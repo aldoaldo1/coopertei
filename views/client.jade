@@ -1,0 +1,16 @@
+div#menu
+  div#modules
+    a(href='/#/client/ots') &Oacute;rdenes de Trabajo
+    a(href='/#/client/events') Eventos
+    a(href='/#/client/notifications') Notificaciones
+
+div#options
+  div#profile
+    h3.inline Conectado como
+    a.inline(href='/#/options/profile') #{session.username}
+    div#session_user_id.hidden #{session.user_id}
+    div#session_username.hidden #{session.username}
+    div#session_role_id.hidden #{session.role_id}
+    div#session_area_id.hidden #{session.area_id}
+  div#submenu
+    a#logout_button Salir

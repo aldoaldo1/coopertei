@@ -1,0 +1,35 @@
+!!! 5
+html
+  head
+    title COOPERTEI
+
+    link(rel='stylesheet', href='/stylesheets/login.min.css')
+
+    script(src='/javascripts/cookies.min.js')
+    script(src='/javascripts/jquery-1.7.1.min.js')
+
+  body
+    h3 COOPERTEI
+    div
+      form#login_form(method='post', action='/login')
+        label(for='user') Usuario
+        br
+        input(name='user', type='text', value='')
+        br
+        label(for='pass') Contrase&ntilde;a
+        br
+        input(name='pass', type='password', value='')
+        br
+        br
+        a Ingresar
+        br
+        p#msg Usuario o contrase&ntilde;a incorrectos
+
+  script
+    $(document).ready(function() {
+      $('form a').on('click', function() { $('#login_form').submit(); });
+      $(document).on('keypress', function(e) { if (e.which == 13) { $('#login_form').submit(); } });
+      if (#{msg} === 1) { $('#msg').fadeIn(); }
+      var username = Cookies.get('username');
+      if (username) { $('input[name=user]').val(username); }
+    });

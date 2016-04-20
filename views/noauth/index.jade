@@ -1,0 +1,26 @@
+!!! 5
+html
+  head
+    title Coopertei | Prototipo
+
+    link(rel='stylesheet', href='/stylesheets/reset.css')
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='stylesheet', href='/stylesheets/reveal.css')
+
+    script(src='/javascripts/jquery-1.7.1.min.js')
+    script(src='/javascripts/jquery.reveal.js')
+
+  body
+    // Hidden modal window for not authorized users
+    div#modal_noauth.reveal-modal
+      h1.title Ruta Inexistente
+      br
+      p.margined No posee permisos para acceder a la ruta requerida.
+      br
+      p.margined(style='width:100%; text-align:center;')
+        a.lefty(href='/') Inicio
+        a.righty.button(href='/login') Autentificarse
+
+      script
+        $('.righty .button').on('click', function() { history.go(-1); });
+        $(document).ready(function() { $('#modal_noauth').reveal(); });

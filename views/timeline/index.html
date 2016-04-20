@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>COOPERTEI</title>
+	<link rel="stylesheet" href="/stylesheets/jquery.timelinr.css" type="text/css" media="screen" />
+	
+	<script src="/javascripts/jquery-1.7.1.min.js"></script>
+	<script src="/javascripts/jquery.timelinr-0.9.5.js"></script>
+	<script type="text/javascript"> 
+		$(function(){
+			$().timelinr()
+		});
+	</script>
+</head>
+
+<body>
+	
+	<div id="timeline">
+		<ul id="dates">
+			<li><a href="#1">I</a></li>
+			<li><a href="#2">II</a></li>
+			<li><a href="#3">III</a></li>
+			<li><a href="#4">IV</a></li>
+			<li><a href="#5">V</a></li>
+		</ul>
+		<ul id="issues">
+			<li id="1">
+				<h1>Sala sucia</h1>
+				<p>Completada</p>
+				<br />
+				<p>Observaci&oacute;n de la Tarea I</p>
+			</li>
+			<li id="2">
+				<h1>Informe de requerimientos</h1>
+				<p>Completada</p>
+				<br />
+				<p>Observaci&oacute;n de la Tarea II</p>
+			</li>
+			<li id="3">
+				<h1>Maquinado de partes</h1>
+				<p>Completada</p>
+				<br />
+				<p>Observaci&oacute;n de la Tarea III</p>
+			</li>
+			<li id="4">
+				<h1>Armado del equipo</h1>
+				<p>Incompleta</p>
+				<br />
+				<p>Observaci&oacute;n de la Tarea IV</p>
+			</li>
+			<li id="5">
+				<h1>Prueba hidr&aacute;ulica</h1>
+				<p>Incompleta</p>
+				<br />
+				<p>Observaci&oacute;n de la Tarea V</p>
+			</li>
+		</ul>
+		<div id="grad_left"></div>
+		<div id="grad_right"></div>
+		<a href="#" id="next">+</a>
+		<a href="#" id="prev">-</a>
+	</div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+!!! 5
+html
+  head
+    title COOPERTEI
+
+    meta(charset='UTF-8')
+
+    link(rel='stylesheet', href='/stylesheets/lib.min.css')
+    link(rel='stylesheet', href='/stylesheets/d3.css')
+    link(rel='stylesheet', href='/stylesheets/style.min.css')
+    link(rel='stylesheet', href='/stylesheets/print.css', media='print')
+
+    script(src='/socket.io/socket.io.js')
+    script(src='/javascripts/lib.min.js')
+    script(src='/javascripts/jquery.iframe-transport.js')
+    script(src='/javascripts/jquery.fileupload.js')
+    script(src='/javascripts/jquery.fileupload.locale.js')
+    script(src='/javascripts/d3/d3.v2.min.js')
+    script(src='/javascripts/d3/nv.d3.min.js')
+    script(src='/javascripts/d3/tooltip.js')
+    script(src='/javascripts/d3/utils.js')
+    script(src='/javascripts/d3/models/axis.js')
+    script(src='/javascripts/d3/models/legend.js')
+    script(src='/javascripts/d3/models/line.js')
+    script(src='/javascripts/d3/models/scatter.js')
+    script(src='/javascripts/d3/models/lineWithFocusChart.js')
+    script(src='/javascripts/main.js')
+  body
+
+    div#head
+      div#logo
+        h3 COOPERTEI
+
+      != body
+
+      div#tabs
+
+    div#left
+      div.inner
+
+    div#right
+      div.inner
+
+    div#foot
+      div#date
+        #{date}
+      img#fullscreen(src='/images/fullscreenyes.png')
+      img#expandup(src='/images/expandup.gif')
+      img#expandright(src='/images/expandright.gif')
+      span#errorreport Reportar error

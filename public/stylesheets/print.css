@@ -1,0 +1,7 @@
+#head, #right, #foot, .fg-toolbar {
+  display: none;
+}
+#left {
+  top: 0;
+  width: 100%;
+}

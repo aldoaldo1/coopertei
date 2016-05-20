@@ -398,7 +398,82 @@
         }, F.appendTitle = function(e, t) {
             $(e).append('<h3 class="formtitle">' + t + "</h3>");
         }, F.createDataTable = function(e, t, n) {
-            var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
+            var rows = '';
+            var attrs = [];
+            var hidden_columns = [0];
+            var order;
+            if(e.datatableOptions){
+                if(e.datatableOptions.aaSorting){
+                    order = e.datatableOptions.aaSorting;
+                }
+            };
+            (e.headers).forEach(function(header){
+                rows += '<th>'+header+'</th>';
+            });
+            if (e.hidden_columns) {
+                (e.hidden_columns).forEach(function(hidden){
+                    hidden_columns.push((e.attrs).indexOf(hidden));
+                });
+            };
+            (e.attrs).forEach(function(attr){
+                attrs.push({data:attr});
+            });
+            var table = '<table id="'+e.name+'_table" style="padding:10px" class="display '+e.name+'" cellspacing="0" width="100%">'+
+                            '<thead>'+
+                                '<tr>'+
+                                    rows+    
+                                '</tr>'+
+                            '</thead>'+
+                        '</table>';
+
+            $("#left").html(table);
+            
+            var datatable = $('#'+e.name+'_table').dataTable({
+                ajax: e.source,
+                columns: attrs,
+                columnDefs: [
+                    {
+                        targets: hidden_columns,
+                        visible: false,
+                    },
+                ],
+                order: order,
+                iDisplayLength: 25,
+                oLanguage: {
+                    oPaginate: {
+                        sFirst: "Inicio",
+                        sPrevious: "Anterior",
+                        sNext: "Siguiente",
+                        sLast: "Final"
+                    },
+                    sEmptyTable: "No existen registros",
+                    sInfo: "_START_ - _END_ de _TOTAL_",
+                    sInfoEmpty: "",
+                    sInfoFiltered: "(filtrando de _MAX_ en total)",
+                    sInfoThousands: ".",
+                    sLengthMenu: "Mostrar _MENU_",
+                    sLoadingRecords: "Cargando...",
+                    sProcessing: "Procesando...",
+                    sSearch: "Buscar",
+                    sZeroRecords: "No existen registros"
+                },
+                fnDrawCallback: function(){
+                    $('.dataTables_filter input').focus();
+                },
+            });
+
+            $(document).on('click', '#'+e.name+'_table tbody tr', function()
+            {
+                var i = datatable.fnGetData(this);
+                $("." + e.name + "_form .selection_id").val(i.id);
+                $("." + e.name + "_infocard .selection_id").val(i.id); 
+                $("#" + e.name + "_table tr").removeClass("selected_row"); 
+                $(this).addClass("selected_row"); 
+                $(".BUTTON_create").hide(); 
+                $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").show(); 
+                t && t(i);
+            });
+            /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
             _.each(e.headers, function(e) {
                 $(r).append($("<th>").html(e));
             }), _.each(e.data.models, function(n) {
@@ -458,7 +533,7 @@
                 }
             }, e.datatableOptions ? e.datatableOptions : {});
             e.datatable = $("." + e.name + "_table").dataTable(a), n && n($("." + e.name + "_table"), e.options.open_ot_number_on_start);
-        }, F.resetForm = function(e) {
+        */}, F.resetForm = function(e) {
             $(e).each(function() {
                 this.reset();
             });
@@ -631,7 +706,14 @@
                 r();
             }, 5e3), n && n(e);
         };
-    }), e.define("/widgets/Alert.js", function(e, t, n, r, i, s) {
+    }), 
+    $(document).on('click', '#head a:not(a#logout_button, a#scheduler)', function(){
+        location.reload();
+    })
+    $(document).on('click', '.blockUI .BUTTON_cancel, .blockOverlay', function(){
+        $('.blockUI').remove()
+    }),
+    e.define("/widgets/Alert.js", function(e, t, n, r, i, s) {
         C.Widget.Alert = {
             initialize: function() {
                 $("#head #tabs").empty().append('<a href="/#/ini/alerts">Alertas de O/T</a><a href="/#/ini/alerts_tasks">Alertas de Tareas</a>'), $("#left .inner").empty().append('<div id="alert_left"></div>'), $("#right .inner").empty().append('<div id="alert_right"></div>');
@@ -704,7 +786,7 @@
     }), e.define("/widgets/Reports.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/ot">Ordenes de trabajo</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/ot">Ordenes de trabajo</a>'), $("#left .inner").empty().append('<div id="otReport_left"></div>'), $("#right .inner").empty().append('<div id="otReporteport_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -1417,6 +1499,7 @@
     }), e.define("/views/alert/AlertTable.js", function(e, t, n, r, i, s) {
         C.View.AlertTable = Backbone.View.extend({
             name: "alert",
+            source: "/alert",
             headers: [ "ID", "O/T", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de entrega" ],
             attrs: [ "id", "number", "client_id", "client", "equipment", "delivery" ],
             data: null,
@@ -1502,11 +1585,12 @@
     }), e.define("/views/alert/AlertTasksTable.js", function(e, t, n, r, i, s) {
         C.View.AlertTasksTable = Backbone.View.extend({
             name: "alert",
-            headers: [ "ID", "O/T", "Nombre", "Descripción", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de vencimiento" ],
-            attrs: [ "id", "number", "name", "description", "client_id", "client", "equipment", "due_date" ],
+            source: "/alerttask",
+            headers: [ "ID", "O/T", "Nombre", "Descripción", "Cliente", "Equipo (TAG)", "Fecha de vencimiento" ],
+            attrs: [ "id", "number", "name", "description", "client", "equipment", "due_date" ],
             data: null,
             datatableOptions: {
-                aoColumns: [ null, null, null, null, null, null, null, {
+                aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
                 } ],
                 aaSorting: [ [ 1, "desc" ] ]
@@ -1587,6 +1671,7 @@
     }), e.define("/views/client/ClientAuthorizationTable.js", function(e, t, n, r, i, s) {
         C.View.ClientAuthorizationTable = Backbone.View.extend({
             name: "client",
+            source: "/authorization",
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
@@ -1641,6 +1726,7 @@
             },
             initialize: function() {
                 var e = this;
+                console.log(this)
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     F.assignValuesToInfoCard($(".client_authorization_infocard"), t, function(t, n) {
                         $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="BUTTON_report" value="Informe de Requerimientos" /><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").on("click", function() {
@@ -1942,6 +2028,7 @@
     }), e.define("/views/client/ClientAuthorizationHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.ClientAuthorizationHistoryTable = Backbone.View.extend({
             name: "client",
+            source: "/authorizationhistory",
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
@@ -2033,6 +2120,7 @@
     }), e.define("/views/client/ClientPayrollTable.js", function(e, t, n, r, i, s) {
         C.View.ClientPayrollTable = Backbone.View.extend({
             name: "client",
+            source: "/client",
             headers: [ "ID", "Nombre", "TAG", "C.U.I.T.", "I.V.A.", "Dirección", "Número", "Piso", "Dpto.", "Ciudad", "E-mail" ],
             attrs: [ "id", "name", "tag", "cuit", "iva_id", "address", "addressnumber", "floor", "apartment", "city_id", "email" ],
             hidden_colums: [ "iva_id", "city_id" ],
@@ -2470,6 +2558,7 @@
     }), e.define("/views/material/MaterialOrderTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialOrderTable = Backbone.View.extend({
             name: "material",
+            source: "/materialorder",
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "ottask", "provider", "date" ],
             data: null,
@@ -2794,6 +2883,7 @@
     }), e.define("/views/materialcategory/MaterialCategoryTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialCategoryTable = Backbone.View.extend({
             name: "materialcategory",
+            source: "/materialcategory",
             headers: [ "ID", "Categoría" ],
             attrs: [ "id", "name" ],
             data: null,
@@ -2904,6 +2994,7 @@
     }), e.define("/views/material/MaterialHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialHistoryTable = Backbone.View.extend({
             name: "material",
+            source: "/materialhistory",
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "provider", "date" ],
             data: null,
@@ -2982,6 +3073,7 @@
     }), e.define("/views/equipment/EquipmentTable.js", function(e, t, n, r, i, s) {
         C.View.EquipmentTable = Backbone.View.extend({
             name: "equipment",
+            source: "/equipment",
             headers: [ "ID", "Equipo (TAG)", "ID Motivo de intervención", "Motivo de intervención", "ID Cliente", "Cliente" ],
             attrs: [ "id", "name", "intervention_id", "intervention", "client_id", "client" ],
             data: null,
@@ -3022,8 +3114,8 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("intervention", function(t) {
-                    e.relations.interventions = t, F.getAllFromModel("client", function(t) {
-                        e.relations.clients = t, F.createForm(e);
+                    e.relations.interventions = t.data, F.getAllFromModel("client", function(t) {
+                        e.relations.clients = t.data, F.createForm(e);
                     });
                 });
             },
@@ -3232,6 +3324,7 @@
     }), e.define("/views/ot/OtAdminTable.js", function(e, t, n, r, i, s) {
         C.View.OtAdminTable = Backbone.View.extend({
             name: "ot",
+            source: "/ot",
             headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
             attrs: [ "id", "number", "client_number", "equipment_id", "equipment", "client_id", "client", "intervention_id", "intervention", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
             hidden_columns: [ "workshop_suggestion", "client_suggestion", "remitoentrada", "reworked_number", "notify_client" ],
@@ -3337,10 +3430,10 @@
                 var e = this;
                 F.getNextOtNumber(function(t) {
                     e.fields.number.value = t.n, F.getAllFromModel("client", function(t) {
-                        e.relations.clients = t, F.getAllFromModel("equipment", function(t) {
-                            e.relations.equipments = t, F.getAllFromModel("intervention", function(t) {
-                                e.relations.interventions = t, F.getAllFromModel("plan", function(t) {
-                                    e.relations.plans = t, F.createForm(e, !1, function() {
+                        e.relations.clients = t.data, F.getAllFromModel("equipment", function(t) {
+                            e.relations.equipments = t.data, F.getAllFromModel("intervention", function(t) {
+                                e.relations.interventions = t.data, F.getAllFromModel("plan", function(t) {
+                                    e.relations.plans = t.data, F.createForm(e, !1, function() {
                                         $("#right").trigger("ot_form_loaded", [ e ]), $(".ot_form select[name=equipment_id]").after($("<span>", {
                                             "class": "equipment_ot_exists"
                                         })), $(".ot_form select[name=equipment_id]").on("change", function() {
@@ -3801,6 +3894,7 @@
     }), e.define("/views/ot/OtAuditTable.js", function(e, t, n, r, i, s) {
         C.View.OtAuditTable = Backbone.View.extend({
             name: "ot",
+            source: "/ot",
             headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
             attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
             hidden_columns: [ "number", "reworked_number" ],
@@ -4000,6 +4094,7 @@
     }), e.define("/views/ot/OtHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.OtHistoryTable = Backbone.View.extend({
             name: "ot",
+            source: "/othistory",
             headers: [ "ID", "O/T", "O/T Cliente", "Ingreso", "Salida", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida" ],
             attrs: [ "id",  "number", "client_number", "created_at", "salida", "equipment_id", "equipment", "client_id", "client", "delivery", "reworked_number", "remitoentrada", "remitosalida" ],
             hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada" ],
@@ -4121,6 +4216,7 @@
     }), e.define("/views/ot/OtPlansTable.js", function(e, t, n, r, i, s) {
         C.View.OtPlansTable = Backbone.View.extend({
             name: "plan",
+            source: "/plan",
             headers: [ "ID", "Nombre", "Descripción", "ID Tareas" ],
             attrs: [ "id", "name", "description", "task_id" ],
             data: null,
@@ -4391,6 +4487,7 @@
     }), e.define("/views/person/PersonTable.js", function(e, t, n, r, i, s) {
         C.View.PersonTable = Backbone.View.extend({
             name: "person",
+            source: "/person",
             headers: [ "ID", "Nombre", "Apellido", "Teléfono", "E-mail" ],
             attrs: [ "id", "firstname", "lastname", "phone", "email" ],
             data: null,
@@ -4518,11 +4615,9 @@
             data: null,
             hidden_columns: [ "name" ],
             initialize: function() {
-                console.log('heraldo')
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     //F.assignValuesToForm($(".person_form"), e);
                 });
-                console.log(this.options.collection)
             },
             events: {
                 "click .otReport_table tr": "selectRow"
@@ -4559,6 +4654,7 @@
     }), e.define("/views/personnel/EmployeeTable.js", function(e, t, n, r, i, s) {
         C.View.EmployeeTable = Backbone.View.extend({
             name: "employee",
+            source: "/employee",
             headers: [ "ID", "Legajo", "ID Persona", "Nombre", "ID Area", "Área", "Horario entrada ID", "Horario salida ID", "Horario", "Interno" ],
             attrs: [ "id", "payroll_number", "person_id", "person", "area_id", "area", "schedule_ini_id", "schedule_end_id", "schedule", "intern" ],
             data: null,
@@ -4627,7 +4723,7 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("person", function(t) {
-                    e.relations.persons = t, F.getAllFromModel("area", function(t) {
+                    e.relations.persons = t.data, F.getAllFromModel("area", function(t) {
                         e.relations.areas = t, F.getAllFromModel("schedule", function(t) {
                             e.relations.schedule_inis = t, e.relations.schedule_ends = t, F.createForm(e);
                         });
@@ -4714,6 +4810,7 @@
     }), e.define("/views/personnel/InoutTable.js", function(e, t, n, r, i, s) {
         C.View.InoutTable = Backbone.View.extend({
             name: "inout",
+            source: "/inout",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
             data: null,
@@ -4786,6 +4883,7 @@
     }), e.define("/views/personnel/InoutHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.InoutHistoryTable = Backbone.View.extend({
             name: "inout",
+            source: "/inouthistory",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
             data: null,
@@ -4822,7 +4920,7 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("employee", function(t) {
-                    e.relations.employees = t, F.createForm(e, $("#inout_right"), function() {
+                    e.relations.employees = t.data, F.createForm(e, $("#inout_right"), function() {
                         C.Session.doIfVigilance(function() {
                             $(".inout_form select[name=permitted], .inout_form label[for=permitted]").remove(), $($(".inout_form .chzn-container")[1]).remove();
                         });
@@ -4912,6 +5010,7 @@
     }), e.define("/views/intervention/InterventionTable.js", function(e, t, n, r, i, s) {
         C.View.InterventionTable = Backbone.View.extend({
             name: "intervention",
+            source: "/intervention",
             headers: [ "ID", "Nombre", "Descripción" ],
             attrs: [ "id", "name", "description" ],
             data: null,
@@ -5142,6 +5241,7 @@
     }), e.define("/views/query/QueryTable.js", function(e, t, n, r, i, s) {
         C.View.QueryTable = Backbone.View.extend({
             name: "query",
+            source: "/query",
             headers: null,
             attrs: null,
             data: null,
@@ -5210,7 +5310,7 @@
             template: function() {
                 var e = this, t = "";
                 F.getAllFromModel("employee", function(n) {
-                    _.each(n, function(e) {
+                    _.each(n.data, function(e) {
                         t += '<option value="' + e.id + '">' + e.name + "</option>";
                     }), $(e.el).append('<h3>Productividad de empleados:</h3><form name="productivityEmployees"><select name="employee_ids[]" multiple="multiple">' + t + "</select>" + '<input type="button" class="graphEmployeeProducivity" value="Graficar" />' + "</form>");
                 });
@@ -5284,6 +5384,7 @@
     }), e.define("/views/task/TaskTable.js", function(e, t, n, r, i, s) {
         C.View.TaskTable = Backbone.View.extend({
             name: "task",
+            source: "/task",
             headers: [ "ID", "Nombre", "Descripción", "prioridad", "ID Area", "Area" ],
             attrs: [ "id", "name", "description", "priority", "area_id", "area" ],
             data: null,
@@ -5412,6 +5513,7 @@
     }), e.define("/views/user/UserTable.js", function(e, t, n, r, i, s) {
         C.View.UserTable = Backbone.View.extend({
             name: "user",
+            source: "/user",
             headers: [ "ID", "Usuario", "ID Empleado", "Empleado", "ID Rol", "Rol", "ID Area", "Area" ],
             attrs: [ "id", "username", "employee_id", "employee", "role_id", "role", "area_id", "area" ],
             data: null,
@@ -5557,6 +5659,7 @@
     }), e.define("/views/errorreport/ErrorReportTable.js", function(e, t, n, r, i, s) {
         C.View.ErrorReportTable = Backbone.View.extend({
             name: "errorreport",
+            source: "/errorreport",
             headers: [ "ID", "Descripción", "Sugerencia", "Usuario", "Fecha" ],
             attrs: [ "id", "description", "suggestion", "user", "created_at" ],
             data: null,

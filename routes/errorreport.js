@@ -17,7 +17,7 @@ Errorreport.get = function(req, res, next) {
 
   DB._.query(q, function(err, errorreports) {
     if (errorreports) {
-      res.send(errorreports);
+      res.send({data:errorreports});
     } else {
       res.send(false);
     }

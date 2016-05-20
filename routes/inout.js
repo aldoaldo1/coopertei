@@ -34,7 +34,7 @@ Inout.get = function(req, res, next) {
       });
     });
 
-    res.send(msg);
+    res.send({data:msg});
   });
 };
 

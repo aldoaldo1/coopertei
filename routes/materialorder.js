@@ -21,7 +21,7 @@ Materialorder.get = function(req, res, next) {
     ORDER BY mo.date DESC \
     ";
   DB._.query(q, function(err, data) {
-    res.send(data);
+    res.send({data:data});
   });
 };
 

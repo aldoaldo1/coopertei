@@ -57,6 +57,8 @@ module.exports = function(app, routes) {
 
   app.get('/user/currentAreaId', Auth.restrict, routes.user.currentAreaId);
   
+  //Reports
+  app.get('/report/ot', Auth.restrict, routes.otreport.get);
 
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'employee', 'client', 'task', 'query',

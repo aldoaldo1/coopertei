@@ -9,7 +9,7 @@ var Intervention = function(db, everyone) {
 
 Intervention.get = function(req, res, next) {
   DB.Intervention.findAll({ where: ["deleted_at IS NULL"] }).on('success', function(interventions) {
-    res.send(DB.dataToArray(interventions));
+    res.send({data:DB.dataToArray(interventions)});
   });
 };
 

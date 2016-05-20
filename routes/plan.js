@@ -36,7 +36,7 @@ Plan.get = function(req, res, next) {
       });
     });
     async.series(queries, function(err, results) {
-      res.send(results);
+      res.send({data:results});
     });
   });
 };

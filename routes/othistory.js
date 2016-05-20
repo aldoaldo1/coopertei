@@ -56,7 +56,7 @@ Othistory.get = function(req, res, next) {
         "state": ot.state
       });
     });
-    res.send(msg);
+    res.send({data:msg});
   });
 };
 

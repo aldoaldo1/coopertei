@@ -9,7 +9,7 @@ var Client = function(db, everyone) {
 
 Client.get = function(req, res, next) {
   DB.Client.findAll({ where: ["deleted_at IS NULL"] }).on('success', function(clients) {
-    res.send(DB.dataToArray(clients));
+    res.send({data:DB.dataToArray(clients)});
   });
 };
 

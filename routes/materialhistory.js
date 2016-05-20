@@ -33,7 +33,7 @@ Materialhistory.get = function(req, res, next) {
     AND moe.deleted_at IS NULL \
   \*/
   DB._.query(q, function(err, data) {
-    res.send(data);
+    res.send({data:data});
   });
 };
 

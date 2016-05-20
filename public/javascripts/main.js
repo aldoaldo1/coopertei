@@ -425,7 +425,7 @@
                                 '</tr>'+
                             '</thead>'+
                         '</table>';
-
+                        
             $("#left").html(table);
             
             var datatable = $('#'+e.name+'_table').dataTable({
@@ -457,6 +457,10 @@
                     sSearch: "Buscar",
                     sZeroRecords: "No existen registros"
                 },
+                dom: 'lBfrtip',
+                buttons: [
+                        'copy', 'csv', 'excel', 'pdf'
+                    ],
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
                 },

@@ -35,7 +35,7 @@ Authorization.get = function(req, res, next) {
         "otstate_id": a.otstate_id,
       });
     });
-    res.send(msg);
+    res.send({data:msg});
   });
 };
 

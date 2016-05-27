@@ -114,31 +114,31 @@ Ot.get = function(req, res, next) {
 
     data.forEach(function(ot) {
       msg.push({
-        "id": ot.id,
-        "ot_number": "Ot_"+ot.number,
-	      "remitoentrada": ot.remitoentrada,
-	      "remitosalida": ot.remitosalida,
-        "number": ot.number,
-        "client_number": ot.client_number,
-        "equipment_id": ot.equipment_id,
-        "equipment": ot.equipment,
-        "delivery": ot.delivery ? moment(ot.delivery).format('DD/MM/YYYY') : "Sin DEFINIR",
-        "created_at": moment(ot.created_at).format('DD/MM/YYYY'),
-        "workshop_suggestion": ot.workshop_suggestion,
-        "client_suggestion": ot.client_suggestion,
-        "client_id": ot.client_id,
-        "client": ot.client,
-        "intervention_id": ot.intervention_id,
-        "intervention": ot.intervention,
-        "plan_id": ot.plan_id,
-        "plan": ot.plan,
-        "reworked_number": ot.reworked_number,
-        "notify_client": ot.notify_client,
-        "otstate_id": ot.otstate_id,
-        "state": ot.state
+        id: ot.id,
+        ot_number: "Ot_"+ot.number,
+	      remitoentrada: ot.remitoentrada,
+	      remitosalida: ot.remitosalida,
+        number: ot.number,
+        client_number: ot.client_number,
+        equipment_id: ot.equipment_id,
+        equipment: ot.equipment,
+        delivery: ot.delivery ? moment(ot.delivery).format('DD/MM/YYYY') : "Sin DEFINIR",
+        created_at: moment(ot.created_at).format('DD/MM/YYYY'),
+        workshop_suggestion: ot.workshop_suggestion,
+        client_suggestion: ot.client_suggestion,
+        client_id: ot.client_id,
+        client: ot.client,
+        intervention_id: ot.intervention_id,
+        intervention: ot.intervention,
+        plan_id: ot.plan_id,
+        plan: ot.plan,
+        reworked_number: ot.reworked_number,
+        notify_client: ot.notify_client,
+        otstate_id: ot.otstate_id,
+        state: ot.state
       });
     });
-    res.send(msg);
+    res.send({data:msg});
   });
   ////ELIMINAR FOTOS HUERFANAS
   /*var q = 'SELECT * FROM reportphoto WHERE deleted_at IS NOT NULL';

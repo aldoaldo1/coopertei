@@ -17,7 +17,7 @@ Task.get = function(req, res, next) {
     "; /*t.name*/
   DB._.query(q, function(err, tasks) {
     if (tasks) {
-      res.send(tasks);
+      res.send({data:tasks});
     } else {
       res.send(false);
     }

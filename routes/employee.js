@@ -42,7 +42,7 @@ console.log(req.session.area_id);
     WHERE e.deleted_at IS NULL \
   ";}
   DB._.query(q, function(err, data) {
-    res.send(data);
+    res.send({data:data});
   });
 };
 

@@ -20,7 +20,7 @@ User.get = function(req, res, next) {
   ";
 
   DB._.query(q, function(err, data) {
-    res.send(data);
+    res.send({data:data});
   });
 };
 

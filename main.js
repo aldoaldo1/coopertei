@@ -398,7 +398,46 @@
         }, F.appendTitle = function(e, t) {
             $(e).append('<h3 class="formtitle">' + t + "</h3>");
         }, F.createDataTable = function(e, t, n) {
-            var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
+            var rows = '';
+            var attrs = [];
+            hidden_columns = [0];
+            (e.headers).forEach(function(header){
+                rows += '<th>'+header+'</th>';
+            });
+            (e.hidden_columns).forEach(function(hidden){
+                hidden_columns.push((e.attrs).indexOf(hidden));
+            });
+            (e.attrs).forEach(function(attr){
+                attrs.push({data:attr});
+            });
+            var table = '<table id="'+e.name+'Table" style="padding:10px" class="display '+e.name+'" cellspacing="0" width="100%">'+
+                            '<thead>'+
+                                '<tr>'+
+                                    rows+    
+                                '</tr>'+
+                            '</thead>'+
+                        '</table>';
+                    
+            $("#left").html(table);
+            var t = $('#'+e.name+'Table').dataTable({
+                ajax: '/'+e.name,
+                columns: attrs,
+                columnDefs: [
+                    {
+                        targets: hidden_columns,
+                        visible: false,
+                    },
+                ],
+                order: [[ 0, "asc" ]],
+                iDisplayLength: 25,
+                oLanguage:{
+                    sSearch: 'Buscar'
+                },
+                fnDrawCallback: function(){
+                    $('.dataTables_filter input').focus();
+                },
+            });
+            /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
             _.each(e.headers, function(e) {
                 $(r).append($("<th>").html(e));
             }), _.each(e.data.models, function(n) {
@@ -458,7 +497,7 @@
                 }
             }, e.datatableOptions ? e.datatableOptions : {});
             e.datatable = $("." + e.name + "_table").dataTable(a), n && n($("." + e.name + "_table"), e.options.open_ot_number_on_start);
-        }, F.resetForm = function(e) {
+        */}, F.resetForm = function(e) {
             $(e).each(function() {
                 this.reset();
             });
@@ -4518,6 +4557,7 @@
             data: null,
             hidden_columns: [ "name" ],
             initialize: function() {
+                console.log('heraldo')
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     //F.assignValuesToForm($(".person_form"), e);
                 });

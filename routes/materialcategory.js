@@ -12,7 +12,7 @@ Materialcategory.get = function(req, res, next) {
     where: ["deleted_at IS NULL"],
     order: "name ASC"
   }).on('success', function(materialcategorys) {
-    res.send(DB.dataToArray(materialcategorys));
+    res.send({data:DB.dataToArray(materialcategorys)});
   });
 };
 

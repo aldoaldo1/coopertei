@@ -1,0 +1,33 @@
+//Ordenes trabajo -> Administracion -> Seleccionar cliente -> crear => genera error.
+
+//Ordenes trabajo -> Administrar => el usuario con rol 1 (vigilancia) solo puede ver las OTs con estado 1 (Inaugurada)
+
+Ordenes trabajo -> Plan tareas => cada tarea debe tener hs estimadas de desarrollo.
+
+Materiales -> Seleccion OT -> tildo recepcion => no actualiza datos del pedido de materiales.
+
+Clientes -> Autorizaciones -> Seleccionar OT -> Informe de requierimiento -> Materiales => No corresponden a la OT.
+
+Materiales -> Pedidos -> Permitir cargar => Permitir cargar materiales NO pedidos a la gente de pañol.
+
+Clientes -> Autorizaciones -> Selecciono OT -> Inf. de requerimiento -> Enviar al cliente -> ver si archivo adjunto (hoy llamado informes pertinentes.pdf) => Puede llevar como nombre: OT+OT_cliente+Tag_equipo.pdf
+
+Materiales -> Pedidos -> Crear pedido -> OT existe con pedido => Carga materiales que se dejaron en blanco como :cant 0unid.
+
+Materiales -> Pedidos -> Crear otro pedido a cargo de Coopertei -> Cargo materiales adicionales. Voy a Clientes -> Autorizaciones -> selecciono OT -> Inf. de requerimiento -> Materiales -> Enviar al cliente (en realidad es Coopertei) => Debe enviar mail con los materiales aun no notificados para comprar.
+
+Cuando se cambia la fecha de finalizacion de OT (ver donde se hace) => Agregar motivo de demora (desde lista) y observacion.
+
+Crear tabla de motivo de demoras para ser utilizado en cambio de fecha de entrega y corrimientos de fecha de fin de tarea.
+
+Materiales => Crear Solapa Compras 
+	=> Permitir al personal de compras acceder para agregar y modificar fecha de posible entrega de cada material.
+	=> Permitir al resto que puede ver sin modificar dicha informacion.
+
+Panel de control -> Cat. de materiales (tabla materialCategory) -> Incorporar campos logicos: Material / Diametro exterior (Øe) / Diametro interior (Øi) / Espesor / Longitud / Ancho / Alto) <- Esperar que Majo entregue el detalla.
+
+Materiales -> Pedidos -> Crear pedidos 
+	=> Ampliar campo material	
+	=> Al seleccionar categoria que pida campos habilitados en materialCategory adicionando cantidad y unidad.
+
+

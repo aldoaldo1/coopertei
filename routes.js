@@ -32,10 +32,10 @@ module.exports = function(app, routes) {
   app.get('/ottask/byOtNumber/:ot_number', Auth.restrict, routes.ottask.byOtNumber);
   app.get('/ottask/resources/:ottask_id', Auth.restrict, routes.ottask.resources);
   app.get('/ottask/get/:id', Auth.restrict, routes.ottask.getOne);
-  app.post('/ottask/add', Auth.restrict, routes.ottask.add);
   app.get('/ottask/rework/:task_id/after/:position', Auth.restrict, routes.ottask.rework);
+  app.post('/ottask/add', Auth.restrict, routes.ottask.add);
   app.post('/ottask/toggleTaskState/:task_id', Auth.restrict, routes.ottask.complete);
-
+  
   app.get('/authorization/setSessionOtId/:ot_number', Auth.restrict, routes.authorization.setSessionOtId);
   app.post('/authorization/saveRequirementsReport', Auth.restrict, routes.authorization.saveRequirementsReport);
   app.post('/authorization/addPhotoToReport', Auth.restrict, routes.authorization.addPhotoToReport);

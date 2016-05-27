@@ -1747,7 +1747,6 @@
             },
             initialize: function() {
                 var e = this;
-                console.log(this)
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     F.assignValuesToInfoCard($(".client_authorization_infocard"), t, function(t, n) {
                         $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="BUTTON_report" value="Informe de Requerimientos" /><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").on("click", function() {
@@ -1755,6 +1754,9 @@
                         });
                     });
                 });
+                $(document).on('click', '.client_table tbody tr', function(evento){
+                    e.selectRow(evento);
+                })
             },
             events: {
                 "click .client_table tr": "selectRow"
@@ -1762,6 +1764,7 @@
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
                 var t = this, n = $($(this.selected_row).find("td")[0]).text();
+                console.log(n)
                 n.length && $.ajax({
                     url: "/authorization/setSessionOtId/" + n,
                     success: function(e) {
@@ -2243,34 +2246,47 @@
             },
             addClient: function() {
                 var e = this;
-                this.collection.create($(".client_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        F.msgOK("El Cliente ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'POST',
+                    data: $('.client_form').serializeObject(),
+                    url: '/client',
+                    success: function(t){
+                        console.log(t, n)
+                        if (t.result) {
+                            F.cleanForm('.client_form');
+                            F.msgOK("El cliente ha sido creado");
+                            F.reloadDataTable('.client_table');
+                        }else{
+                            F.msgError(t.error);
+                        }
                     }
-                });
+                })
             },
             editClient: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".client_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El Cliente ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.client_form').serializeObject(),
+                    url: '/client/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.client_form');
+                        F.msgOK('El cliente ha sido actualizado');
+                        F.reloadDataTable('.client_table');
                     }
-                });
+                })
             },
             delClient: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Cliente?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El Cliente ha sido eliminado");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/client/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.client_form');
+                            F.msgOK('El cliente ha sido eliminado');
+                            F.reloadDataTable('.client_table');
                         }
-                    });
+                    })
                 });
             }
         });

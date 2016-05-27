@@ -71,6 +71,7 @@ Authorization.put = function(req, res, next) {
 };
 
 Authorization.setSessionOtId = function(req, res, next) {
+  console.log(req.params)
   DB.Ot.find({ where: { number: req.params.ot_number } }).on('success', function(ot) {
     if (ot) {
       req.session.auth_selected_ot_id = ot.id;
@@ -128,167 +129,161 @@ Authorization.saveRequirementsReport = function(req, res, next) {
               report_id: r.id,
               ottask_id: t.id,
               observation: req.body['task_observation_' + t.id]
-          }).save();
+            }).save();
           });
-             var qq = " \
-		    SELECT ot.*, c.email, e.name AS name_equipment,\
-		    c.name AS client_name, i.name AS intervention_name ,p.name AS plan_name\
-		    FROM ot\
-		    INNER JOIN client c ON ot.client_id = c.id\
-		    LEFT JOIN equipment e ON ot.equipment_id = e.id\
-		    LEFT JOIN intervention i ON i.id = ot.intervention_id\
-		    LEFT JOIN plan p ON p.id = ot.plan_id\
-		    WHERE ot.id = " + ot_id + " \
-		  ";/* ot_id antes era r.id*/
-  DB._.query(qq, function(err, ot) {
-    if (ot.length) {
-      DB.Report.find({ where: { ot_id: ot[0].id } }).on('success', function(r) {
-        // Get Reporttasks
-        var q1 = " \
-          SELECT rt.*, ott.name AS name, ott.priority AS priority \
-          FROM reporttask rt \
-          LEFT JOIN ottask ott ON rt.ottask_id = ott.id \
-          WHERE rt.report_id = " + r.id + " AND ott.deleted_at is NULL \
-	  ORDER BY ott.priority\
-        ";
-        DB._.query(q1, function(error, tasks) {
-
-		
-          // Build list
-          var html ='<h1> COOPERTEI Ltda. </h1><p>Leyenda06/09/13</p>'; 
-	  var date = moment().format('DD/MM/YYYY');
-	  var material_inform = "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body><div style='width:1000px' ><div style='float:left; width:200px;height:112px' align='left'><img src='/srv/coopsys/public/images/coop.jpg' width='300px'/></div><div style='float:left;height:112px; width:600px;font-weight:bold'; align='left'><div align='center'><span style='font-size:22px; '>COOPERTEI LTDA</span><span style='font-size:18px'><br />ISO 9001:2008<br /></span><span style='font-size:16px'> Requerimiento de Materiales</span><span style='font-size:14px'></span></div><span style='font-size:14px'><p align='right'>FECHA:"+date+"</p></span></div><div style='float:left; width:200px; height:112px;' align='right'><img src='/srv/coopsys/public/images/dnv.jpg'  height='100px'/></div><table width='1000px' border='1' align='center'><tr><th colspan='4' style='background-color:#999'><span style='font-size:12; font-weight:bold' >DATOS DEL CLIENTE</span></th><th align = 'left'; colspan='3'style='background-color:#FFF'><span style='font-size:10; font-weight:bold'>O/T Coopertei:"+ot[0].number+" </span></th></tr><tr><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>Nombre:"+ot[0].client_name+"</span></div></th><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>O/C:</span></div></th><td rowspan='2'><div align='center'><span style='font-size:12; font-weight:bold''>Proveedor</span><span style='font-size:12; font-weight:bold''>&nbsp;del Material</span></div></td><td width='179'> <div align='left'><span style='font-size:12; font-weight:bold''>Cliente</span> </div></td> <td width='89'> <span style='font-size:12; font-weight:bold''>X</span> </td></tr><tr><th height='24' colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>Equipo:&nbsp;"+ot[0].name_equipment+"</span></div></th><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>O/T Cliente:&nbsp;"+ot[0].client_number+"</span></div></th><td><div align='left'><span style='font-size:12; font-weight:bold'>Coopertei</span></div></td><td align='center'><span style='font-size:12; font-weight:bold''>&nbsp;</span></td></tr><tr><th colspan='7'><div align='left'><span style='font-size:12; font-weight:bold''>Tarea:"+ot[0].plan_name+"</span></div></th></tr></table><table width='1000px' border='1' align='center'><tr><td align='center'; width='300px'><span style='font-size:12; font-weight:bold''>MATERIAL</span></td><td align='center'; width='600px'><span style='font-size:12; font-weight:bold''>DETALLE</span></td><td align='center'; width='100px'><span style='font-size:12; font-weight:bold''>CANT</span></td></tr>";
-	  var task_inform = "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body><div style='width:1003px' ><div style='float:left; width:200px;height:112px' align='left'><img src='/srv/coopsys/public/images/coop.jpg' width='300px'/></div><div style='float:left;height:112px; width:600px' align='center'><h1 align='center'><h1 align='center'>COOPERTEI LTDA  <br /> INFORME DE REQUERIMIENTOS DE TAREAS</h1></div><div style='float:left; width:200px; height:112px;' align='right'><img src='/srv/coopsys/public/images/dnv.jpg'  width='150px'/></div><div style='float:left; width:500px; text-align:left'><h2>FECHA:"+date+"</h2></div><div style='float:left; width:500px; text-align:right'><h2> N° O/T:&nbsp;"+ot[0].number+" </h2></div><table width='1000' border='1' align='center'> <th width='1000' colspan='3' bgcolor='#EEEEEE' ><span style='font-size:19px; font-weight:bold'>DATOS DEL CLIENTE</span></th><tr><th colspan='2' align='left'> NOMBRE:&nbsp;"+ot[0].client_name+"</th><td><span style='font-size:16px; font-weight:bold'>O/C:</span></td></tr><tr><th colspan='2' align='left'>EQUIPO:&nbsp;"+ot[0].name_equipment+"</th><td><span style='font-size:16px; font-weight:bold'>O/T:&nbsp;"+ ot[0].client_number+"</span></td></tr><th width='1000' colspan='3' align='left'>MOTIVO DE LA INTEVERNCIÓN:&nbsp;"+ot[0].plan_name+"</th><tr><td align= 'center'; width='50px' bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold'>ITEM</span></td><td align= 'center';  width='450px' bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold; text-align:center'>TAREAS A REALIZAR</span></td><td align= 'center';  bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold'>OBSERVACIONES</span></td>";
-	  var contador = 1;
-          if (tasks.length) {
-            var task_style = 'text-decoration:underline; font-weight:bold;';
-            tasks.forEach(function(t) {
-              console.log(t)
-              if(t.priority>0){
-			          task_inform +="</tr><tr><td align='center'>"+contador+"</td><td>"+t.name+"</td><td>"+t.observation+"</td></tr>";
-		          	  contador ++;
-	        	  }
+          var qq = " \
+    		    SELECT ot.*, c.email, e.name AS name_equipment,\
+    		    c.name AS client_name, i.name AS intervention_name ,p.name AS plan_name\
+    		    FROM ot\
+    		    INNER JOIN client c ON ot.client_id = c.id\
+    		    LEFT JOIN equipment e ON ot.equipment_id = e.id\
+    		    LEFT JOIN intervention i ON i.id = ot.intervention_id\
+    		    LEFT JOIN plan p ON p.id = ot.plan_id\
+    		    WHERE ot.id = " + ot_id + " \
+    		    ";/* ot_id antes era r.id*/
+          DB._.query(qq, function(err, ot) {
+            if (ot.length) {
+              DB.Report.find({ where: { ot_id: ot[0].id } }).on('success', function(r) {
+                // Get Reporttasks
+                var q1 = " \
+                  SELECT rt.*, ott.name AS name, ott.priority AS priority \
+                  FROM reporttask rt \
+                  LEFT JOIN ottask ott ON rt.ottask_id = ott.id \
+                  WHERE rt.report_id = " + r.id + " AND ott.deleted_at is NULL \
+                  ORDER BY ott.priority\
+                  ";
+                DB._.query(q1, function(error, tasks) {
+                  // Build list
+                  var html ='<h1> COOPERTEI Ltda. </h1><p>Leyenda06/09/13</p>'; 
+              	  var date = moment().format('DD/MM/YYYY');
+              	  var material_inform = "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body><div style='width:1000px' ><div style='float:left; width:200px;height:112px' align='left'><img src='/srv/coopsys/public/images/coop.jpg' width='300px'/></div><div style='float:left;height:112px; width:600px;font-weight:bold'; align='left'><div align='center'><span style='font-size:22px; '>COOPERTEI LTDA</span><span style='font-size:18px'><br />ISO 9001:2008<br /></span><span style='font-size:16px'> Requerimiento de Materiales</span><span style='font-size:14px'></span></div><span style='font-size:14px'><p align='right'>FECHA:"+date+"</p></span></div><div style='float:left; width:200px; height:112px;' align='right'><img src='/srv/coopsys/public/images/dnv.jpg'  height='100px'/></div><table width='1000px' border='1' align='center'><tr><th colspan='4' style='background-color:#999'><span style='font-size:12; font-weight:bold' >DATOS DEL CLIENTE</span></th><th align = 'left'; colspan='3'style='background-color:#FFF'><span style='font-size:10; font-weight:bold'>O/T Coopertei:"+ot[0].number+" </span></th></tr><tr><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>Nombre:"+ot[0].client_name+"</span></div></th><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>O/C:</span></div></th><td rowspan='2'><div align='center'><span style='font-size:12; font-weight:bold''>Proveedor</span><span style='font-size:12; font-weight:bold''>&nbsp;del Material</span></div></td><td width='179'> <div align='left'><span style='font-size:12; font-weight:bold''>Cliente</span> </div></td> <td width='89'> <span style='font-size:12; font-weight:bold''>X</span> </td></tr><tr><th height='24' colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>Equipo:&nbsp;"+ot[0].name_equipment+"</span></div></th><th colspan='2'><div align='left'><span style='font-size:12; font-weight:bold''>O/T Cliente:&nbsp;"+ot[0].client_number+"</span></div></th><td><div align='left'><span style='font-size:12; font-weight:bold'>Coopertei</span></div></td><td align='center'><span style='font-size:12; font-weight:bold''>&nbsp;</span></td></tr><tr><th colspan='7'><div align='left'><span style='font-size:12; font-weight:bold''>Tarea:"+ot[0].plan_name+"</span></div></th></tr></table><table width='1000px' border='1' align='center'><tr><td align='center'; width='300px'><span style='font-size:12; font-weight:bold''>MATERIAL</span></td><td align='center'; width='600px'><span style='font-size:12; font-weight:bold''>DETALLE</span></td><td align='center'; width='100px'><span style='font-size:12; font-weight:bold''>CANT</span></td></tr>";
+              	  var task_inform = "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body><div style='width:1003px' ><div style='float:left; width:200px;height:112px' align='left'><img src='/srv/coopsys/public/images/coop.jpg' width='300px'/></div><div style='float:left;height:112px; width:600px' align='center'><h1 align='center'><h1 align='center'>COOPERTEI LTDA  <br /> INFORME DE REQUERIMIENTOS DE TAREAS</h1></div><div style='float:left; width:200px; height:112px;' align='right'><img src='/srv/coopsys/public/images/dnv.jpg'  width='150px'/></div><div style='float:left; width:500px; text-align:left'><h2>FECHA:"+date+"</h2></div><div style='float:left; width:500px; text-align:right'><h2> N° O/T:&nbsp;"+ot[0].number+" </h2></div><table width='1000' border='1' align='center'> <th width='1000' colspan='3' bgcolor='#EEEEEE' ><span style='font-size:19px; font-weight:bold'>DATOS DEL CLIENTE</span></th><tr><th colspan='2' align='left'> NOMBRE:&nbsp;"+ot[0].client_name+"</th><td><span style='font-size:16px; font-weight:bold'>O/C:</span></td></tr><tr><th colspan='2' align='left'>EQUIPO:&nbsp;"+ot[0].name_equipment+"</th><td><span style='font-size:16px; font-weight:bold'>O/T:&nbsp;"+ ot[0].client_number+"</span></td></tr><th width='1000' colspan='3' align='left'>MOTIVO DE LA INTEVERNCIÓN:&nbsp;"+ot[0].plan_name+"</th><tr><td align= 'center'; width='50px' bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold'>ITEM</span></td><td align= 'center';  width='450px' bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold; text-align:center'>TAREAS A REALIZAR</span></td><td align= 'center';  bgcolor='#EEEEEE'><span style='font-size:18px; font-weight:bold'>OBSERVACIONES</span></td>";
+              	  var contador = 1;
+                  if (tasks.length) {
+                    var task_style = 'text-decoration:underline; font-weight:bold;';
+                    tasks.forEach(function(t) {
+                      console.log(t)
+                      if(t.priority>0){
+        			          task_inform +="</tr><tr><td align='center'>"+contador+"</td><td>"+t.name+"</td><td>"+t.observation+"</td></tr>";
+        		          	  contador ++;
+        	        	  }
+                    });
+                  } else {
+                    html += 'La Órden de Trabajo  N&ordm;: '+ ot[0].client_number +' del Equipo ' + ot[0].name_equipment + ' id Coopertei:  ' + ot[0].number + ' (todav&iacute;a) no posee tareas.</li>';
+                  }
+                  var con = " \
+              	    SELECT moe.*, mc.name AS category, u.name AS unit, mo.provider AS provider_name  \
+              	    FROM materialorder mo\
+              	    LEFT JOIN materialorderelement moe ON mo.id = moe.materialorder_id \
+              	    LEFT JOIN materialcategory mc ON moe.materialcategory_id = mc.id \
+              	    LEFT JOIN unit u ON moe.unit_id = u.id \
+              	    WHERE mo.ot_id = " + ot[0].id + " AND moe.deleted_at IS null \
+              	    AND moe.deleted_at IS NULL \
+              	   ";
+            	    var aq=0;
+            	    var internalaq=0;
+            	    DB._.query(con, function(error, e) {
+            		    if(e.length){
+            			    e.forEach(function(e){
+            				    if(e.provider_name == 'Cliente'){
+            					    aq++;}
+            					    var units = " ";    
+            					    if(e.units != null){
+            					        units = e.unit.split(" ");
+            					    }
+            					
+            				    material_inform += "<tr><td width=300px><span >"+e.category+"</span></td><td width=600px><span >"+e.name +"</span></td><td width='100px'><span >"+ e.quantity + units[0] +"<span></td></tr>";/*AGREGUE e.unit*/
+            				    if(e.provider_name == 'Coopertei'){
+            					      internalaq++;
+            					      var internal_material_inform ="<tr><td>"+e.quantity+"</td><td>"+e.category+"</td><td>"+e.name+"</td></tr>";
+            			      }
+            			    });
+            		    };
+                    // Get Reportphotos
+                    DB.Reportphoto.findAll({
+                      where: { report_id: r.id, deleted_at: null }
+                    }).on('success', function(photos) {
+                    // Send e-mail to Client
+                    setTimeout( function(){ /*ENVIOMAIL*/
+                      var transport = nodemailer.createTransport('SMTP', {
+                	      service: 'SMTP',
+                	      host: process.env.STMP_HOST,//'mail.coopertei.com.ar',
+                        auth: {
+                          user: process.env.STMP_USER,//'notificaciones@coopertei.com.ar',
+                          pass: process.env.STMP_PASS//'CoopSys'
+                        }
+                      })
+                    }, 20000);
+                		for (var i=contador;i<34;i++){ 
+                			task_inform +="<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>";
+                		}
+                	
+                		var firma ="\
+                		SELECT CONCAT (p.firstname, ' ' , p.lastname) AS name \
+                		FROM user AS u \
+                		INNER JOIN employee AS em ON em.id = u.employee_id \
+                		INNER JOIN person AS p ON p.id = em.person_id \
+                		WHERE u.username = '"+ req.session.username +"'\
+                		";
+                		DB._.query(firma, function(error, uf) {
+		                  console.log(aq, "TEXT")
+                  		task_inform += "  <tr><th width='1000' colspan='3' bgcolor='#EEEEEE'><span style='font-size:18px;  font-weight:bold'>CONFORMIDAD DE LAS PARTES</span></th></tr><tr><th width='1000' colspan='2'><br /><br /><br /></th><th><br />"+uf[0].name+"<br /></th></tr><tr><th width='1000' colspan='2'>Firma y aclaración del Cliente</th><th> Firma y aclaración por Coopertei</th></tr></table><p align='right'> R-P2.4/0 <br /> Vigencia: 01/09/06</p></div></body></html>";
+                  		for (var i=aq;i<28;i++){ 
+                  			material_inform +="<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</span></td></tr>";
+                  		}
+                  		material_inform += "</table><table width='1000px' border='1' align='center'><tr><th colspan='7' style='background-color:#999'><span style='font-size:18px;  font-weight:bold'>CONFORMIDAD DE LAS PARTES</span></th>  </tr>  <tr>  <th colspan='4'><br /><br /><br />    <br /></th><th colspan='3'><br />"+uf[0].name+"<br />   <br /></th>  </tr>  <tr>  <th colspan='4'>Firma y aclaración del Cliente</th>  <th colspan='3'> Firma y aclaración por Coopertei</th></tr></table><p align='right'> R-P2.5/0 <br /> Vigencia: 01/09/06</p></div></body></html>";
+                  		material_inform=task_inform+'<br><br><br><br><br><br><br>'+material_inform;
+                    	
+                      DB.Reportphoto.findAll({
+                       	 where: { report_id: r.id, deleted_at: null }
+                  	  }).on('success', function(photos) {
+                        material_inform += "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body>";  
+		                    var i=0;
+                      	photos.forEach(function(ph) {
+                      		i++;
+                    			material_inform += "<img src=/srv/coopsys/public/uploads/"+ ph.path+" width=49% />";
+                    			if( i % 2 == 0){
+                    			  material_inform +="<br />";
+                    			}else{
+              			        material_inform +="&nbsp;&nbsp;&nbsp;";
+                    			}
+      		              });
+                        material_inform += "</body></html>";  
+                      	var htmlFileNameMaterial = "/tmp/material_inform"+ot[0].id+".html", pdfFileNameMaterial = "/tmp/material_inform"+ot[0].id+".pdf";
+                      	var childre= exec('rm '+htmlFileNameMaterial, function(err, stdout, stderr) {
+                      	  err? console.log("ERROR"):console.log("OKOKOK");
+                      	})
+                      	var childr= exec('rm '+pdfFileNameMaterial, function(err, stdout, stderr) {
+                      	  err? console.log("ERROR"):console.log("OKOKOK");
+                      	})	
+                      	fs.writeFile(htmlFileNameMaterial, material_inform, function(err) {});
+                      	var child= exec('xvfb-run -s"-screen 0 1024x768x24" wkhtmltopdf '+htmlFileNameMaterial+" "+pdfFileNameMaterial, function(err, stdout, stderr) {
+                       			err ? console.log("ESTA CON ERROR"):console.log("no hubo error");
+                      			console.log(stdout);	
+                      	});
+                      }).on('error', function(err) {
+                        res.send(false);
+                      });
+                    }).on('error', function(err) {
+                      res.send(false);
+                    });
+                  }).on('error', function(err) {
+                    res.send(false);
+                  });
+                }).on('error', function(err) {
+                  res.send(false);
+                });  
+              }).on('error', function(err) {
+                res.send(false);
+              });
+            }).on('error', function(err) {
+              res.send(false);
             });
           } else {
-            html += 'La Órden de Trabajo  N&ordm;: '+ ot[0].client_number +' del Equipo ' + ot[0].name_equipment + ' id Coopertei:  ' + ot[0].number + ' (todav&iacute;a) no posee tareas.</li>';
+            res.send({ result: true, report_id: r.id });
           }
-	var con = " \
-	    SELECT moe.*, mc.name AS category, u.name AS unit, mo.provider AS provider_name  \
-	    FROM materialorder mo\
-	    LEFT JOIN materialorderelement moe ON mo.id = moe.materialorder_id \
-	    LEFT JOIN materialcategory mc ON moe.materialcategory_id = mc.id \
-	    LEFT JOIN unit u ON moe.unit_id = u.id \
-	    WHERE mo.ot_id = " + ot[0].id + " AND moe.deleted_at IS null \
-	    AND moe.deleted_at IS NULL \
-	   ";
-	    var aq=0;
-	    var internalaq=0;
-	    DB._.query(con, function(error, e) {
-		    if(e.length){
-			    e.forEach(function(e){
-				    if(e.provider_name == 'Cliente'){
-					    aq++;}
-					    var units = " ";    
-					    if(e.units != null){
-					        units = e.unit.split(" ");
-					    }
-					
-				    material_inform += "<tr><td width=300px><span >"+e.category+"</span></td><td width=600px><span >"+e.name +"</span></td><td width='100px'><span >"+ e.quantity + units[0] +"<span></td></tr>";/*AGREGUE e.unit*/
-				    if(e.provider_name == 'Coopertei'){
-					      internalaq++;
-					      var internal_material_inform ="<tr><td>"+e.quantity+"</td><td>"+e.category+"</td><td>"+e.name+"</td></tr>";
-			      }
-			    });
-		    };
-          // Get Reportphotos
-          DB.Reportphoto.findAll({
-            where: { report_id: r.id, deleted_at: null }
-          }).on('success', function(photos) {
-            // Send e-mail to Client
-            setTimeout( function(){ /*ENVIOMAIL*/
-            var transport = nodemailer.createTransport('SMTP', {
-      	      service: 'SMTP',
-      	      host: process.env.STMP_HOST,//'mail.coopertei.com.ar',
-              auth: {
-                user: process.env.STMP_USER,//'notificaciones@coopertei.com.ar',
-                pass: process.env.STMP_PASS//'CoopSys'
-              }
-	      })}, 20000);
-		for (var i=contador;i<34;i++){ 
-			task_inform +="<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>";
-		}
-	
-		var firma ="\
-		SELECT CONCAT (p.firstname, ' ' , p.lastname) AS name \
-		FROM user AS u \
-		INNER JOIN employee AS em ON em.id = u.employee_id \
-		INNER JOIN person AS p ON p.id = em.person_id \
-		WHERE u.username = '"+ req.session.username +"'\
-		";
-		DB._.query(firma, function(error, uf) {
-		console.log(aq, "TEXT")
-		task_inform += "  <tr><th width='1000' colspan='3' bgcolor='#EEEEEE'><span style='font-size:18px;  font-weight:bold'>CONFORMIDAD DE LAS PARTES</span></th></tr><tr><th width='1000' colspan='2'><br /><br /><br /></th><th><br />"+uf[0].name+"<br /></th></tr><tr><th width='1000' colspan='2'>Firma y aclaración del Cliente</th><th> Firma y aclaración por Coopertei</th></tr></table><p align='right'> R-P2.4/0 <br /> Vigencia: 01/09/06</p></div></body></html>";
-		for (var i=aq;i<28;i++){ 
-			material_inform +="<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</span></td></tr>";
-		}
-		material_inform += "</table><table width='1000px' border='1' align='center'><tr><th colspan='7' style='background-color:#999'><span style='font-size:18px;  font-weight:bold'>CONFORMIDAD DE LAS PARTES</span></th>  </tr>  <tr>  <th colspan='4'><br /><br /><br />    <br /></th><th colspan='3'><br />"+uf[0].name+"<br />   <br /></th>  </tr>  <tr>  <th colspan='4'>Firma y aclaración del Cliente</th>  <th colspan='3'> Firma y aclaración por Coopertei</th></tr></table><p align='right'> R-P2.5/0 <br /> Vigencia: 01/09/06</p></div></body></html>";
-		material_inform=task_inform+'<br><br><br><br><br><br><br>'+material_inform;
-        	DB.Reportphoto.findAll({
-           	 where: { report_id: r.id, deleted_at: null }
-        	  }).on('success', function(photos) {
-        	material_inform += "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN''http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'><html xmlns='http://www.w3.org/1999/xhtml'><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /><title>COOPERTEI</title></head><body>";  
-		var i=0;
-        	photos.forEach(function(ph) {
-        		i++;
-			material_inform += "<img src=/srv/coopsys/public/uploads/"+ ph.path+" width=49% />";
-			if( i % 2 == 0){
-			material_inform +="<br />";
-			}else{
-			material_inform +="&nbsp;&nbsp;&nbsp;";
-			}
-		});
-        	material_inform += "</body></html>";  
-	var htmlFileNameMaterial = "/tmp/material_inform"+ot[0].id+".html", pdfFileNameMaterial = "/tmp/material_inform"+ot[0].id+".pdf";
-	var childre= exec('rm '+htmlFileNameMaterial, function(err, stdout, stderr) {
-	  err? console.log("ERROR"):console.log("OKOKOK");
-	})
-	var childr= exec('rm '+pdfFileNameMaterial, function(err, stdout, stderr) {
-	  err? console.log("ERROR"):console.log("OKOKOK");
-	})	
-	fs.writeFile(htmlFileNameMaterial, material_inform, function(err) {
-	});
-	var child= exec('xvfb-run -s"-screen 0 1024x768x24" wkhtmltopdf '+htmlFileNameMaterial+" "+pdfFileNameMaterial, function(err, stdout, stderr) {
- 			err ? console.log("ESTA CON ERROR"):console.log("no hubo error");
-			console.log(stdout);	
-	});
-/*EMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMCEMC*/
-        }).on('error', function(err) {
-            res.send(false);
-          });
-        /*/*//*/*//*/*//*/*/
-          }).on('error', function(err) {
-            res.send(false);
-          });
-//*PHOTOS*//        	  
-        }).on('error', function(err) {
-          res.send(false);
         });
-//*PHOTOS*//        	  
-        }).on('error', function(err) {
-          res.send(false);
-        });  
-         /*EMCEMC*/     }).on('error', function(err) {
-         /*EMCEMC*/  res.send(false);
-        /*EMCEMC*/ });
-      }).on('error', function(err) {
-        res.send(false);
-      });
-    } else {//this.saveRequirementsReport(req, res, next) ;
-    //res.send({ result: false });
-     res.send({ result: true, report_id: r.id });
-    }
-  });
-           res.send({ result: true, report_id: r.id });
+          res.send({ result: true, report_id: r.id });
         });
       });
     } else {
@@ -299,6 +294,8 @@ Authorization.saveRequirementsReport = function(req, res, next) {
 };
 
 Authorization.addPhotoToReport = function(req, res, next) {
+  console.log(req.session)
+  console.log(req.session.auth_selected_ot_id)
   req.files.photos.forEach(function(ph) {
      DB.Report.find({ where: { ot_id: req.session.auth_selected_ot_id } }).on('success', function(r) {
       var path= ph.path.split('/').pop()

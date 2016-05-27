@@ -63,8 +63,8 @@ if(req.body.client_id > 0){
         }
       },
       function(err, results) {
-        // Send the news
-        //agregar lo del equipo
+        //Send the news
+        //Agregar lo del equipo
         var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
         DB._.query(q, function(err, data) {   
           DB.News.build({
@@ -97,6 +97,10 @@ if(req.body.client_id > 0){
 
 
 Ot.get = function(req, res, next) {
+  var where = 'otstate_id <> 6';
+  if (req.session.role_id == 1){
+    where = 'otstate_id = 1'
+  }
   var q = " \
     SELECT ot.*, c.name AS client, e.name AS equipment, i.name AS intervention, \
            p.name AS plan, s.name AS state \
@@ -106,9 +110,9 @@ Ot.get = function(req, res, next) {
     LEFT JOIN intervention i ON ot.intervention_id = i.id \
     LEFT JOIN plan p ON ot.plan_id = p.id \
     LEFT JOIN otstate s ON ot.otstate_id = s.id \
-    WHERE otstate_id <> 6 AND ot.deleted_at IS NULL \
+    WHERE "+where+" AND ot.deleted_at IS NULL \
     ORDER BY ot.delivery ASC";						
-
+  
   DB._.query(q, function(err, data) {
     var msg = [];
 

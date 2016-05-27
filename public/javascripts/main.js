@@ -1792,8 +1792,6 @@
                     }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
                         var n = this;
                         t.saveRequirementsReport(function() {
-                            console.log('heraldo');
-
                             $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
                                 t.cleanModals(function() {
                                     F.msgOK("El Informe de Requerimientos fue enviado al cliente");

@@ -33,7 +33,6 @@ Auth.restrict = function(req, res, next) {
     req.session.role_id = process.env.ROLE_ID;
     req.session.area_id = process.env.AREA_ID;
   }
-
   if (!req.session.username || !req.session.user_id || !req.session.role_id) {
     res.redirect('/login');
   } else {

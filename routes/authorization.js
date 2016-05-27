@@ -1,5 +1,7 @@
 var moment = require('moment'),
     nodemailer = require('nodemailer');
+    require('dotenv').config;
+
 var exec = require('child_process').exec;var execTest = require('child_process').exec;
 var fs = require('fs');
 var DB, Everyone, PATH;
@@ -205,11 +207,11 @@ Authorization.saveRequirementsReport = function(req, res, next) {
             // Send e-mail to Client
             setTimeout( function(){ /*ENVIOMAIL*/
             var transport = nodemailer.createTransport('SMTP', {
-	      service: 'SMTP',
-	      host: 'mail.coopertei.com.ar',
+      	      service: 'SMTP',
+      	      host: process.env.STMP_HOST,//'mail.coopertei.com.ar',
               auth: {
-                user: 'notificaciones@coopertei.com.ar',
-                pass: 'CoopSys'
+                user: process.env.STMP_USER,//'notificaciones@coopertei.com.ar',
+                pass: process.env.STMP_PASS//'CoopSys'
               }
 	      })}, 20000);
 		for (var i=contador;i<34;i++){ 
@@ -421,11 +423,11 @@ Authorization.notifyClient = function(req, res, next) {
           }).on('success', function(photos) {
             // Send e-mail to Client
             var transport = nodemailer.createTransport('SMTP', {
-	      service: 'SMTP',
-	      host: 'mail.coopertei.com.ar',
+      	      service: 'SMTP',
+      	      host: process.env.STMP_HOST,
               auth: {
-                user: 'notificaciones@coopertei.com.ar',
-                pass: 'CoopSys'
+                user: process.env.STMP_USER,
+                pass: process.env.STMP_PASS
               }
 			    });
 		var attached_photos = [];
@@ -451,11 +453,11 @@ Authorization.notifyClient = function(req, res, next) {
 			       contents: internal_material_inform
 			});
 			var internalMailOptions = {
-			from: 'notificaciones@coopertei.com.ar',
-			to: 'compras@coopertei.com.ar',/*modificar por compras@coopertei.com.ar*/
-			bcc: 'notificaciones@coopertei.com.ar',
+			from: process.env.STMP_USER,
+			to: process.env.STMP_SHOP,
+			bcc: process.env.STMP_USER,
 			subject: '[Coopertei] Pedido de Materiales de Orden de trabajo: '+  ot[0].client_number +' del Equipo ' + ot[0].name_equipment + ' id Coopertei:  ' + ot[0].number,
-			replyTo: 'notificaciones@coopertei.com.ar',
+			replyTo: process.env.STMP_USER,
 			html: html,
 			generateTextFromHTML: true,
 		 	attachments: internal_attached_photos
@@ -500,34 +502,38 @@ Authorization.notifyClient = function(req, res, next) {
 		       fileName: "Informes Pertinentes.pdf",
 		       filePath: "/tmp/material_inform"+ot[0].id+".pdf"
 		});
-	//setTimeout(function (){	
-            var mailOptions = {
-              from: 'notificaciones@coopertei.com.ar',
-              to: ot[0].email,
-	      bcc: 'notificaciones@coopertei.com.ar',
-              subject: '[Coopertei] Notificación de Órden de Trabajo: '+  ot[0].client_number +' del Equipo ' + ot[0].name_equipment + ' id Coopertei:  ' + ot[0].number,
-              replyTo: 'notificaciones@coopertei.com.ar',
-              html: html,
-              generateTextFromHTML: true,
-              attachments: attached_photos
-            };//}, 5000);
+    var to = ot[0].email;
+    if(process.env.ENV == 'dev'){
+      to = process.env.STMP_USER;
+    }
+
+	  var mailOptions = {
+      from: process.env.STMP_USER,
+      to: to,
+      bcc: process.env.STMP_USER,
+      subject: '[Coopertei] Notificación de Órden de Trabajo: '+  ot[0].client_number +' del Equipo ' + ot[0].name_equipment + ' id Coopertei:  ' + ot[0].number,
+      replyTo: process.env.STMP_USER,
+      html: html,
+      generateTextFromHTML: true,
+      attachments: attached_photos
+    };
 
 	setTimeout(function(){
-           transport.sendMail(mailOptions, function(error, response) {
-            transport.close();
-            }); },5000);
+    transport.sendMail(mailOptions, function(error, response) {
+      transport.close();
+    }); },5000);
 
-      DB.Authorization.find({ where: { ot_id: ot[0].id } }).on('success', function(a) {
-              if (a) {
-                a.updateAttributes({
-                  otstate_id: 2,
-                  req_info_sent_date: moment().format('DD/MM/YYYY')
-                }).on('success', function() {
-                  DB.Ot.find({ where: { id: ot[0].id } }).on('success', function(ot) {
-                    if (ot) {
-                      ot.updateAttributes({ otstate_id: 2 }).on('success', function() {
-                        res.send(true);
-                      });
+  DB.Authorization.find({ where: { ot_id: ot[0].id } }).on('success', function(a) {
+    if (a) {
+      a.updateAttributes({
+        otstate_id: 2,
+        req_info_sent_date: moment().format('DD/MM/YYYY')
+      }).on('success', function() {
+        DB.Ot.find({ where: { id: ot[0].id } }).on('success', function(ot) {
+          if (ot) {
+            ot.updateAttributes({ otstate_id: 2 }).on('success', function() {
+              res.send(true);
+            });
                     }
                   });
                 }).on('error', function(err) {

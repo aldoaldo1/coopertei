@@ -4,23 +4,25 @@ var fs = require('fs'),
     Sequelize = require('sequelize'),
     _ = require('underscore'),
     moment = require('moment');
+    require('dotenv').config();
 
 module.exports = function() {
-  var DB_HOST = 'localhost',
-      DB_PORT = '/var/run/mysqld/mysqld.sock',
-      DB_USER = 'root',
-      DB_PASS = 'Emc#362',
-      DB_NAME = 'coopertei';
+  var env = process.env;
+  var DB_HOST = process.env.DB_HOST, //'localhost',
+      DB_PORT = process.env.DB_PORT, //'/var/run/mysqld/mysqld.sock',
+      DB_USER = process.env.DB_USER, //'root',
+      DB_PASS = process.env.DB_PASS, //'Emc#362',
+      DB_NAME = process.env.DB_NAME; //'coopertei';
 
   // ORM
 
   var sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
     host: DB_HOST,
     port: DB_PORT,
-    logging: false,
+    logging: console.log,
     define: { timestamps: true, paranoid: true, underscored: true, freezeTableName: true }
   });
-
+  
   // Basic client
 
   var DB = {

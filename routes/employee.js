@@ -76,7 +76,7 @@ Employee.post = function(req, res, next) {
 };
 
 Employee.put = function(req, res, next) {
-  DB.Employee.find({ where: { id: req.body.id } }).on('success', function(e) {
+  DB.Employee.find({ where: { id: req.params.id } }).on('success', function(e) {
     if (e) {
       e.updateAttributes(req.body).on('success', function() {
         res.send(req.body);

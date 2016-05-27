@@ -34,7 +34,7 @@ Task.post = function(req, res, next) {
 };
 
 Task.put = function(req, res, next) {
-  DB.Task.find({ where: { id: req.body.id } }).on('success', function(t) {
+  DB.Task.find({ where: { id: req.params.id } }).on('success', function(t) {
     if (t) {
       t.updateAttributes(req.body).on('success', function() {
         res.send(req.body);

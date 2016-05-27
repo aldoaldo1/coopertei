@@ -277,6 +277,9 @@
             var t = [], n = $(e).dataTable().fnGetNodes();
             for (var r = 0; r < n.length; r += 1) $(n[r]).hasClass("selected_row") && t.push(n[r]);
             return t;
+        }, F.reloadDataTable = function(e) {
+            $(e).dataTable().api().ajax.reload()
+            $(e).hide().fadeIn(500);
         };
     }), e.define("/F.validations.js", function(e, t, n, r, i, s) {
         F.V.len = function(e) {
@@ -418,14 +421,16 @@
             (e.attrs).forEach(function(attr){
                 attrs.push({data:attr});
             });
-            var table = '<table id="'+e.name+'_table" style="padding:10px" class="display '+e.name+'" cellspacing="0" width="100%">'+
-                            '<thead>'+
-                                '<tr>'+
-                                    rows+    
-                                '</tr>'+
-                            '</thead>'+
-                        '</table>';
-                        
+            var table = '<div id="'+e.name+'_left">'+
+                            '<table id="'+e.name+'_table" style="padding:10px" class="display '+e.name+'_table" cellspacing="0" width="100%">'+
+                                '<thead>'+
+                                    '<tr>'+
+                                        rows+    
+                                    '</tr>'+
+                                '</thead>'+
+                            '</table>'+
+                        '</div>';
+
             $("#left").html(table);
             
             var datatable = $('#'+e.name+'_table').dataTable({
@@ -457,7 +462,7 @@
                     sSearch: "Buscar",
                     sZeroRecords: "No existen registros"
                 },
-                dom: 'lBfrtip',
+                dom: 'lBfr<"toolbar">tip',
                 buttons: [
                         'copy', 'csv', 'excel', 'pdf'
                     ],
@@ -468,15 +473,18 @@
 
             $(document).on('click', '#'+e.name+'_table tbody tr', function()
             {
-                var i = datatable.fnGetData(this);
-                $("." + e.name + "_form .selection_id").val(i.id);
-                $("." + e.name + "_infocard .selection_id").val(i.id); 
-                $("#" + e.name + "_table tr").removeClass("selected_row"); 
-                $(this).addClass("selected_row"); 
-                $(".BUTTON_create").hide(); 
-                $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").show(); 
+                if (!$(this).hasClass('details')){
+                    var i = datatable.fnGetData(this);
+                    $("." + e.name + "_form .selection_id").val(i.id);
+                    $("." + e.name + "_infocard .selection_id").val(i.id); 
+                    $("#" + e.name + "_table tr").removeClass("selected_row"); 
+                    $(this).addClass("selected_row"); 
+                    $(".BUTTON_create").hide(); 
+                    $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").show(); 
+                }
                 t && t(i);
             });
+            n && n($("." + e.name + "_table"), e.options.open_ot_number_on_start);
             /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
             _.each(e.headers, function(e) {
                 $(r).append($("<th>").html(e));
@@ -541,13 +549,21 @@
             $(e).each(function() {
                 this.reset();
             });
+        }, F.initForm = function(e) {
+            $(e).find("input:text, input:password, textarea").val(null);
+            $(e).find("input:checkbox").attr("checked", !1);
+            $(e).find("select").val(-1).trigger('liszt:updated');
         }, F.cleanForm = function(e) {
-            $(e).find("input:text, input:password, textarea").val(null), $(e).find("input:checkbox").attr("checked", !1), $(e).find("select").val(-1);
+            $(e).find("input:text, input:password, textarea").val(null);
+            $(e).find("input:checkbox").attr("checked", !1);
+            $(e).find("select").val(-1).trigger('liszt:updated');
+            $(e).find('.selection_id').val('');
+            $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").hide(), $(".BUTTON_create").show();
         }, F.getFormFields = function(e) {
             return $(e).find("input:text, input:password, input:checkbox, select, textarea");
         }, F.assignValuesToForm = function(e, t) {
             var n = F.getFormFields(e), r;
-            F.cleanForm(e), _.each(n, function(e, n) {
+            F.initForm(e), _.each(n, function(e, n) {
                 r = $(e).attr("name");
                 if ($(e).hasClass("chzn-select") && $(e).attr("multiple")) {
                     var i = t[r].split(",");
@@ -577,11 +593,12 @@
                 "class": "BUTTON_save" + r,
                 value: "Guardar"
             })), e.buttons.cancel && $(t).append($("<input>", {
-                type: "reset",
+                type: "button",
                 "class": "BUTTON_cancel" + r,
                 value: "Cancelar"
             }).on("click", function() {
-                e.isCRUD && n(), $("." + e.name + "_table tr").removeClass("selected_row");
+                F.cleanForm(t)
+                e.isCRUD && n(), $(".selected_row").removeClass("selected_row");
             })), e.buttons.delete && $(t).append($("<input>", {
                 type: "button",
                 "class": "BUTTON_delete" + r,
@@ -1664,7 +1681,7 @@
                             collection: t,
                             client_table: e.client_table
                         }), e.client_options = new C.View.ClientAuthorizationOptions({
-                            el: $("#client_left .fg-toolbar")[0],
+                            el: $("#left .toolbar")[0],
                             client_table: e.client_table,
                             client_form: e.client_form
                         });
@@ -1769,9 +1786,11 @@
                         $(e).attr("disabled", !0), t.saveRequirementsReport(function() {
                             $(e).attr("disabled", !1), F.msgOK("Observaciones añadidas al Informe");  setTimeout(function(){location.reload()}, 1e3);
                         });
-                    }), $("#requirements_report_window .BUTTON_send").on("click", function() {
+                    }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
                         var n = this;
                         t.saveRequirementsReport(function() {
+                            console.log('heraldo');
+
                             $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
                                 t.cleanModals(function() {
                                     F.msgOK("El Informe de Requerimientos fue enviado al cliente");
@@ -1936,6 +1955,7 @@
                     url: "/authorization/saveRequirementsReport",
                     data: $("form[name=requirements_report_form]").serializeObject(),
                     success: function(t) {
+                        console.log(t)
                         t.result === !0 && e(t);
                     }
                 });
@@ -2221,17 +2241,12 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".client_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addClient: function() {
                 var e = this;
                 this.collection.create($(".client_form").serializeObject(), {
                     success: function(t, n) {
                         var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El Cliente ha sido creado");
+                        F.msgOK("El Cliente ha sido creado");
                         setTimeout(function(){location.reload()}, 1e3);
                     }
                 });
@@ -2551,7 +2566,7 @@
                             collection: t,
                             material_table: e.material_table
                         }), e.material_options = new C.View.MaterialOrderOptions({
-                            el: $("#material_left .fg-toolbar")[0],
+                            el: $("#material_left .toolbar")[0],
                             material_table: e.material_table,
                             material_infocard: e.material_infocard
                         });
@@ -2692,6 +2707,7 @@
                 this.render();
             },
             render: function() {
+                console.log(this.template())
                 return C.Session.isVigilance() || $(this.el).append(this.template()), this;
             },
             template: function() {
@@ -2731,7 +2747,8 @@
                             },
                             success: function(e) {
                                 e.result === !0 ? t(function() {
-                                    window.location.reload();
+                                    $('.blockUI').remove();
+                                    F.reloadDataTable('.material_table')
                                 }) : t(function() {
                                     F.msgError("Ocurrió un error al guardar el pedido");
                                 });
@@ -2757,7 +2774,7 @@
                 $.ajax({
                     url: "/materialcategory",
                     success: function(t) {
-                        e.material_categories = t;
+                        e.material_categories = t.data;
                     }
                 });
             },
@@ -2777,7 +2794,7 @@
                     css: {
                         top: "10%",
                         left: "30%",
-                        width: "38%",
+                        width: "40%",
                         border: "none",
                         padding: "1%",
                         cursor: "default"
@@ -2799,9 +2816,9 @@
                 });
             },
             materialCategoriesList: function(e) {
-                var t = $("<select>", {
+                var t = $('<select>', {
                     name: "material_category_" + e,
-                    style: "display:inline; width:auto; height:25px; margin-right:10px;"
+                    style: "display:inline; width:250px; height:25px;"
                 });
                 return _.each(this.material_categories, function(e) {
                     $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
@@ -2934,43 +2951,40 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                return;
-                var t;
-            },
-            editTableRow: function(e) {},
             addMaterial: function() {
                 var e = this;
                 this.collection.create($(".materialcategory_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La categoria ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido creada");
+                        F.reloadDataTable('.materialcategory_table');
                     }
                 });
             },
             editMaterial: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".materialcategory_form").serializeObject(), {
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.materialcategory_form').serializeObject(),
+                    url: '/materialcategory/'+e.getSelectionID(),
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La categoria ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido actualizada");
+                        F.reloadDataTable('.materialcategory_table');
                     }
-                });
+                })
             },
             delMaterial: function() {
                 var e = this;
-                F.msgConfirm("¿Desea eliminar esta Categoría?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La categoria ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
-                        }
-                    });
-                });
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/materialcategory/'+e.getSelectionID(),
+                    success: function(t, n) {
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido eliminada");
+                        F.reloadDataTable('.materialcategory_table');
+                    }
+                })
             }
         });
     }), e.define("/views/material/MaterialHistory.js", function(e, t, n, r, i, s) {
@@ -3149,33 +3163,37 @@
                 var e = this;
                 this.collection.create($(".equipment_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El equipo ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.equipment_form');
+                        F.msgOK("El equipo ha sido creado");
+                        F.reloadDataTable('.equipment_table');
                     }
                 });
             },
             editMaterial: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".equipment_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El equipo ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.equipment_form').serializeObject(),
+                    url: '/equipment/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.equipment_form');
+                        F.msgOK('El equipo ha sido actualizado');
+                        F.reloadDataTable('.equipment_table');
                     }
-                });
+                })
             },
             delMaterial: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Equipo?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El equipo ha sido eliminado");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/equipment/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.equipment_form');
+                            F.msgOK('El equipo ha sido eliminado');
+                            F.reloadDataTable('.equipment_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -3218,7 +3236,7 @@
                             collection: t
                         }), $("#right").bind("ot_form_loaded", function(t, n) {
                             $(".right_options").remove(), e.ot_options = new C.View.OtAdminOptions({
-                                el: $("#ot_left .fg-toolbar")[0],
+                                el: $("#ot_left .toolbar")[0],
                                 ot_table: e.ot_table,
                                 ot_form: n
                             });
@@ -3342,9 +3360,13 @@
                 aaSorting:  [ [1,"desc"]],
             },
             initialize: function() {
+                var t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".ot_form"), e);
                 });
+                $(document).on('click', '.ot_table tr', function(evento){
+                    t.selectRow(evento);
+                })
             },
             events: {
                 "click .ot_table tr": "selectRow"
@@ -3488,7 +3510,7 @@
                     success: function(e, t) {
                         var n = e.attributes;
                         F.msgOK("La O/T ha sido creada"), $(".ot_form select[name=client_id]").val(null), $(".ot_form select[name=equipment_id]").val(null);
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.reloadDataTable('.ot_table')
                     }
                 }) : F.msgError("Cargue al menos Cliente y TAG del equipo");
             },
@@ -3501,7 +3523,7 @@
                 success: function(n) {
                   var n = e.attributes;
                   F.msgOK("La O/T ha actualizaa");
-                  setTimeout(function(){location.reload()}, 1e3);
+                  F.reloadDataTable('.ot_table')
                 }
               });
             },
@@ -3524,7 +3546,7 @@
                 return $(e).append($("<input>", {
                     type: "button",
                     "class": "ot_conclude",
-                    value: "Concluír O/T",
+                    value: "Concluir O/T",
                     disabled: "disabled"
                 })), e;
             },
@@ -3542,7 +3564,7 @@
             },
             concludeOt: function() {
                 console.log("ME LLAMO")
-                var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n)[0], i = $(".ot_table").dataTable().fnGetData(n)[1];
+                var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n).id, i = $(".ot_table").dataTable().fnGetData(n).number;
                 F.msgConfirm("¿Realmente desea concluír la auditoría de la Órden de Trabajo Nº " + i + "?", function() {
                   new C.View.OtAdminConcludeForm({
                       el: $("body"),
@@ -3590,7 +3612,7 @@
                     open_ot_number_on_start: this.options.open_ot_number_on_start
                 }), $("#right").bind("ot_infocard_loaded", function(e, n) {
                     $(".right_options").remove(), t.ot_options = new C.View.OtAuditOptions({
-                        el: $("#ot_left .fg-toolbar")[0],
+                        el: $("#ot_left .toolbar")[0],
                         ot_table: t.ot_table,
                         ot_infocard: n
                     });
@@ -3627,24 +3649,20 @@
                 });
             },
             template: function() {
-                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i)[0]);
-                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i)[0])+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Nombre</label><input type="text" name="new_task_name" /><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
+                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Nombre</label><input type="text" name="new_task_name" /><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
             },
             cleanModals: function(e) {
-                $.unblockUI(), window.setTimeout(function() {
-                    $("#ot_add_task_window").remove(), e && e();
-                }, 1e3);
+                $('blockUI').remove();
             },
             performAddTask: function() {
-        	console.log("Se ejecuta");
-                this.options.addNewTask({
+        	    this.options.addNewTask({
                     name: $("#add_task_ot_form input:text[name=new_task_name]").val(),
                     description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val()
                 }, this.cleanModals);
             },
             cancelAddTask: function() {
-                location.reload()
-                //this.cleanModals();
+                this.cleanModals();
             }
         });
     }), e.define("/views/ot/OtAuditToggleTaskState.js", function(e, t, n, r, i, s) {
@@ -3665,7 +3683,7 @@
                     type: "GET",
                     url: "/employee",
                     success: function(t) {
-                        e.employees = t, $(document).trigger("employees_loaded");
+                        e.employees = t.data, $(document).trigger("employees_loaded");
                     }
                 });
             },
@@ -3859,7 +3877,7 @@
                 var e = this;
                 new C.View.OtAuditAddTask({
                     addNewTask: function(t, n) {
-                        var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i)[0]);
+                        var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                         $(".selected_ottask").length && (s = parseInt($(".selected_ottask").attr("data-position"))), $.ajax({
                             url: "/ottask/add",
                             type: "POST",
@@ -3878,7 +3896,7 @@
             },
             reworkTask: function() {
                 var e = this, t = $(".selection_ottask_id").val();
-                F.getOneFromModel("ottask/get/", $(".selection_ottask_id").val(), function(x){
+                F.getOneFromModel("ottask/get", $(".selection_ottask_id").val(), function(x){
                   if(x[0].completed==1){
                     F.msgConfirm("Esta opreación RETRABAJARÁ la Tarea.", function() {
                         var n = parseInt($(".selected_ottask").attr("data-position"));
@@ -3911,33 +3929,41 @@
                 iDisplayLength: 50000
             },
             initialize: function() {
+                var t = this;
                 function e(e, n) {
                     var r = $(e).dataTable();
-                    $(".ot_table tbody tr").on("click", function() {
-                        r.fnIsOpen(this) ? ($(".task_form").fadeOut("slow", function() {
+                    $(document).on("click", ".ot_table tbody tr", function(evento) {
+                        $(".task_form").fadeOut("slow", function() {
                             $(this).remove();
-                        }), $("#ot_left .ot_rework_task").attr("disabled", !0).css({
-                            color: "graytext"
-                        }), r.fnClose(this)) : r.fnOpen(this, t.generateRowDetails(r, this), "details");
+                        })
+                        if(r.fnIsOpen(this)){
+                            r.fnClose(this)
+                            F.cleanInfocard($('.ot_infocard'));
+                        }else{
+                            if (!$(this).hasClass('details')){
+                                $('.ot_table tbody tr').each(function(){
+                                    r.fnClose(this);
+                                })
+                                t.selectRow(evento);
+                                r.fnOpen(this, t.generateRowDetails(r, this), "details");
+                                F.assignValuesToInfoCard($(".ot_infocard"), r.fnGetData(this));
+                            }
+                        }
                     });
-                    if (n !== undefined) {
-                        var i = $(".ot_table tbody tr td:contains('" + n + "')").parent();
-                        $(i).addClass("selected_row"), $(i).click();
-                    }
                 }
                 var t = this;
-                this.data = this.options.collection, this.area_id = this.options.area_id, F.createDataTable(this, function(e) {
-                    F.assignValuesToInfoCard($(".ot_infocard"), e);
-                }, e);
+                this.data = this.options.collection;
+                this.area_id = this.options.area_id; 
+                F.createDataTable(this, function() {}, e);
             },
             events: {
                 "click .ot_table tr": "selectRow"
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget), $("#ot_left .ot_add_task").attr("disabled", !1);
-            },
+            }, 
             generateRowDetails: function(e, t) {
-                var n = -1, r = -1, i = this, s = e.fnGetData(t), o = s[0], u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
+                var n = -1, r = -1, i = this, s = e.fnGetData(t), o = s.id, u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
                 return this.getOtTasks(o, function(e) {
                     var r, s, u;
                     if (e.length) {
@@ -3948,15 +3974,13 @@
                                 "class": "complete_task_" + e.id
                             }), u = "<span>" + e.name + " - </span> "+e.priority+" Descripción: "+e.description, u += '<span class="task_due_date">' + F.toHumanDate(e.due_date, !1) + "</span>", e.completed_date ? u += '<span class="task_completed_date">' + F.toHumanDate(e.completed_date, !1) + "</span>" : e.reworked != 0 ? u += '<span class="task_completed_date" style="color:darkred;">Retrabajada</span>' : u += '<span class="task_completed_date" style="color:#555;">Incompleta</span>', C.Session.roleID() >= 2 && $(r).append(s), $(r).append(u);
                             var t = C.Session.getUser().role_id, h = t == 4, p = t == 3 && i.area_id == e.area_id, d = i.area_id != e.area_id || t != 1 || t != 2 || t != 5;
-                            e.reworked != 0 ? ($(s).attr("disabled", !0), $(r).css({
+                            e.reworked != 0 ? ($(s).attr("disabled", !0),$(r).css({
                                 opacity: .5
                             })) : e.completed == 1 && ($(s).attr("checked", !0), $(s).parent().addClass("crossed"), a = e.id, f += 1), $(".ot_id_" + o).append(r).fadeIn(), i.bindRenderOtTaskForm(r, e, d), i.bindEnableTaskActions(r, e, d), $('input:checkbox[class="complete_task_' + e.id + '"]').on("click", function() {
                                 var t = this, n = null, r = F.doNothing, s = null;
                                 C.Session.getUser().role_id != 7 && e.area_id != C.Session.getUser().area_id ? (r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
-                                    $(t).attr("checked", !1);
-                                }, s = !0, F.msgError(r, function() {
-                                    i();
-                                })) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
+                                    $(t).attr("checked", !1)
+                                }, s = !0, i(), F.msgError(r)) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
                                     $(t).attr("checked", !1);
                                 }, s = !1) : (n = "Esta operación convertirá en INCOMPLETA la Tarea.", r = function() {
                                     $(t).attr("checked", !0);
@@ -4010,9 +4034,10 @@
                 $(".ot_id_" + e).append('<p class="row_details_headers">Nombre - Descripción<span>Estado - Vencimiento</span></p>');
             },
             bindRenderOtTaskForm: function(e, t, n) {
+                console.log(this.ottask_form)
                 var r = this;
                 $(e).on("click", function() {
-                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 2 && ($("#tasksCompletitionPercentage").remove(), $(".task_form").remove(), r.ottask_form = new C.View.OtTaskForm({
+                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 2 && ($("#tasksCompletitionPercentage").remove(),$('#ot_right').unbind(), $(".task_form").remove(), r.ottask_form = new C.View.OtTaskForm({
                         el: $("#ot_right"),
                         model: new C.Model.OtTask,
                         table: r,
@@ -4120,7 +4145,7 @@
                     F.assignValuesToInfoCard($(".ot_infocard"), e);
                 }, function() {
                     var t = $(".ot_table").dataTable();
-                    $(".ot_table tbody tr").on("click", function() {
+                    $(document).on("click", ".ot_table tbody tr", function() {
                         t.fnIsOpen(this) ? t.fnClose(this) : t.fnOpen(this, e.generateRowDetails(t, this), "details");
                     });
                 });
@@ -4132,7 +4157,7 @@
                 this.selected_row = $(e.currentTarget), $("#ot_right .ot_add_task").attr("disabled", !1);
             },
             generateRowDetails: function(e, t) {
-                var n = this, r = e.fnGetData(t), i = r[0], s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
+                var n = this, r = e.fnGetData(t), i = r.id, s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
                 return this.getOtTasks(i, function(e) {
                     var t, r, s;
                     e.length ? (n.appendRowDetailsHeaders(i), _.each(e, function(e) {
@@ -4164,7 +4189,7 @@
             bindRenderOtTaskForm: function(e, t, n) {
                 var r = this;
                 $(e).on("click", function() {
-                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 3 && ($("#tasksCompletitionPercentage").remove(), $(".task_form").remove(), new C.View.OtTaskForm({
+                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 3 && ($("#tasksCompletitionPercentage").remove(),$('#ot_right').unbind(), $(".task_form").remove(), new C.View.OtTaskForm({
                         el: $("#ot_right"),
                         model: new C.Model.OtTask,
                         table: r,
@@ -4261,14 +4286,13 @@
             initialize: function() {
                 var e = this, t = [];
                 F.getAllFromModel("task", function(t) {
-                    e.relations.tasks = t, F.createForm(e);
+                    e.relations.tasks = t.data, F.createForm(e);
                 });
             },
             events: {
                 "click .plan_form .BUTTON_create": "addPlan",
                 "click .plan_form .BUTTON_save": "editPlan",
                 "click .plan_form .BUTTON_delete": "delPlan",
-                "click .plan_form .BUTTON_cancel": "cancelPlan"                
             },
             getTable: function() {
                 return this.options.plan_table;
@@ -4282,45 +4306,42 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".plan_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addPlan: function() {
                 var e = this;
+                console.log($('.plan_form').serializeObject());
                 this.collection.create($(".plan_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El Plan ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.plan_form');
+                        F.msgOK("El Plan ha sido creado");
+                        F.reloadDataTable('.plan_table');
                     }
                 });
             },
             editPlan: function() {
                 var e = this;
-                e.collection.get(this.getSelectionID()).save($(".plan_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        console.log($(".plan_form").serializeObject()), e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El Plan ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.plan_form').serializeObject(),
+                    url: '/plan/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.plan_form');
+                        F.msgOK('El plan ha sido actualizado');
+                        F.reloadDataTable('.plan_table');
                     }
-                });
+                })
             },
-            cancelPlan: function() {
-              location.reload()
-            },            
             delPlan: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Plan?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El Plan ha sido eliminado");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/plan/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.plan_form');
+                            F.msgOK('El plan ha sido eliminado');
+                            F.reloadDataTable('.plan_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4381,6 +4402,8 @@
                 "click .task_form .BUTTON_delete": "delTask",
                 "click .task_form .BUTTON_cancel": "cancelEditTask"
             },
+            closeForm: function(){
+            },
             getTask: function() {
                 return this.options.task;
             },
@@ -4408,10 +4431,7 @@
                     data: $(".task_form").serializeObject(),
                     success: function(t) {
                         F.msgOK("La Tarea Fué editada con Éxito")
-                        setTimeout(function(){
-                          window.location = "/#/ots/audit/Ot_"+t.ot_id;
-                          location.reload()
-                        }, 1e3);            
+                        e.reloadOtRowDetails()         
                     }
                 }) : F.msgError("No tiene suficientes permisos");
             },
@@ -4497,9 +4517,14 @@
             data: null,
             hidden_columns: [ "name" ],
             initialize: function() {
+                t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".person_form"), e);
                 });
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
             },
             events: {
                 "click .person_table tr": "selectRow"
@@ -4561,34 +4586,42 @@
             editTableRow: function(e) {},
             addPerson: function() {
                 var e = this;
-                this.collection.create($(".person_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La persona ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'POST',
+                    data: $(".person_form").serializeObject(),
+                    url: '/person',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK('La persona ha sido creada');
+                        F.reloadDataTable('.person_table');
                     }
-                });
+                })
             },
             editPerson: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".person_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La persona ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    url: '/person/'+this.getSelectionID(),
+                    data: $(".person_form").serializeObject(),
+                    type: 'PUT',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK("La persona ha sido actualizada");
+                        F.reloadDataTable('.person_table'); 
                     }
-                });
+                })
             },
             delPerson: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Persona?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La persona ha sido eliminada");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        url: '/person/'+e.getSelectionID(),
+                        type: 'DELETE',
+                        success: function(){
+                            F.cleanForm('.person_form');
+                            F.msgOK("La persona ha sido eliminada");
+                            F.reloadDataTable('.person_table')
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4760,32 +4793,37 @@
                 var e = this;
                 this.collection.create($(".employee_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El empleado ha sido creado/a");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.employee_form');
+                        F.msgOK('El empleado ha sido creado/a');
+                        F.reloadDataTable('.employee_table');
                     }
                 });
             },
             editEmployee: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".employee_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El empleado ha sido actualizado/a");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.employee_form').serializeObject(),
+                    url: '/employee/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.employee_form');
+                        F.msgOK('El empleado ha sido actualizado/a');
+                        F.reloadDataTable('.employee_table');
                     }
-                });
+                })
             },
             delEmployee: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a este Empleado?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El empleado ha sido eliminado/a");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/employee/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.employee_form');
+                            F.msgOK('El empleado ha sido eliminado/a');
+                            F.reloadDataTable('.employee_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4948,44 +4986,41 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                return;
-                var t;
-            },
-            editTableRow: function(e) {},
             addInout: function() {
                 var e = this;
                 this.collection.create($(".inout_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La Autorización ha sido creada");
-                        window.setTimeout(function() {
-                                location.reload();
-                        }, 1e3);
+                        F.cleanForm('.inout_form');
+                        F.msgOK("La Autorización ha sido creada");
+                        F.reloadDataTable('.inout_table');
                     }
                 });
             },
             editInout: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".inout_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La Autorización ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.inout_form').serializeObject(),
+                    url: '/inout/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.inout_form');
+                        F.msgOK('La Autorización ha sido actualizada');
+                        F.reloadDataTable('.inout_table');
                     }
-                });
+                })
             },
             delInout: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Autorización?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La Autorización ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/inout/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.inout_form');
+                            F.msgOK('La Aurorización ha sido eliminada');
+                            F.reloadDataTable('.inout_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5066,41 +5101,40 @@
                 return this.getTable().selected_row;
             },
             addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".intervention_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
             },
-            editTableRow: function(e) {},
             addIntervention: function() {
                 var e = this;
                 this.collection.create($(".intervention_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La intervención ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.msgOK("La intervención ha sido creada");
+                        F.cleanForm('.intervention_form')
+                        F.reloadDataTable('.intervention_table')
                     }
                 });
             },
             editIntervention: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".intervention_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La intervención ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    url: '/intervention/'+e.getSelectionID(),
+                    data: $('.intervention_form').serializeObject(),
+                    success: function(t, n){
+                        F.msgOK("La intervención ha sido actualizada");
+                        F.reloadDataTable('.intervention_table');
                     }
-                });
+                })
             },
             delIntervention: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Motivo de Intervención?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La intervención ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/intervention/'+e.getSelectionID(),
+                        success: function(){
+                            F.msgOK("La intervención ha sido eliminada");
+                            F.reloadDataTable('.intervention_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5453,42 +5487,41 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".task_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addTask: function() {
                 var e = this;
                 this.collection.create($(".task_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La tarea ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.task_form');
+                        F.msgOK("La tarea ha sido creada");
+                        F.reloadDataTable('.task_table');
                     }
                 });
             },
             editTask: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".task_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La tarea ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.task_form').serializeObject(),
+                    url: '/task/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.task_form');
+                        F.msgOK('La tarea ha sido actualizada');
+                        F.reloadDataTable('.task_table');
                     }
-                });
+                })
             },
             delTask: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Tarea?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La tarea ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/task/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.task_form');
+                            F.msgOK('La tarea ha sido eliminada');
+                            F.reloadDataTable('.task_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5573,9 +5606,10 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("employee", function(t) {
-                    e.relations.employees = t, F.getAllFromModel("role", function(t) {
-                        delete t[4], e.relations.roles = t, F.getAllFromModel("area", function(t) {
-                            e.relations.areas = t, F.createForm(e);
+                    e.relations.employees = t.data, F.getAllFromModel("role", function(t) {
+                        e.relations.roles = t, F.getAllFromModel("area", function(t) {
+                            e.relations.areas = t;
+                            F.createForm(e);
                         });
                     });
                 });
@@ -5604,37 +5638,44 @@
             editTableRow: function(e) {},
             addUser: function() {
                 var e = this;
-                this.collection.create($(".user_form").serializeObject(), {
-                    success: function(t, n) {
-                        if (n.result === !0) {
-                            var r = t.attributes;
-                            e.addTableRow(n.user.id), F.msgOK("El usuario ha sido creado/a");
-                            setTimeout(function(){location.reload()}, 1e3);
-                        } else F.msgError(n.error);
+                $.ajax({
+                    data: $('.user_form').serializeObject(),
+                    type: 'POST',
+                    url: '/user',
+                    success: function(t, n){
+                        F.cleanForm('.user_form')
+                        if (t.result === !0) {
+                            F.msgOK("El usuario ha sido creado/a");
+                            F.reloadDataTable('.user_table');
+                        } else F.msgError(t.error);
                     }
-                });
+                })
             },
             editUser: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".user_form").serializeObject(), {
+                $.ajax({
+                    type: 'PUT',
+                    url: '/user/'+e.getSelectionID(),
+                    data: $('.user_form').serializeObject(),
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El usuario ha sido actualizado/a");setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.user_form')
+                        F.msgOK("El usuario ha sido actualizado/a");
+                        F.reloadDataTable('.user_table');
                     }
-                });
+                })
             },
             delUser: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a este Usuario?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El usuario ha sido eliminado/a");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/user/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.user_form')
+                            F.msgOK("El usuario ha sido eliminado/a");
+                            F.reloadDataTable('.user_table');
                         }
-                    });
+                    })
                 });
             }
         });

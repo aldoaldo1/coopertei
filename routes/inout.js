@@ -101,7 +101,7 @@ Inout.registerComeback = function(req, res, next) {
 };
 
 Inout.put = function(req, res, next) {
-  DB.Inout.find({ where: { id: req.body.id } }).on('success', function(e) {
+  DB.Inout.find({ where: { id: req.params.id } }).on('success', function(e) {
     if (e) {
       e.updateAttributes(req.body).on('success', function() {
         res.send(req.body);

@@ -48,7 +48,7 @@ Equipment.post = function(req, res, next) {
 };
 
 Equipment.put = function(req, res, next) {
-  DB.Equipment.find({ where: { id: req.body.id } }).on('success', function(e) {
+  DB.Equipment.find({ where: { id: req.params.id } }).on('success', function(e) {
     if (e) {
       delete req.body.created_at;
       delete req.body.updated_at;

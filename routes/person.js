@@ -47,7 +47,7 @@ Person.post = function(req, res, next) {
 };
 
 Person.put = function(req, res, next) {
-  DB.Person.find({ where: { id: req.body.id } }).on('success', function(p) {
+  DB.Person.find({ where: { id: req.params.id } }).on('success', function(p) {
     if (p) {
       //req.body.created_at = DB.toMySqlDate(req.body.created_at.substr(0, 10));
       //req.body.updated_at = DB.toMySqlDate(req.body.updated_at.substr(0, 10));

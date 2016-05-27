@@ -26,7 +26,6 @@ Ottask.getOne = function(req, res, next) {
     FROM ottask \
     WHERE id = " + req.params.id + " AND deleted_at IS NULL \
   "; 
-  console.log(q)
   DB._.query(q, function(err, task) {
     console.log(task)
     res.send(task);
@@ -66,8 +65,8 @@ Ottask.resources = function(req, res, next) {
 };
 
 Ottask.add = function(req, res, next) {
-  var q, new_task_position = null;
-
+  var q, new_task_position = 1;
+  console.log(req.body.selected_row_position)
   if (req.body.selected_row_position > 0) {
     q = " \
       UPDATE ottask \
@@ -84,7 +83,8 @@ Ottask.add = function(req, res, next) {
       WHERE ot_id = " + req.body.ot_id + " AND deleted_at IS NULL \
     ";
   }
- DB._.query(q, function(err, result) {
+  console.log(q)
+  DB._.query(q, function(err, result) {
     var pos;
 
     if (new_task_position !== null) {
@@ -111,7 +111,7 @@ Ottask.add = function(req, res, next) {
     }).save().on('success', function() {
       res.send(true);
     }).on('error', function(err) {
-      res.send(false);
+      res.send(false, err);
     });
   });
 };

@@ -56,7 +56,7 @@ User.post = function(req, res, next) {
 };
 
 User.put = function(req, res, next) {
-  DB.User.find({ where: { id: req.body.id } }).on('success', function(u) {
+  DB.User.find({ where: { id: req.params.id } }).on('success', function(u) {
     if (u) {
       delete req.body.created_at;
       delete req.body.updated_at;

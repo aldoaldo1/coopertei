@@ -54,13 +54,20 @@ Plan.post = function(req, res, next) {
     "name": req.body.name,
     "description": req.body.description
   }).save().on('success', function(plan) {
-    req.body.task_id.forEach(function(id, pos) {
+    if (Array.isArray(req.body.task_id)){
+      req.body.task_id.forEach(function(id, pos) {
+        DB.Taskplan.build({
+          "plan_id": plan.id,
+          "task_id": id
+        }).save();
+      });
+    }
+    else{
       DB.Taskplan.build({
-        "plan_id": plan.id,
-        "task_id": id
-      }).save();
-    });
-    
+          "plan_id": plan.id,
+          "task_id": req.body.task_id
+        }).save();
+    }
     res.send({ "id": plan.id });
   }).on('error', function(err) {
     res.send(false);
@@ -68,7 +75,7 @@ Plan.post = function(req, res, next) {
 };
 
 Plan.put = function(req, res, next) {
-  DB.Plan.find({ where: { id: req.body.id } }).on('success', function(p) {
+  DB.Plan.find({ where: { id: req.params.id } }).on('success', function(p) {
     if (p) {
       p.updateAttributes({
         "name": req.body.name,

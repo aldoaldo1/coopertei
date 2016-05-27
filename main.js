@@ -352,7 +352,7 @@
                 type: "success",
                 closeOnSelfHover: !0
             });
-        }, F.msgError = function(e) {
+        }, F.msgError = function(e, f) {
             noty({
                 text: e,
                 layout: "topRight",
@@ -3893,9 +3893,9 @@
                                 opacity: .5
                             })) : e.completed == 1 && ($(s).attr("checked", !0), $(s).parent().addClass("crossed"), a = e.id, f += 1), $(".ot_id_" + o).append(r).fadeIn(), i.bindRenderOtTaskForm(r, e, d), i.bindEnableTaskActions(r, e, d), $('input:checkbox[class="complete_task_' + e.id + '"]').on("click", function() {
                                 var t = this, n = null, r = F.doNothing, s = null;
-                                C.Session.getUser().role_id != 7 && e.area_id != C.Session.getUser().area_id ? (r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
+                                C.Session.getUser().role_id != 7 && e.area_id != C.Session.getUser().area_id ? (function(){console.log('heraldo')},r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
                                     $(t).attr("checked", !1);
-                                }, s = !0, F.msgError(r, function() {
+                                }, s = !0, i(), F.msgError(r, function() {
                                     i();
                                 })) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
                                     $(t).attr("checked", !1);

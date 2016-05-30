@@ -1696,11 +1696,12 @@
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
+            hidden_columns: ['ot_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
                 }, null, null ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [ [ 2, "desc" ] ]
             },
             rowHandler: function(e, t) {
                 var n = this, r = $(e).find("td")[7];
@@ -1814,7 +1815,7 @@
             requirementsReportTemplate: function(e, t) {
                 var n = this;
                 this.getOtTasks(e.ot_id, function(r) {
-                    var i = moment().format("DD/MM/YYYY"), s = n.getTasksMarkup(r), o = n.getPhotosUploadMarkup(), u = n.getOtMaterialMarkup(e.ot_number), a = n.getCurrentPhotosMarkup(), f = n.getButtonsMarkup(r);
+                    var i = moment().format("DD/MM/YYYY"), s = n.getTasksMarkup(r), o = n.getPhotosUploadMarkup(), u = n.getOtMaterialMarkup(e.ot_id), a = n.getCurrentPhotosMarkup(), f = n.getButtonsMarkup(r);
                     $("body").append('<div id="requirements_report_window" style="display:none; max-height:500px; overflow:auto;"><h3 class="lefty">INFORME DE REQUERIMIENTOS DE TAREAS</h3><h3 class="righty">' + i + "</h3>" + "<br /><br />" + '<h3 class="lefty">O/T Nº: ' + e.ot_number + "</h3>" + "<br /><br />" + '<input type="button" class="button BUTTON_req_info_tasks" value="Tareas" />' + '<input type="button" class="button BUTTON_req_info_material" value="Materiales" />' + '<input type="button" class="button BUTTON_req_info_photos_upload" value="Añadir Fotografías" />' + '<input type="button" class="button BUTTON_req_info_current_photos" value="Fotografías Actuales" />' + "<br /><br /><br />" + '<form name="requirements_report_form" class="req_info_tasks clean_form">' + '<table style="width:100%;">' + s + "</table>" + "</form>" + '<div class="req_info_material" style="display:none;">' + u + "</div>" + '<div class="req_info_photos_upload" style="display:none;">' + o + "</div>" + '<div class="req_info_current_photos" style="display:none;">' + a + "</div>" + "<br /><br />" + f + "</div>"), n.bindInputFiles(), n.bindButtons(), t && t();
                 });
             },
@@ -2057,11 +2058,12 @@
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
+            hidden_columns: ['ot_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
                 }, null, null ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [ [ 2, "desc" ] ]
             },
             rowHandler: function(e, t) {
                 var n = $(e).find("td")[7];

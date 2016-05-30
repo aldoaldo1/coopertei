@@ -2619,17 +2619,31 @@
                     url: "/materialorder/elements/" + e.id,
                     success: function(e) {
                         e.result === !0 && ($(".material_order_infocard").empty(), t.renderDetails(e.elements));
+                        var details = '<br /><div class="details"><h3>Detalles del pedido</h3></div>'
+                        $('.material_order_infocard').append(details);
+                        _.each(e.elements, function(e){
+                            $.ajax({
+                                url: "/materialreception/byElements/" + e.id,
+                                success: function(e) {
+                                    e.forEach(function(e) {
+                                        var t, n;
+                                        e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
+                                    });
+                                }
+                            })
+                        })
                     }
                 });
             },
             renderDetails: function(e) {
                 var t, n, r;
+                var details = [];
                 $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>"), _.each(e, function(e) {
                     n = $("<input>", {
                         type: "checkbox",
                         checked: e.arrived == 1
                     }), $(n).on("click", function() {
-                        console.log(C.Session.getUser().area_id), console.log(C.Session.getUser().role_id), (C.Session.getUser().area_id < 2 || C.Session.getUser().area_id > 3) && C.Session.getUser().role_id != 7 ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
+                        (C.Session.getUser().area_id < 2 || C.Session.getUser().area_id > 3) && C.Session.getUser().role_id != 7 ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
                             $.unblockUI(), window.setTimeout(function() {
                                 $("#material_order_received").remove();
                             }, 1e3);
@@ -2637,7 +2651,17 @@
                             console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
                                 url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
                                 success: function(t) {
+                                    console.log(e.id)
                                     t.result === !1 && $(n).attr("checked", e.arrived);
+                                    $.ajax({
+                                        url: "/materialreception/byElements/" + e.id,
+                                        success: function(e) {
+                                            e.forEach(function(e) {
+                                                var t, n;
+                                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
+                                            });
+                                        }
+                                    })
                                 }
                             }), $.unblockUI(), window.setTimeout(function() {
                                 $("#material_order_received").remove();
@@ -2698,13 +2722,12 @@
                         success: function(e) {
                             e.forEach(function(e) {
                                 var t, n;
-                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(r).append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n);
+                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", details.push("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n);
                             });
                         }
                     }).success(function() {
-                        console.log("DONE");
                     }), $(".material_order_infocard").append(r);
-                });
+                })
             }
         });
     }), e.define("/views/material/MaterialOrderInfoCard.js", function(e, t, n, r, i, s) {

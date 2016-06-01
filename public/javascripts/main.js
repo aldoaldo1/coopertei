@@ -186,7 +186,7 @@
             $("#head a").removeClass("ui-state-active"), $("#tabs a").removeClass("active-tab");
             if (e !== !1) {
                 $("#head a[href='/#/" + e.split("/")[0] + "']").addClass("ui-state-active"), $("#tabs a[href='/#/" + e + "']").addClass("active-tab");
-                var t = [ "ots/plans", "crud/intervention", "crud/task" ];
+                var t = [ /*"ots/plans", */"crud/intervention", "crud/task" ];
                 _.indexOf(t, e) === -1 ? ($("#left").css({
                     width: "75%"
                 }), $("#right").css({
@@ -558,6 +558,10 @@
             $(e).find("input:checkbox").attr("checked", !1);
             $(e).find("select").val(-1).trigger('liszt:updated');
             $(e).find('.selection_id').val('');
+            $(e).find('.dispensable').remove();
+            $(e).find('option:first').prop('selected', function() {
+                return this.defaultSelected;
+            });
             $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").hide(), $(".BUTTON_create").show();
         }, F.getFormFields = function(e) {
             return $(e).find("input:text, input:password, input:checkbox, select, textarea");
@@ -624,12 +628,12 @@
                     f = $('<input type="hidden" name="' + n + '" value="' + u + '"' + a + "/>");
                     break;
                   case "select":
-                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:89%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
+                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:50%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
                         $(f).append('<option value="' + e.id + '">' + e.name + "</option>");
                     });
                     break;
                   case "selectmultiple":
-                    f = $('<select data-placeholder="Seleccione ' + c + '..."' + ' multiple name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:91%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
+                    f = $('<select data-placeh 91%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
                         $(f).append('<option value="' + e.id + '">' + e.name + "</option>");
                     });
                     break;
@@ -659,7 +663,7 @@
                   default:
                     f = $('<input type="text" name="' + n + '" value="' + u + '"' + a + "/>");
                 }
-                l = $("<p>", {
+                l = $("<span>", {
                     "class": e.name + "_" + n
                 }), $(l).append(i).append(f), $(s).append(l), t.required && t.required === !0 && $(n).attr("required", !0);
                 if (t.check !== undefined) {
@@ -1948,7 +1952,6 @@
                 });
             },
             cancelShowRequirementsReport: function() {
-                //this.cleanModals();
                 location.reload()
             },
             saveRequirementsReport: function(e) {
@@ -4289,6 +4292,10 @@
             attrs: [ "id", "name", "description", "task_id" ],
             data: null,
             initialize: function() {
+                t = function(){
+
+                }
+
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".plan_form"), e);
                 });
@@ -4313,9 +4320,12 @@
                     label: "Descripción",
                     type: "textarea"
                 },
-                task_id: {
-                    label: "Tarea(s)",
-                    type: "selectmultiple"
+                task_count: {
+                    type: 'hidden',
+                    value: 1,
+                    attrs:{
+                        class: 'task_count',
+                    }
                 }
             },
             isCRUD: !0,
@@ -4326,7 +4336,76 @@
                 var e = this, t = [];
                 F.getAllFromModel("task", function(t) {
                     e.relations.tasks = t.data, F.createForm(e);
+                    $(".plan_form select").after()
+                    var t = 1, n = $("<input>", {
+                        type: "button",
+                        value: "Agregar tarea"
+                    }), r, i;
+                    var container = $('<div class="tasks"></div>')
+                    i = $('<div class="task task_container_0" style="margin-bottom:10px"></div>'), $(".plan_form .plan_form_description").after(container), $(container).append(i), $(i).append(e.addTask(0, 0)), $(i).append(' <input type="text" class="hours" name="task_hours_0" style="display:inline; margin:0; width:30px; height:19px;">:<input type="text" class="minutes" name="task_minutes_0" style="display:inline; width:30px; margin:0; height:19px;">'), $(i).append("<br />")
+
+                    $(".plan_form").append(n), $(n).on("click", function() {
+                        $('.task_count').val(t)
+                        r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:20px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, 0)), $(i).append(' <input type="text" class="hours" name="task_hours_'+t+'" style="display:inline; width:30px; margin:0; height:19px;">:<input class="minutes" type="text" name="task_minutes_'+t+'" style="display:inline; margin:0; width:30px; height:19px;">'), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                            $(this).parent().remove();
+                        }), t += 1, r = null, i = null;
+                        e.toogleButtonVisibility()
+                    });
+                    $(document).on('click', '.delete', function(){
+                        var fields = $('.task')
+                            t = 0
+                            _.each(fields, function(el){
+                                $(el).find('.hours').attr('name', 'task_hours_'+t)
+                                $(el).find('.minutes').attr('name', 'task_minutes_'+t)
+                                $(el).find('.id').attr('name', 'task_id_'+t)
+                                $(el).attr('class', 'task task_container_'+t)
+                                t++
+                            })
+                            $('.plan_form .task_count').val(Number($('.task_count').val())-1)
+                            e.toogleButtonVisibility()
+                    })
+                    $(document).on('click', '.plan_table tbody tr', function(){
+                        $.ajax({
+                            url: '/plan/task/'+e.getSelectionID(),
+                            success: function(data){
+                                $('.tasks').empty()
+                                t = 0;
+                                $('.task_count').val(data.length)
+                                    _.each(data, function(task){
+                                    var hours = Math.floor(Number(task.eta)/60);
+                                    var minutes = Number(task.eta) % 60;
+                                    minutes = (minutes < 10)? "0" + minutes : minutes;
+                                    hours = (hours < 10) ? "0" + hours : hours;
+                                    r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:20px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, task.task_id)), $(i).append(' <input type="text" class="hours" name="task_hours_'+t+'" value="'+hours+'" style="display:inline; width:30px; margin:0; height:19px;">:<input class="minutes" type="text" name="task_minutes_'+t+'" value="'+minutes+'" style="display:inline; margin:0; width:30px; height:19px;">'),$('.select_'+t+' option[value="'+task.task_id+'"]').prop('selected', true), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                                        $(this).parent().remove();
+                                    }), t += 1, r = null, i = null;
+                                })
+                                $('.dispensable:first').removeClass('dispensable')
+                                $('.delete:first').addClass('dispensable')
+                                e.toogleButtonVisibility();
+                            }
+                        })
+                    })
                 });
+            },
+            toogleButtonVisibility: function(){
+                if ($('.dispensable').length > 0){
+                    $('.BUTTON_cancel').show()
+                }else{
+                    $('.BUTTON_cancel').hide()
+                }
+            },
+            addTask: function(e, value){
+                var t = $('<select>', {
+                    name: "task_id_" + e,
+                    style: "display:inline; width:75%; height:25px; margin:0;",
+                    class: 'id select_'+e,
+                });
+                $('.select_'+e+' option[value="'+value+'"]').prop('selected', true);
+                $(t).append('<option disabled selected value="0">Elegir tarea</option>');
+                return _.each(this.relations.tasks, function(e) {
+                    $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
+                }), t;
             },
             events: {
                 "click .plan_form .BUTTON_create": "addPlan",

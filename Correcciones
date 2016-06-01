@@ -2,7 +2,7 @@
 
 //Ordenes trabajo -> Administrar => el usuario con rol 1 (vigilancia) solo puede ver las OTs con estado 1 (Inaugurada)
 
-Ordenes trabajo -> Plan tareas => cada tarea debe tener hs estimadas de desarrollo.
+//Ordenes trabajo -> Plan tareas => cada tarea debe tener hs estimadas de desarrollo.
 
 Materiales -> Seleccion OT -> tildo recepcion => no actualiza datos del pedido de materiales.
 

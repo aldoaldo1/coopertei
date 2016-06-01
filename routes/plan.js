@@ -41,6 +41,11 @@ Plan.get = function(req, res, next) {
   });
 };
 
+Plan.getTasks = function(req, res, next){
+  DB.Taskplan.findAll({where: {plan_id: Number(req.params.id)}}).on('success', function(result){
+    res.send(result)
+  })
+}
 
 Plan.getOne = function(req, res, next) {
   DB.Plan.findAll(DB.whereID(req.params.id)).on('success', function(x) {
@@ -50,11 +55,24 @@ Plan.getOne = function(req, res, next) {
 
 
 Plan.post = function(req, res, next) {
+  console.log(req.body)
   DB.Plan.build({
     "name": req.body.name,
     "description": req.body.description
   }).save().on('success', function(plan) {
-    if (Array.isArray(req.body.task_id)){
+    var task_count = Number(req.body.task_count);
+    for (var i = 0; i <= task_count; i++) {
+      var id = Number(eval('req.body.task_id_'+i));
+      var hours = Number(eval('req.body.task_hours_'+i));
+      var minutes = Number(eval('req.body.task_minutes_'+i)) + (hours * 60);
+      console.log(minutes)
+      DB.Taskplan.build({
+          "plan_id": plan.id,
+          "task_id": id,
+          "eta": minutes
+        }).save();
+    };
+    /*if (Array.isArray(req.body.task_id)){
       req.body.task_id.forEach(function(id, pos) {
         DB.Taskplan.build({
           "plan_id": plan.id,
@@ -67,7 +85,7 @@ Plan.post = function(req, res, next) {
           "plan_id": plan.id,
           "task_id": req.body.task_id
         }).save();
-    }
+    }*/
     res.send({ "id": plan.id });
   }).on('error', function(err) {
     res.send(false);
@@ -83,24 +101,22 @@ Plan.put = function(req, res, next) {
       }).on('success', function() {
         var q = " \
           DELETE FROM taskplan \
-          WHERE plan_id = " + req.body.id + " \
+          WHERE plan_id = " + req.params.id + " \
         ";
-        
+        console.log(q)
         DB._.query(q, function(err, data) {
-          if (util.isArray(req.body.task_id)) {
-            req.body.task_id.forEach(function(id, pos) {
-              DB.Taskplan.build({
-                "task_id": id,
-                "plan_id": req.body.id
-              }).save();
-            });
-          } else {
+          var task_count = Number(req.body.task_count);
+          for (var i = 0; i <= task_count; i++) {
+            var id = Number(eval('req.body.task_id_'+i));
+            var hours = Number(eval('req.body.task_hours_'+i));
+            var minutes = Number(eval('req.body.task_minutes_'+i)) + (hours * 60);
+            console.log(minutes)
             DB.Taskplan.build({
-              "task_id": req.body.task_id,
-              "plan_id": req.body.id
-            }).save();
-          }
-          
+                "plan_id": p.id,
+                "task_id": id,
+                "eta": minutes
+              }).save();
+          };
           res.send(req.body);
         });
       }).on('error', function(err) {

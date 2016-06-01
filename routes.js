@@ -60,6 +60,7 @@ module.exports = function(app, routes) {
   //Reports
   app.get('/report/ot', Auth.restrict, routes.otreport.get);
 
+  app.get('/plan/task/:id', Auth.restrict, routes.plan.getTasks);
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',

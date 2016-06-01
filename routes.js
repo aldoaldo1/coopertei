@@ -20,6 +20,7 @@ module.exports = function(app, routes) {
   app.get('/clientauthorize/:ot_id', Auth.restrict, routes.clients.authorizeOt);
   app.get('/clientevents/:ot_id', Auth.restrict, routes.clients.getEvents);
   app.get('/clientnotifications', Auth.restrict, routes.clients.getNotifications);
+  app.get('/clientuser', Auth.restrict, routes.user.getClients);
 
   /*EMC*/
   app.get('/materialorder/elementUpdate/:id/:name/:quantity',  Auth.restrict, routes.materialorder.elementUpdate);

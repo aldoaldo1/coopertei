@@ -82,4 +82,16 @@ User.delete = function(req, res, next) {
   });
 };
 
+User.getClients = function(req, res, next) {
+  var q = " \
+    SELECT u.id, u.username as name \
+    FROM user u \
+    WHERE u.deleted_at IS NULL AND u.role_id = 6 \
+  ";
+
+  DB._.query(q, function(err, data) {
+    res.send(data);
+  });
+}
+
 module.exports = User;

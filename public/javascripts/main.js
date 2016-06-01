@@ -475,6 +475,7 @@
             {
                 if (!$(this).hasClass('details')){
                     var i = datatable.fnGetData(this);
+                    console.log(i)
                     $("." + e.name + "_form .selection_id").val(i.id);
                     $("." + e.name + "_infocard .selection_id").val(i.id); 
                     $("#" + e.name + "_table tr").removeClass("selected_row"); 
@@ -628,7 +629,7 @@
                     f = $('<input type="hidden" name="' + n + '" value="' + u + '"' + a + "/>");
                     break;
                   case "select":
-                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:50%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
+                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:90%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
                         $(f).append('<option value="' + e.id + '">' + e.name + "</option>");
                     });
                     break;
@@ -2176,9 +2177,10 @@
                     label: "Nombre",
                     check: "alpha"
                 },
-                username: {
+                user_id: {
                     label: "Usuario general para el cliente",
-                    check: "alpha"
+                    check: "alpha",
+                    type: 'select'
                 },
                 tag: {
                     label: "TAG",
@@ -2226,7 +2228,9 @@
                 var e = this;
                 F.getAllFromModel("iva", function(t) {
                     e.relations.ivas = t, F.getAllFromModel("city", function(t) {
-                        e.relations.citys = t, F.createForm(e);
+                        e.relations.citys = t, console.log(t), F.getAllFromModel('clientuser', function(t){
+                            e.relations.users = t, console.log(t), F.createForm(e);
+                        })
                     });
                 });
             },

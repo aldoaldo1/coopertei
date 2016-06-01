@@ -4,9 +4,9 @@
 
 //Ordenes trabajo -> Plan tareas => cada tarea debe tener hs estimadas de desarrollo.
 
-Materiales -> Seleccion OT -> tildo recepcion => no actualiza datos del pedido de materiales.
+//Materiales -> Seleccion OT -> tildo recepcion => no actualiza datos del pedido de materiales.
 
-Clientes -> Autorizaciones -> Seleccionar OT -> Informe de requierimiento -> Materiales => No corresponden a la OT.
+//Clientes -> Autorizaciones -> Seleccionar OT -> Informe de requierimiento -> Materiales => No corresponden a la OT.
 
 Materiales -> Pedidos -> Permitir cargar => Permitir cargar materiales NO pedidos a la gente de pañol.
 

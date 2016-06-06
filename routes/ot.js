@@ -252,56 +252,55 @@ Ot.update = function(req, res, next) {
    if(ot){
     if(ot.plan_id == req.body.plan_id){
     //Actualizo Todo menos plan de tareas
-     var equipment;
-     if(req.body.equipment_new){
-     DB.Equipment.build({
-      name: req.body.equipment_new,
-      intervention_id: req.body.intervention_id,
-      client_id: req.body.client_id
-     }).save().on('success', function(e) {
-      	qe="\
-      	UPDATE ot\
-	      SET remitoentrada = '"+req.body.remitoentrada+"',\
-	      client_number = '"+req.body.client_number+"',\
-	      client_id = '"+req.body.client_id+"',\
-	      equipment_id = '"+e.id+"',\
-	      delivery = '"+delivery+"',\
-	      intervention_id = '"+req.body.intervention_id+"',\
-	      workshop_suggestion = '"+req.body.workshop_suggestion+"',\
-	      client_suggestion = '"+req.body.client_suggestion+"',\
-	      reworked_number = '"+req.body.reworked_number+"',\
-	      notify_client = '"+req.body.notify_client+"'\
-	      WHERE id = " + req.params.ot_id + "\
-	  ";
-      	DB._.query(qe, function(errq, data) {
-	    res.send({ result: true });
-	}).on('error', function(err) {
-        res.send({ result: false, error: err });
+      var equipment;
+      if(req.body.equipment_new){
+        DB.Equipment.build({
+          name: req.body.equipment_new,
+          intervention_id: req.body.intervention_id,
+          client_id: req.body.client_id
+        }).save().on('success', function(e) {
+        	qe="\
+          	UPDATE ot\
+            SET remitoentrada = '"+req.body.remitoentrada+"',\
+            client_number = '"+req.body.client_number+"',\
+            client_id = '"+req.body.client_id+"',\
+            equipment_id = '"+e.id+"',\
+            delivery = '"+delivery+"',\
+            intervention_id = '"+req.body.intervention_id+"',\
+            workshop_suggestion = '"+req.body.workshop_suggestion+"',\
+            client_suggestion = '"+req.body.client_suggestion+"',\
+            reworked_number = '"+req.body.reworked_number+"',\
+            notify_client = '"+req.body.notify_client+"'\
+            WHERE id = " + req.params.ot_id + "\
+            ";
+        	DB._.query(qe, function(errq, data) {
+            res.send({ result: true });
+          }).on('error', function(err) {
+            res.send({ result: false, error: err });
+          });
         });
-    });
-     }else{
-	      qe="\
-	      UPDATE ot\
-	          SET remitoentrada = '"+req.body.remitoentrada+"',\
-	          client_number = '"+req.body.client_number+"',\
-	          client_id = '"+req.body.client_id+"',\
-	          equipment_id = '"+req.body.equipment_id+"',\
-	          delivery = '"+delivery+"',\
-	          intervention_id = '"+req.body.intervention_id+"',\
-	          workshop_suggestion = '"+req.body.workshop_suggestion+"',\
-	          client_suggestion = '"+req.body.client_suggestion+"',\
-	          reworked_number = '"+req.body.reworked_number+"',\
-	          notify_client = '"+req.body.notify_client+"'\
-	          WHERE id = " + req.params.ot_id + "\
-	      ";
-	      DB._.query(qe, function(errq, data) {
-	       
-	          res.send({ result: true });
-	      }).on('error', function(err) {
-          res.send({ result: false, error: err });
+      }else{
+        qe="\
+          UPDATE ot\
+          SET remitoentrada = '"+req.body.remitoentrada+"',\
+          client_number = '"+req.body.client_number+"',\
+          client_id = '"+req.body.client_id+"',\
+          equipment_id = '"+req.body.equipment_id+"',\
+          delivery = '"+delivery+"',\
+          intervention_id = '"+req.body.intervention_id+"',\
+          workshop_suggestion = '"+req.body.workshop_suggestion+"',\
+          client_suggestion = '"+req.body.client_suggestion+"',\
+          reworked_number = '"+req.body.reworked_number+"',\
+          notify_client = '"+req.body.notify_client+"'\
+          WHERE id = " + req.params.ot_id + "\
+          ";
+        DB._.query(qe, function(errq, data) {
+  	      res.send({ result: true });
+        }).on('error', function(err) {
+            res.send({ result: false, error: err });
         });
-     };
-     }else{
+      };
+    }else{
      //Actualizo Todo
       ot.updateAttributes({
         remitoentrada: req.body.remitoentrada,
@@ -326,23 +325,45 @@ Ot.update = function(req, res, next) {
                 INNER JOIN task t ON tp.task_id = t.id \
                 WHERE tp.plan_id = " + req.body.plan_id;
               DB._.query(q2, function(err, tasks) {
-                if (tasks && tasks.length) {
+                if (tasks && tasks.length){
                   var position = 1;
+                  var priority = 1;
                   tasks.forEach(function(t) {
-                    DB.Ottask.build({
-                      name: t.name,
-                      sent: 0,                      
-                      priority: t.priority,
-                      description: t.description,
-                      due_date: moment(DB.flipDateMonth(req.body.delivery)).format('YYYY-MM-DD'),
-                      position: position,
-                      area_id: t.area_id,
-                      completed: 0,
-                      reworked: 0,
-                      derived_to: 0,
-                      ot_id: ot.id
-                    }).save();
-                    position += 1;
+                  var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
+                    DB._.query(q3, function(err, max){
+                      var startDay = moment(ot.created_at);
+                      
+                      if (max[0].eta){
+                        startDay = moment(ot.created_at);
+                        console.log(startDay)
+                        console.log('Dias desde la ultima prioridad: '+max[0].eta)
+                        console.log('Dias estimados: '+t.eta)
+                        startDay.add('days', Number(max[0].eta) + Number(t.eta));
+                        console.log(startDay)
+                      }
+                      else{
+                        startDay = moment(ot.created_at).format('YYYY-MM-DD') 
+                      }
+                      DB.Ottask.build({
+                        name: t.name,
+                        sent: 0,                      
+                        priority: t.priority,
+                        description: t.description,
+                        position: position,
+                        due_date: moment(startDay).format('YYYY-MM-DD'),
+                        area_id: t.area_id,
+                        completed: 0,
+                        reworked: 0,
+                        derived_to: 0,
+                        ot_id: ot.id
+                      }).save();
+                      position += 1;
+                      if (max[0].eta) {
+                        console.log(startDay)
+                        startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
+                        console.log(startDay)
+                      };
+                    })
                   });
                 }
               });

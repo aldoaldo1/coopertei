@@ -4346,11 +4346,11 @@
                         value: "Agregar tarea"
                     }), r, i;
                     var container = $('<div class="tasks"></div>')
-                    i = $('<div class="task task_container_0" style="margin-bottom:10px"></div>'), $(".plan_form .plan_form_description").after(container), $(container).append(i), $(i).append(e.addTask(0, 0)), $(i).append(' <input type="text" class="hours" name="task_hours_0" style="display:inline; margin:0; width:30px; height:19px;">:<input type="text" class="minutes" name="task_minutes_0" style="display:inline; width:30px; margin:0; height:19px;">'), $(i).append("<br />")
+                    i = $('<div class="task task_container_0" style="margin-bottom:10px"></div>'), $(".plan_form .plan_form_description").after(container), $(container).append(i), $(i).append(e.addTask(0, 0)), $(i).append(' <input type="text" class="eta" name="eta_0" placeholder="Dias" style="display:inline; margin:0; width:70px; height:19px;">'), $(i).append("<br />")
 
                     $(".plan_form").append(n), $(n).on("click", function() {
                         $('.task_count').val(t)
-                        r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:20px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, 0)), $(i).append(' <input type="text" class="hours" name="task_hours_'+t+'" style="display:inline; width:30px; margin:0; height:19px;">:<input class="minutes" type="text" name="task_minutes_'+t+'" style="display:inline; margin:0; width:30px; height:19px;">'), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                        r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, 0)), $(i).append(' <input type="text" placeholder="Dias" class="eta" name="eta_'+t+'" style="display:inline; width:70px; margin:0; height:19px;">'), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
                             $(this).parent().remove();
                         }), t += 1, r = null, i = null;
                         e.toogleButtonVisibility()
@@ -4359,8 +4359,7 @@
                         var fields = $('.task')
                             t = 0
                             _.each(fields, function(el){
-                                $(el).find('.hours').attr('name', 'task_hours_'+t)
-                                $(el).find('.minutes').attr('name', 'task_minutes_'+t)
+                                $(el).find('.eta').attr('name', 'eta_'+t)
                                 $(el).find('.id').attr('name', 'task_id_'+t)
                                 $(el).attr('class', 'task task_container_'+t)
                                 t++
@@ -4376,11 +4375,7 @@
                                 t = 0;
                                 $('.task_count').val(data.length)
                                     _.each(data, function(task){
-                                    var hours = Math.floor(Number(task.eta)/60);
-                                    var minutes = Number(task.eta) % 60;
-                                    minutes = (minutes < 10)? "0" + minutes : minutes;
-                                    hours = (hours < 10) ? "0" + hours : hours;
-                                    r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:20px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, task.task_id)), $(i).append(' <input type="text" class="hours" name="task_hours_'+t+'" value="'+hours+'" style="display:inline; width:30px; margin:0; height:19px;">:<input class="minutes" type="text" name="task_minutes_'+t+'" value="'+minutes+'" style="display:inline; margin:0; width:30px; height:19px;">'),$('.select_'+t+' option[value="'+task.task_id+'"]').prop('selected', true), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                                    r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, task.task_id)), $(i).append(' <input type="text" class="eta" name="eta_'+t+'" value="'+task.eta+'" placeholder="Dias" style="display:inline; width:70px; margin:0; height:19px;">'),$('.select_'+t+' option[value="'+task.task_id+'"]').prop('selected', true), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
                                         $(this).parent().remove();
                                     }), t += 1, r = null, i = null;
                                 })
@@ -4406,7 +4401,7 @@
                     class: 'id select_'+e,
                 });
                 $('.select_'+e+' option[value="'+value+'"]').prop('selected', true);
-                $(t).append('<option disabled selected value="0">Elegir tarea</option>');
+                $(t).append('<option disabled selected value="0">Tarea</option>');
                 return _.each(this.relations.tasks, function(e) {
                     $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
                 }), t;

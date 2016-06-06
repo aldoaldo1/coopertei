@@ -63,13 +63,11 @@ Plan.post = function(req, res, next) {
     var task_count = Number(req.body.task_count);
     for (var i = 0; i <= task_count; i++) {
       var id = Number(eval('req.body.task_id_'+i));
-      var hours = Number(eval('req.body.task_hours_'+i));
-      var minutes = Number(eval('req.body.task_minutes_'+i)) + (hours * 60);
-      console.log(minutes)
+      var eta = Number(eval('req.body.eta_'+i));
       DB.Taskplan.build({
           "plan_id": plan.id,
           "task_id": id,
-          "eta": minutes
+          "eta": eta
         }).save();
     };
     /*if (Array.isArray(req.body.task_id)){
@@ -108,13 +106,11 @@ Plan.put = function(req, res, next) {
           var task_count = Number(req.body.task_count);
           for (var i = 0; i <= task_count; i++) {
             var id = Number(eval('req.body.task_id_'+i));
-            var hours = Number(eval('req.body.task_hours_'+i));
-            var minutes = Number(eval('req.body.task_minutes_'+i)) + (hours * 60);
-            console.log(minutes)
+            var eta = Number(eval('req.body.eta_'+i));
             DB.Taskplan.build({
                 "plan_id": p.id,
                 "task_id": id,
-                "eta": minutes
+                "eta": eta
               }).save();
           };
           res.send(req.body);

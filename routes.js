@@ -47,6 +47,7 @@ module.exports = function(app, routes) {
   app.get('/materialorder/elements/:order_id', Auth.restrict, routes.materialorder.elements);
   // ORIGINAL app.get('/materialorder/arrival/:element_id', Auth.restrict, routes.materialorder.arrival);
   app.get('/materialorder/arrival/:element_id/:quantity/:observation', Auth.restrict, routes.materialorder.arrival);
+  app.get('/materialcategory/getproperties/:id', Auth.restrict, routes.materialcategory.getProperties)
   //
   app.get('/alert', Auth.restrict, routes.alert.get);
   app.get('/alerttask', Auth.restrict, routes.alerttask.get);

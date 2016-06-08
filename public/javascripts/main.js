@@ -2604,6 +2604,7 @@
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "ottask", "provider", "date" ],
             data: null,
+            hidden_columns: ["ot_id"],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, {
                     sType: "es_date"
@@ -2813,7 +2814,15 @@
         C.View.MaterialCreateOrder = Backbone.View.extend({
             name: "material_create_order_window",
             initialize: function() {
+                e = this;
                 this.getMaterialCategories(), this.getMaterialUnits(), this.render();
+                $(document).on('change', '#order_elements select', function(){
+                    var id = $(this).val()
+                    var index = Number($(this).parent().find('.id').val())
+                    $(this).parent().find('.property').remove()
+                    console.log(index)
+                    e.appendProperties(id, index)
+                })
             },
             getMaterialCategories: function() {
                 var e = this;
@@ -2847,6 +2856,36 @@
                     }
                 });
             },
+            appendProperties: function(id, index){
+                $.ajax({
+                    url:'/materialcategory/getProperties/'+id,
+                    success: function(data){
+                        console.log(data)
+                        var el = $('.material_container_'+index)
+                        if (data.material){
+                            $(el).append('<input class="property" type="text" name="material_element_'+index+'" placeholder="Material" style="width:80%; margin: 0 auto">')
+                        }
+                        if (data.externaldiameter) {
+                            $(el).append('<input type="text" class="property" name="externaldiameter_'+index+'" placeholder="Diámetro externo" style="width:19%; margin-right: 1%; display:inline">')
+                        }
+                        if (data.internaldiameter){
+                            $(el).append('<input type="text" class="property" name="internaldiameter_'+index+'" placeholder="Diámetro interno" style="width:19%; margin-right: 1%; display:inline">')
+                        }
+                        if (data.width) {
+                            $(el).append('<input type="text" class="property" name="width_'+index+'" placeholder="Ancho" style="width:19%; margin-right: 1%; display:inline">')
+                        };
+                        if (data.height) {
+                            $(el).append('<input type="text" class="property" name="height_'+index+'" placeholder="Alto" style="width:19%; margin-right: 1%; display:inline">')
+                        };
+                        if (data.longitude) {
+                            $(el).append('<input type="text" class="property" name="longitude_'+index+'" placeholder="Longitud" style="width:19%; margin-right: 1; display:inline">')
+                        };
+                        if (data.thickness) {
+                            $(el).append('<input type="text" class="property" name="thickness_'+index+'" placeholder="Espesor" style="width:19%; margin-right: 1; display:inline">')
+                        }
+                    }
+                })
+            },
             template: function() {
                 $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
             },
@@ -2856,7 +2895,7 @@
                     value: "Agregar Material"
                 }), r, i;
                 $("#order_elements").append(n), $(n).on("click", function() {
-                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" name="material_element_' + t + '" placeholder="Material" style="display:inline; width:75px; height:19px;">'), $(i).append(' <input type="text" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(i).append('<input type="hidden" class="id" name="id" value="'+t+'">'), $(r).on("click", function() {
                         $(this).parent().remove();
                     }), t += 1, r = null, i = null;
                 });
@@ -2974,11 +3013,51 @@
                 name: {
                     label: "Nombre",
                     check: "alpha"
-                }
+                },
             },
             isCRUD: !0,
             initialize: function() {
+                var e = this
                 F.createForm(this);
+                var check = [
+                    {
+                        name: 'Descripción',
+                        tag: 'material',
+                    },
+                    {
+                        name: 'Diametro interno',
+                        tag: 'internaldiameter',
+                    },
+                    {
+                        name: 'Diametro externo',
+                        tag: 'externaldiameter',
+                    },
+                    {
+                        name: 'Longitud',
+                        tag: 'longitude',
+                    },
+                    {
+                        name: 'Ancho',
+                        tag: 'width',
+                    },
+                    {
+                        name: 'Alto',
+                        tag: 'height',
+                    },
+                    {
+                        name: 'Espesor',
+                        tag: 'thickness',
+                    },
+                ]
+                $('.materialcategory_form input[type=text]').after('<br /><div class="check_section"></div>');
+                check.forEach(function(c){
+                    e.template(c.name, c.tag);
+                })
+                $('.check_section').append('<br />');
+            },
+            template: function(name, value){
+                var input = '<input style="margin:5px" type="checkbox" name="'+value+'"> '+name+'<br />';
+                $('.check_section').append(input);
             },
             events: {
                 "click .materialcategory_form .BUTTON_create": "addMaterial",
@@ -3062,11 +3141,12 @@
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "provider", "date" ],
             data: null,
+            hidden_columns: ["ot_id"],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
                 } ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [[ 1, "desc" ]]
             },
             initialize: function() {
                 var e = this;
@@ -6245,7 +6325,7 @@
             $(document).ajaxError(function(e, t, n) {
                 F.msgErrorTop("Error de servidor.<br />Recargue la aplicación e intente nuevamente");
             }), $(document).on("keyup", function(e) {
-                e.which == 27 && location.reload();//&& $.unblockUI(); en lugar del reload()
+                //e.which == 27 && location.reload();//&& $.unblockUI(); en lugar del reload()
             }), $("#logout_button").on("click", function() {
                 F.msgConfirm("¿Realmente desea salir?", function() {
                     window.location = "/logout";

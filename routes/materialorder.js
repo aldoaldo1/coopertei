@@ -52,11 +52,34 @@ console.log(req.params)
       DB.Materialorder.find({where:{ot_id: ot.id, ottask_id: req.body.ottask_id,provider:req.body.provider}}).on('success', function(mo){
       if(mo){
             for (var i = 1; i <= q_els; i += 1) {
-               if(req.body.materials['material_category_' + i]||req.body.materials['material_element_' + i]||req.body.materials['material_quantity_' + i]||req.body.materials['material_unit_' + i]){ 
+               var description = '';
+              if (req.body.materials['material_element_' + i]) {
+                description += req.body.materials['material_element_' + i] + ' ';
+              };
+              if (req.body.materials['externaldiameter_' + i]) {
+                description += 'Øe: ' + req.body.materials['externaldiameter_' + i] + ' ';
+              };
+              if (req.body.materials['internaldiameter_' + i]) {
+                description += 'Øi: ' + req.body.materials['internaldiameter_' + i] + ' ';
+              };
+              if (req.body.materials['width_' + i]) {
+                description += 'Ancho: ' + req.body.materials['width_' + i] + ' ';
+              };
+              if (req.body.materials['height_' + i]) {
+                description += 'Alto: ' + req.body.materials['height_' + i] + ' ';
+              };
+              if (req.body.materials['longitude_' + i]) {
+                description += 'Longitud: ' + req.body.materials['longitude_' + i] + ' ';
+              };
+              if (req.body.materials['thickness' + i]) {
+                description += 'Espesor: ' + req.body.materials['thickness' + i] + ' ';
+              };
+
+              if(req.body.materials['material_category_' + i]||req.body.materials['material_element_' + i]||req.body.materials['material_quantity_' + i]||req.body.materials['material_unit_' + i]){ 
                 DB.Materialorderelement.build({
                   materialorder_id: mo.id,
                   materialcategory_id: req.body.materials['material_category_' + i],
-                  name: req.body.materials['material_element_' + i],
+                  name: description,//req.body.materials['material_element_' + i],
                   quantity: req.body.materials['material_quantity_' + i],
                   unit_id: req.body.materials['material_unit_' + i],
                 }).save()

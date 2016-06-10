@@ -2658,24 +2658,29 @@
                                 $("#material_order_received").remove();
                             }, 1e3);
                         }), $("#material_order_received .BUTTON_proceed").on("click", function() {
-                            console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
-                                url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
-                                success: function(t) {
-                                    console.log(e.id)
-                                    t.result === !1 && $(n).attr("checked", e.arrived);
-                                    $.ajax({
-                                        url: "/materialreception/byElements/" + e.id,
-                                        success: function(e) {
-                                            e.forEach(function(e) {
-                                                var t, n;
-                                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
-                                            });
-                                        }
-                                    })
-                                }
-                            }), $.unblockUI(), window.setTimeout(function() {
-                                $("#material_order_received").remove();
-                            }, 1e3);
+                            if (!isNaN($("#material_order_received input:text[name=quantity_received]").val())){
+                                console.log($("#material_order_received input:text[name=quantity_received]").val())
+                                console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
+                                    url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
+                                    success: function(t) {
+                                        console.log(e.id)
+                                        t.result === !1 && $(n).attr("checked", e.arrived);
+                                        $.ajax({
+                                            url: "/materialreception/byElements/" + e.id,
+                                            success: function(e) {
+                                                e.forEach(function(e) {
+                                                    var t, n;
+                                                    e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
+                                                });
+                                            }
+                                        })
+                                    }
+                                }), $.unblockUI(), window.setTimeout(function() {
+                                    $("#material_order_received").remove();
+                                }, 1e3);
+                            }else{
+                                F.msgError('La cantidad debe ser expresada en números')
+                            }
                         }), $.blockUI({
                             message: $("#material_order_received"),
                             css: {

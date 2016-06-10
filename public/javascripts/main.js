@@ -3754,7 +3754,12 @@
         C.View.OtAuditAddTask = Backbone.View.extend({
             name: "ot_add_task_window",
             initialize: function() {
-                this.render();
+                var e = this
+                e.el.unbind
+                $(document).bind("tasks_loaded", function() {
+                    e.render();
+                    console.log(e.tasks)
+                }),this.getTasks();
             },
             render: function() {
                 var e = this;
@@ -3774,9 +3779,32 @@
                     }
                 });
             },
+            getTasks: function() {
+                var e = this;
+                $.ajax({
+                    type: "GET",
+                    url: "/task",
+                    success: function(t) {
+                        e.tasks = t.data, $(document).trigger("tasks_loaded");
+                    }
+                });
+            },
+            buildTasksList: function(e) {
+                var t = $("<select>", {
+                    name: e
+                });
+                return $(t).append($("<option>", {
+                    value: 0
+                }).text("Seleccione tarea...")), _.each(this.tasks, function(e) {
+                    $(t).append($("<option>", {
+                        value: e.id
+                    }).text(e.name));
+                }), t;
+            },
             template: function() {
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
-                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Nombre</label><input type="text" name="new_task_name" /><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                $('#add_task_ot_form').prepend(this.buildTasksList('tareas')).prepend('<label>Nombre</label>')
             },
             cleanModals: function(e) {
                 $('blockUI').remove();

@@ -359,6 +359,12 @@ Ot.update = function(req, res, next) {
                       };
                     })
                   });
+                  if (ot.delivery == 'NaN/NaN/NaN') {
+                    var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
+                    DB._.query(query, function(err, deadline){
+                      ot.updateAttributes({delivery:deadline[0].deadline})
+                    })
+                  }
                 }
               });
             });

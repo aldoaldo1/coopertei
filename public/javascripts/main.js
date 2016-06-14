@@ -398,6 +398,7 @@
                 "class": "selection_id",
                 value: 0
             }));
+            console.log(e);
         }, F.appendTitle = function(e, t) {
             $(e).append('<h3 class="formtitle">' + t + "</h3>");
         }, F.createDataTable = function(e, t, n) {
@@ -475,7 +476,6 @@
             {
                 if (!$(this).hasClass('details')){
                     var i = datatable.fnGetData(this);
-                    console.log(i)
                     $("." + e.name + "_form .selection_id").val(i.id);
                     $("." + e.name + "_infocard .selection_id").val(i.id); 
                     $("#" + e.name + "_table tr").removeClass("selected_row"); 
@@ -2615,6 +2615,8 @@
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     e.showDetails(t);
+                    $('.material_order_infocard .selection_id').val(t.id)
+
                 });
             },
             events: {
@@ -2624,6 +2626,7 @@
                 this.selected_row = $(e.currentTarget);
             },
             showDetails: function(e) {
+                var id = e.ot_number
                 var t = this;
                 $.ajax({
                     url: "/materialorder/elements/" + e.id,
@@ -2631,6 +2634,8 @@
                         e.result === !0 && ($(".material_order_infocard").empty(), t.renderDetails(e.elements));
                         var details = '<br /><div class="details"><h3>Detalles del pedido</h3></div>'
                         $('.material_order_infocard').append(details);
+                        console.log(e.id)
+                        $('.material_order_infocard').append('<input type="hidden" name="selection_id" class="selection_id" value="'+id+'">') 
                         _.each(e.elements, function(e){
                             $.ajax({
                                 url: "/materialreception/byElements/" + e.id,
@@ -2648,7 +2653,8 @@
             renderDetails: function(e) {
                 var t, n, r;
                 var details = [];
-                $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>"), _.each(e, function(e) {
+                $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>")
+                 _.each(e, function(e) {
                     n = $("<input>", {
                         type: "checkbox",
                         checked: e.arrived == 1
@@ -2820,8 +2826,9 @@
             name: "material_create_order_window",
             initialize: function() {
                 e = this;
+                $(e.el).unbind
                 this.getMaterialCategories(), this.getMaterialUnits(), this.render();
-                $(document).on('change', '#order_elements select', function(){
+                $(document).on('change', '#order_elements .select_material', function(){
                     var id = $(this).val()
                     var index = Number($(this).parent().find('.id').val())
                     $(this).parent().find('.property').remove()
@@ -2892,7 +2899,9 @@
                 })
             },
             template: function() {
-                $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
+                var i = $('.material_order_infocard .selection_id').val()
+                if (i == 0){ i = ''}
+                $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" value="'+i+'" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
             },
             appendOrderMaterialsWidget: function() {
                 var e = this, t = 1, n = $("<input>", {
@@ -2908,8 +2917,10 @@
             materialCategoriesList: function(e) {
                 var t = $('<select>', {
                     name: "material_category_" + e,
-                    style: "display:inline; width:250px; height:25px;"
+                    style: "display:inline; width:250px; height:25px;",
+                    class: "select_material"
                 });
+                $(t).append('<option  selected="true" disabled="disabled" value="0">Seleccione un material...</option>');
                 return _.each(this.material_categories, function(e) {
                     $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
                 }), t;
@@ -3760,7 +3771,7 @@
             name: "ot_add_task_window",
             initialize: function() {
                 var e = this
-                e.el.unbind
+                $(document).unbind("tasks_loaded")
                 $(document).bind("tasks_loaded", function() {
                     e.render();
                     console.log(e.tasks)
@@ -3796,13 +3807,13 @@
             },
             buildTasksList: function(e) {
                 var t = $("<select>", {
-                    name: e
+                    name: 'name'
                 });
                 return $(t).append($("<option>", {
                     value: 0
                 }).text("Seleccione tarea...")), _.each(this.tasks, function(e) {
                     $(t).append($("<option>", {
-                        value: e.id
+                        value: e.name
                     }).text(e.name));
                 }), t;
             },
@@ -3810,15 +3821,18 @@
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                 $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
                 $('#add_task_ot_form').prepend(this.buildTasksList('tareas')).prepend('<label>Nombre</label>')
+                $('#add_task_ot_form').append('<label>Tiempo estimado (dias)</label><input type="text" name="eta" style="width:50px;margin:0 auto"><input type="checkbox" name="reprogram">Reprogramar tareas')
             },
             cleanModals: function(e) {
-                $('blockUI').remove();
+                $('#ot_add_task_window').remove()
+                $('.blockUI').remove();
             },
             performAddTask: function() {
         	    this.options.addNewTask({
-                    name: $("#add_task_ot_form input:text[name=new_task_name]").val(),
-                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val()
-                }, this.cleanModals);
+                    name: $("#add_task_ot_form select").val(),
+                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
+                    eta: $('#add_task_ot_form input[name=eta]').val()
+                }, this.cleanModals());
             },
             cancelAddTask: function() {
                 this.cleanModals();
@@ -3831,6 +3845,7 @@
             initialize: function() {
                 if (!this.options.currentTaskState) {
                     var e = this;
+                    $(document).unbind('employees_loaded');
                     $(document).bind("employees_loaded", function() {
                         e.render();
                     }), this.getEmployees();
@@ -3876,9 +3891,10 @@
                 $(".button").button();
             },
             cleanModals: function(e) {
-                $.unblockUI(), window.setTimeout(function() {
-                    $("#toggle_task_state_window").remove(), e && e();
-                }, 1e3);
+                //$.unblockUI(), window.setTimeout(function() {
+                    $("#toggle_task_state_window").remove()
+                    $('.blockUI').remove();
+                //}, 1e3);
             },
             buildToolsList: function(e) {
                 return "		multiple>			<option value='1-Torno-TURRI'>1-Torno-TURRI</option>			<option value='2-Torno-TURRI'>2-Torno-TURRI</option>			<option value='3-Torno-TURRI'>3-Torno-TURRI</option>			<option value='4-Torno-TURRI'>4-Torno-TURRI</option>			<option value='5-Torno-TURRI'>5-Torno-TURRI</option>			<option value='6-Torno-TURRI'>6-Torno-TURRI</option>			<option value='7-Torno-T-ESPRINGFIELD'>7-Torno-T-ESPRINGFIELD</option>			<option value='8-Torno-BATISTI'>8-Torno-BATISTI</option>			<option value='9-Torno-AMERICAN'>9-Torno-AMERICAN</option>			<option value='10-Torno-Sin Nombre'>10-Torno-Sin Nombre</option>			<option value='11-Mortajadora-MINGANTI'>11-Mortajadora-MINGANTI</option>			<option value='12-Fresadora-MAS'>12-Fresadora-MAS</option>			<option value='13-Fresadora-ARNO'>13-Fresadora-ARNO</option>			<option value='14-Fresadora-IMEPLA'>14-Fresadora-IMEPLA</option>			<option value='15-Cepillo-RODAWEY'>15-Cepillo-RODAWEY</option>			<option value='16-Rectificadora-WECHECO'>16-Rectificadora-WECHECO</option>			<option value='17-Alesadora-PLAUERT-TOS'>17-Alesadora-PLAUERT-TOS</option>			<option value='18-Rectificadora-NORMATIC'>18-Rectificadora-NORMATIC</option>			<option value='19-Fresadora-Bawer-CRA'>19-Fresadora-Bawer-CRA</option>			<option value='20-Alesadora-RICHARDS'>20-Alesadora-RICHARDS</option>			<option value='21-Rectificadora E/P-TOS, HOSTIVAR'>21-Rectificadora E/P-TOS, HOSTIVAR</option>			<option value='22-Alesadora-TOS-VARNDORF'>22-Alesadora-TOS-VARNDORF</option>			<option value='23-Sierra sin fin-PEHAKA'>23-Sierra sin fin-PEHAKA</option>			<option value='24-Agujereadora-IMEPLA'>24-Agujereadora-IMEPLA</option>			<option value='25-Agujereadora-AMERICAN'>25-Agujereadora-AMERICAN</option>			<option value='26-Balanceadora-COBI'>26-Balanceadora-COBI</option>			<option value='27-Arenadora-BLASTING'>27-Arenadora-BLASTING</option>			<option value='34-Amoladora Soldadura-WEKA'>34-Amoladora Soldadura-WEKA</option>			<option value='35-Agujereadora de banco-BARBERO ABM-16'>35-Agujereadora de banco-BARBERO ABM-16</option>			<option value='36-Agujereadora  banco Soldad-ELEVE'>36-Agujereadora  banco Soldad-ELEVE</option>			<option value='37-Amoladora de tornería-S/Identificar'>37-Amoladora de tornería-S/Identificar</option>			<option value='38-Prensa Hidráulica-ADABOR'>38-Prensa Hidráulica-ADABOR</option>			<option value='39-Soldadora-TAMIG-R480-S'>39-Soldadora-TAMIG-R480-S</option>			<option value='40-Soldadora-MILLER Sinc.250'>40-Soldadora-MILLER Sinc.250</option>			<option value='42-Torno-C Y'>42-Torno-C Y</option>			<option value='50-Torno-BATISTI'>50-Torno-BATISTI </option>			<option value='51-Torno-BATISTI '>51-Torno-BATISTI </option>			<option value='52-Fresadora-IMEPLA'>52-Fresadora-IMEPLA</option>			<option value='CU 02'>CU 02</option>			<option value='CU 14'>CU 14</option>			<option value='CU 23'>CU 23</option>			<option value='CU 24'>CU 24</option>			<option value='CU 26'>CU 26</option>			<option value='CU 27'>CU 27</option>			<option value='CU 32'>CU 32</option>			<option value='CU 33'>CU 33</option>			<option value='CU 36'>CU 36</option>			<option value='CU 39'>CU 39</option>			<option value='CU 40'>CU 40</option>			<option value='CU 42'>CU 42</option>			<option value='CU 43'>CU 43</option>			<option value='CU 44'>CU 44</option>			<option value='CU 45'>CU 45</option>			<option value='CU 48'>CU 48</option>			<option value='CU 50'>CU 50</option>			<option value='CU 51'>CU 51</option>			<option value='CU 52'>CU 52</option>			<option value='CU 53'>CU 53</option>			<option value='CU 54'>CU 54</option>			<option value='CU 55'>CU 55</option>			<option value='CU 56'>CU 56</option>			<option value='CU 57'>CU 57</option>			<option value='CU 59'>CU 59</option>			<option value='CU 60'>CU 60</option>			<option value='CU 61'>CU 61</option>			<option value='CU 62'>CU 62</option>			<option value='CU 63'>CU 63</option>			<option value='CU 65'>CU 65</option>			<option value='CU 67'>CU 67</option>			<option value='CU 68'>CU 68</option>			<option value='CU 70'>CU 70</option>			<option value='CU 71'>CU 71</option>			<option value='CU 72'>CU 72</option>			<option value='CU 73'>CU 73</option>			<option value='CU 75'>CU 75</option>			<option value='CP 04'>CP 04</option>			<option value='CP 01'>CP 01</option>			<option value='CP 02'>CP 02</option>			<option value='ME 02'>ME 02</option>			<option value='ME 03'>ME 03</option>			<option value='ME 04'>ME 04</option>			<option value='ME 05'>ME 05</option>			<option value='ME 06'>ME 06</option>			<option value='ME 07'>ME 07</option>			<option value='ME 08'>ME 08</option>			<option value='ME 09'>ME 09</option>			<option value='ME 11'>ME 11</option>			<option value='ME 12'>ME 12</option>			<option value='ME 13'>ME 13</option>			<option value='ME 14'>ME 14</option>			<option value='ME 15'>ME 15</option>			<option value='ME 16'>ME 16</option>			<option value='ME 20'>ME 20</option>			<option value='ME 21'>ME 21</option>			<option value='ME 22'>ME 22</option>			<option value='ME 24'>ME 24</option>			<option value='ME 34'>ME 34</option>			<option value='ME 35'>ME 35</option>			<option value='ME 36'>ME 36</option>			<option value='ME 37'>ME 37</option>			<option value='ME 38'>ME 38</option>			<option value='ME 39'>ME 39</option>			<option value='ME 41'>ME 41</option>			<option value='ME 42'>ME 42</option>			<option value='ME 43'>ME 43</option>			<option value='ME 44'>ME 44</option>			<option value='ME 45'>ME 45</option>			<option value='ME 46'>ME 46</option>			<option value='ME 47'>ME 47</option>			<option value='ME 48'>ME 48</option>			<option value='ME 49'>ME 49</option>			<option value='ME 50'>ME 50</option>			<option value='ME 51'>ME 51</option>			<option value='ME 52'>ME 52</option>			<option value='ME 53'>ME 53</option>			<option value='ME 54'>ME 54</option>			<option value='ME 55'>ME 55</option>			<option value='ME 56'>ME 56</option>			<option value='ME 57'>ME 57</option>			<option value='M-PROF-1'>M-PROF-1</option>			<option value='M-PROF-2'>M-PROF-2</option>			<option value='MI3P 01'>MI3P 01</option>			<option value='MI3P 02'>MI3P 02</option>			<option value='MI3P 04'>MI3P 04</option>			<option value='MI3P 06'>MI3P 06</option>			<option value='MI3P 07'>MI3P 07</option>			<option value='MI3P 08'>MI3P 08</option>			<option value='MI3P 09'>MI3P 09</option>			<option value='MI3P 10'>MI3P 10</option>			<option value='MI3P 11'>MI3P 11</option>			<option value='MI3P 12'>MI3P 12</option>			<option value='MI3P 13'>MI3P 13</option>			<option value='MI3P 14'>MI3P 14</option>			<option value='MI3P 15'>MI3P 15</option>			<option value='MI3P 16'>MI3P 16</option>			<option value='MI3P 17'>MI3P 17</option>			<option value='MI3P 18'>MI3P 18</option>			<option value='MI3P 19'>MI3P 19</option>			<option value='MI3P 20'>MI3P 20</option>			<option value='MI3P 21'>MI3P 21</option>			<option value='MIV 01'>MIV 01</option>			<option value='MIV 02'>MIV 02</option>			<option value='MIV 04'>MIV 04</option>			<option value='MIV 05'>MIV 05</option>			<option value='MIVD 02'>MIVD 02</option>			<option value='RC 01'>RC 01</option>			<option value='RC 02'>RC 02</option>			<option value='RC 03'>RC 03</option>			<option value='RC 04'>RC 04</option>			<option value='RC 05'>RC 05</option>			<option value='RC 09'>RC 09</option>			<option value='RC 20'>RC 20</option>			<option value='RC 21'>RC 21</option>			<option value='RC 23'>RC 23</option>			<option value='RC 28'>RC 28</option>			<option value='RC 30'>RC 30</option>			<option value='RC 35'>RC 35</option>			<option value='RC 37'>RC 37</option>			<option value='RC 38'>RC 38</option>			<option value='RC 40'>RC 40</option>			<option value='RC 43'>RC 43</option>			<option value='RC 44'>RC 44</option>			<option value='RC 45'>RC 45</option>			<option value='RC 48'>RC 48</option>			<option value='RC 49'>RC 49</option>			<option value='RC 50'>RC 50</option>			<option value='RC 51'>RC 51</option>			<option value='RP 04'>RP 04</option>			<option value='RP 01'>RP 01</option>			<option value='RP 02'>RP 02</option>			<option value='RP 03'>RP 03</option>			<option value='COBIC  BAL'>COBIC  BAL</option>			<option value='ALESAMETRO  01'>ALESAMETRO  01</option>			<option value='ALESAMETRO  02'>ALESAMETRO  02</option>			<option value='ALESAMETRO  06'>ALESAMETRO  06</option>			<option value='ALESAMETRO  03'>ALESAMETRO  03</option>			<option value='COP-1'>COP-1</option>			<option value='COP-4'>COP-4</option>			<option value='COP-6'>COP-6</option>			<option value='TOR 02'>TOR 02</option>		</select>		";
@@ -3896,11 +3912,11 @@
                 }), t;
             },
             performToggleState: function() {
-                this.options.performToggleTaskState(/*this.cleanModals*/location.reload());
+                this.options.performToggleTaskState(this.cleanModals());
             },
             performToggleStateJob: function() {
                 this.options.performToggleTaskState(this.cleanModals, !0), $(this.options.checkbox).attr("checked", !1),// this.cleanModals();
-                location.reload();
+                //location.reload();
             },
             cancelToggleState: function() {
                 $(this.options.checkbox).attr("checked", !1), location.reload();
@@ -4044,10 +4060,11 @@
                                 ot_id: o,
                                 name: t.name,
                                 description: t.description,
+                                eta: t.eta,
                                 selected_row_position: s
                             },
                             success: function(t) {
-                                console.log("ROW = ", s), console.log("nose que es n() -->", n()), t === !0 && (n(), e.reloadRowDetails());
+                                e.reloadRowDetails();
                             }
                         });
                     }
@@ -4193,7 +4210,6 @@
                 $(".ot_id_" + e).append('<p class="row_details_headers">Nombre - Descripción<span>Estado - Vencimiento</span></p>');
             },
             bindRenderOtTaskForm: function(e, t, n) {
-                console.log(this.ottask_form)
                 var r = this;
                 $(e).on("click", function() {
                     $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 2 && ($("#tasksCompletitionPercentage").remove(),$('#ot_right').unbind(), $(".task_form").remove(), r.ottask_form = new C.View.OtTaskForm({
@@ -4248,6 +4264,7 @@
                             success: function(t) {
                                 F.onSuccess(t, function(t) {
                                     e(), i.reloadRowDetails();
+                                    console.log('heraldo')
                                 }, function(e) {
                                     F.msgError("Ocurrió un error al completar la Tarea");
                                 }), r(t);

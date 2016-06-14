@@ -66,7 +66,7 @@ Ottask.resources = function(req, res, next) {
 
 Ottask.add = function(req, res, next) {
   var q, new_task_position = 1;
-  console.log(req.body.selected_row_position)
+  console.log(req.body)
   if (req.body.selected_row_position > 0) {
     q = " \
       UPDATE ottask \

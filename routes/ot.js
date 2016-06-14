@@ -335,11 +335,7 @@ Ot.update = function(req, res, next) {
                       
                       if (max[0].eta){
                         startDay = moment(ot.created_at);
-                        console.log(startDay)
-                        console.log('Dias desde la ultima prioridad: '+max[0].eta)
-                        console.log('Dias estimados: '+t.eta)
                         startDay.add('days', Number(max[0].eta) + Number(t.eta));
-                        console.log(startDay)
                       }
                       else{
                         startDay = moment(ot.created_at).format('YYYY-MM-DD') 
@@ -359,9 +355,7 @@ Ot.update = function(req, res, next) {
                       }).save();
                       position += 1;
                       if (max[0].eta) {
-                        console.log(startDay)
                         startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
-                        console.log(startDay)
                       };
                     })
                   });
@@ -369,7 +363,7 @@ Ot.update = function(req, res, next) {
               });
             });
           }
-         });
+        });
         res.send({ result: true });
       });
     }

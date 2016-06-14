@@ -186,7 +186,7 @@
             $("#head a").removeClass("ui-state-active"), $("#tabs a").removeClass("active-tab");
             if (e !== !1) {
                 $("#head a[href='/#/" + e.split("/")[0] + "']").addClass("ui-state-active"), $("#tabs a[href='/#/" + e + "']").addClass("active-tab");
-                var t = [ "ots/plans", "crud/intervention", "crud/task" ];
+                var t = [ /*"ots/plans", */"crud/intervention", "crud/task" ];
                 _.indexOf(t, e) === -1 ? ($("#left").css({
                     width: "75%"
                 }), $("#right").css({
@@ -276,8 +276,10 @@
         }, F.getDataTableSelection = function(e) {
             var t = [], n = $(e).dataTable().fnGetNodes();
             for (var r = 0; r < n.length; r += 1) $(n[r]).hasClass("selected_row") && t.push(n[r]);
-            console.log(t)
             return t;
+        }, F.reloadDataTable = function(e) {
+            $(e).dataTable().api().ajax.reload()
+            $(e).hide().fadeIn(500);
         };
     }), e.define("/F.validations.js", function(e, t, n, r, i, s) {
         F.V.len = function(e) {
@@ -353,7 +355,7 @@
                 type: "success",
                 closeOnSelfHover: !0
             });
-        }, F.msgError = function(e, f) {
+        }, F.msgError = function(e) {
             noty({
                 text: e,
                 layout: "topRight",
@@ -396,32 +398,44 @@
                 "class": "selection_id",
                 value: 0
             }));
+            console.log(e);
         }, F.appendTitle = function(e, t) {
             $(e).append('<h3 class="formtitle">' + t + "</h3>");
         }, F.createDataTable = function(e, t, n) {
             var rows = '';
             var attrs = [];
-            hidden_columns = [0];
+            var hidden_columns = [0];
+            var order;
+            if(e.datatableOptions){
+                if(e.datatableOptions.aaSorting){
+                    order = e.datatableOptions.aaSorting;
+                }
+            };
             (e.headers).forEach(function(header){
                 rows += '<th>'+header+'</th>';
             });
-            (e.hidden_columns).forEach(function(hidden){
-                hidden_columns.push((e.attrs).indexOf(hidden));
-            });
+            if (e.hidden_columns) {
+                (e.hidden_columns).forEach(function(hidden){
+                    hidden_columns.push((e.attrs).indexOf(hidden));
+                });
+            };
             (e.attrs).forEach(function(attr){
                 attrs.push({data:attr});
             });
-            var table = '<table id="'+e.name+'Table" style="padding:10px" class="display '+e.name+'" cellspacing="0" width="100%">'+
-                            '<thead>'+
-                                '<tr>'+
-                                    rows+    
-                                '</tr>'+
-                            '</thead>'+
-                        '</table>';
-                    
+            var table = '<div id="'+e.name+'_left">'+
+                            '<table id="'+e.name+'_table" style="padding:10px" class="display '+e.name+'_table" cellspacing="0" width="100%">'+
+                                '<thead>'+
+                                    '<tr>'+
+                                        rows+    
+                                    '</tr>'+
+                                '</thead>'+
+                            '</table>'+
+                        '</div>';
+
             $("#left").html(table);
-            var t = $('#'+e.name+'Table').dataTable({
-                ajax: '/'+e.name,
+            
+            var datatable = $('#'+e.name+'_table').dataTable({
+                ajax: e.source,
                 columns: attrs,
                 columnDefs: [
                     {
@@ -429,15 +443,49 @@
                         visible: false,
                     },
                 ],
-                order: [[ 0, "asc" ]],
+                order: order,
                 iDisplayLength: 25,
-                oLanguage:{
-                    sSearch: 'Buscar'
+                oLanguage: {
+                    oPaginate: {
+                        sFirst: "Inicio",
+                        sPrevious: "Anterior",
+                        sNext: "Siguiente",
+                        sLast: "Final"
+                    },
+                    sEmptyTable: "No existen registros",
+                    sInfo: "_START_ - _END_ de _TOTAL_",
+                    sInfoEmpty: "",
+                    sInfoFiltered: "(filtrando de _MAX_ en total)",
+                    sInfoThousands: ".",
+                    sLengthMenu: "Mostrar _MENU_",
+                    sLoadingRecords: "Cargando...",
+                    sProcessing: "Procesando...",
+                    sSearch: "Buscar",
+                    sZeroRecords: "No existen registros"
                 },
+                dom: 'lBfr<"toolbar">tip',
+                buttons: [
+                        'copy', 'csv', 'excel', 'pdf'
+                    ],
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
                 },
             });
+
+            $(document).on('click', '#'+e.name+'_table tbody tr', function()
+            {
+                if (!$(this).hasClass('details')){
+                    var i = datatable.fnGetData(this);
+                    $("." + e.name + "_form .selection_id").val(i.id);
+                    $("." + e.name + "_infocard .selection_id").val(i.id); 
+                    $("#" + e.name + "_table tr").removeClass("selected_row"); 
+                    $(this).addClass("selected_row"); 
+                    $(".BUTTON_create").hide(); 
+                    $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").show(); 
+                }
+                t && t(i);
+            });
+            n && n($("." + e.name + "_table"), e.options.open_ot_number_on_start);
             /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
             _.each(e.headers, function(e) {
                 $(r).append($("<th>").html(e));
@@ -502,13 +550,25 @@
             $(e).each(function() {
                 this.reset();
             });
+        }, F.initForm = function(e) {
+            $(e).find("input:text, input:password, textarea").val(null);
+            $(e).find("input:checkbox").attr("checked", !1);
+            $(e).find("select").val(-1).trigger('liszt:updated');
         }, F.cleanForm = function(e) {
-            $(e).find("input:text, input:password, textarea").val(null), $(e).find("input:checkbox").attr("checked", !1), $(e).find("select").val(-1);
+            $(e).find("input:text, input:password, textarea").val(null);
+            $(e).find("input:checkbox").attr("checked", !1);
+            $(e).find("select").val(-1).trigger('liszt:updated');
+            $(e).find('.selection_id').val('');
+            $(e).find('.dispensable').remove();
+            $(e).find('option:first').prop('selected', function() {
+                return this.defaultSelected;
+            });
+            $(".BUTTON_save, .BUTTON_cancel, .BUTTON_delete").hide(), $(".BUTTON_create").show();
         }, F.getFormFields = function(e) {
             return $(e).find("input:text, input:password, input:checkbox, select, textarea");
         }, F.assignValuesToForm = function(e, t) {
             var n = F.getFormFields(e), r;
-            F.cleanForm(e), _.each(n, function(e, n) {
+            F.initForm(e), _.each(n, function(e, n) {
                 r = $(e).attr("name");
                 if ($(e).hasClass("chzn-select") && $(e).attr("multiple")) {
                     var i = t[r].split(",");
@@ -538,11 +598,12 @@
                 "class": "BUTTON_save" + r,
                 value: "Guardar"
             })), e.buttons.cancel && $(t).append($("<input>", {
-                type: "reset",
+                type: "button",
                 "class": "BUTTON_cancel" + r,
                 value: "Cancelar"
             }).on("click", function() {
-                e.isCRUD && n(), $("." + e.name + "_table tr").removeClass("selected_row");
+                F.cleanForm(t)
+                e.isCRUD && n(), $(".selected_row").removeClass("selected_row");
             })), e.buttons.delete && $(t).append($("<input>", {
                 type: "button",
                 "class": "BUTTON_delete" + r,
@@ -568,12 +629,12 @@
                     f = $('<input type="hidden" name="' + n + '" value="' + u + '"' + a + "/>");
                     break;
                   case "select":
-                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:89%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
+                    f = $('<select data-placeholder="Seleccione ' + c + '..." name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:90%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
                         $(f).append('<option value="' + e.id + '">' + e.name + "</option>");
                     });
                     break;
                   case "selectmultiple":
-                    f = $('<select data-placeholder="Seleccione ' + c + '..."' + ' multiple name="' + n + '"' + a + ' class="chzn-select" style="display:none; position:relative; width:91%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
+                    f = $('<select data-placeh 91%;">'), $(f).append("<option value></option>"), _.each(e.relations[F.withoutId(n) + "s"], function(e) {
                         $(f).append('<option value="' + e.id + '">' + e.name + "</option>");
                     });
                     break;
@@ -603,7 +664,7 @@
                   default:
                     f = $('<input type="text" name="' + n + '" value="' + u + '"' + a + "/>");
                 }
-                l = $("<p>", {
+                l = $("<span>", {
                     "class": e.name + "_" + n
                 }), $(l).append(i).append(f), $(s).append(l), t.required && t.required === !0 && $(n).attr("required", !0);
                 if (t.check !== undefined) {
@@ -671,7 +732,14 @@
                 r();
             }, 5e3), n && n(e);
         };
-    }), e.define("/widgets/Alert.js", function(e, t, n, r, i, s) {
+    }), 
+    $(document).on('click', '#head a:not(a#logout_button, a#scheduler)', function(){
+        location.reload();
+    })
+    $(document).on('click', '.blockUI .BUTTON_cancel, .blockOverlay', function(){
+        $('.blockUI').remove()
+    }),
+    e.define("/widgets/Alert.js", function(e, t, n, r, i, s) {
         C.Widget.Alert = {
             initialize: function() {
                 $("#head #tabs").empty().append('<a href="/#/ini/alerts">Alertas de O/T</a><a href="/#/ini/alerts_tasks">Alertas de Tareas</a>'), $("#left .inner").empty().append('<div id="alert_left"></div>'), $("#right .inner").empty().append('<div id="alert_right"></div>');
@@ -744,7 +812,7 @@
     }), e.define("/widgets/Reports.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/ot">Ordenes de trabajo</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/ot">Ordenes de trabajo</a>'), $("#left .inner").empty().append('<div id="otReport_left"></div>'), $("#right .inner").empty().append('<div id="otReporteport_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -1457,6 +1525,7 @@
     }), e.define("/views/alert/AlertTable.js", function(e, t, n, r, i, s) {
         C.View.AlertTable = Backbone.View.extend({
             name: "alert",
+            source: "/alert",
             headers: [ "ID", "O/T", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de entrega" ],
             attrs: [ "id", "number", "client_id", "client", "equipment", "delivery" ],
             data: null,
@@ -1542,11 +1611,12 @@
     }), e.define("/views/alert/AlertTasksTable.js", function(e, t, n, r, i, s) {
         C.View.AlertTasksTable = Backbone.View.extend({
             name: "alert",
-            headers: [ "ID", "O/T", "Nombre", "Descripción", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de vencimiento" ],
-            attrs: [ "id", "number", "name", "description", "client_id", "client", "equipment", "due_date" ],
+            source: "/alerttask",
+            headers: [ "ID", "O/T", "Nombre", "Descripción", "Cliente", "Equipo (TAG)", "Fecha de vencimiento" ],
+            attrs: [ "id", "number", "name", "description", "client", "equipment", "due_date" ],
             data: null,
             datatableOptions: {
-                aoColumns: [ null, null, null, null, null, null, null, {
+                aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
                 } ],
                 aaSorting: [ [ 1, "desc" ] ]
@@ -1616,7 +1686,7 @@
                             collection: t,
                             client_table: e.client_table
                         }), e.client_options = new C.View.ClientAuthorizationOptions({
-                            el: $("#client_left .fg-toolbar")[0],
+                            el: $("#left .toolbar")[0],
                             client_table: e.client_table,
                             client_form: e.client_form
                         });
@@ -1627,14 +1697,16 @@
     }), e.define("/views/client/ClientAuthorizationTable.js", function(e, t, n, r, i, s) {
         C.View.ClientAuthorizationTable = Backbone.View.extend({
             name: "client",
+            source: "/authorization",
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
+            hidden_columns: ['ot_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
                 }, null, null ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [ [ 2, "desc" ] ]
             },
             rowHandler: function(e, t) {
                 var n = this, r = $(e).find("td")[7];
@@ -1688,6 +1760,9 @@
                         });
                     });
                 });
+                $(document).on('click', '.client_table tbody tr', function(evento){
+                    e.selectRow(evento);
+                })
             },
             events: {
                 "click .client_table tr": "selectRow"
@@ -1695,6 +1770,7 @@
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
                 var t = this, n = $($(this.selected_row).find("td")[0]).text();
+                console.log(n)
                 n.length && $.ajax({
                     url: "/authorization/setSessionOtId/" + n,
                     success: function(e) {
@@ -1719,7 +1795,7 @@
                         $(e).attr("disabled", !0), t.saveRequirementsReport(function() {
                             $(e).attr("disabled", !1), F.msgOK("Observaciones añadidas al Informe");  setTimeout(function(){location.reload()}, 1e3);
                         });
-                    }), $("#requirements_report_window .BUTTON_send").on("click", function() {
+                    }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
                         var n = this;
                         t.saveRequirementsReport(function() {
                             $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
@@ -1744,7 +1820,7 @@
             requirementsReportTemplate: function(e, t) {
                 var n = this;
                 this.getOtTasks(e.ot_id, function(r) {
-                    var i = moment().format("DD/MM/YYYY"), s = n.getTasksMarkup(r), o = n.getPhotosUploadMarkup(), u = n.getOtMaterialMarkup(e.ot_number), a = n.getCurrentPhotosMarkup(), f = n.getButtonsMarkup(r);
+                    var i = moment().format("DD/MM/YYYY"), s = n.getTasksMarkup(r), o = n.getPhotosUploadMarkup(), u = n.getOtMaterialMarkup(e.ot_id), a = n.getCurrentPhotosMarkup(), f = n.getButtonsMarkup(r);
                     $("body").append('<div id="requirements_report_window" style="display:none; max-height:500px; overflow:auto;"><h3 class="lefty">INFORME DE REQUERIMIENTOS DE TAREAS</h3><h3 class="righty">' + i + "</h3>" + "<br /><br />" + '<h3 class="lefty">O/T Nº: ' + e.ot_number + "</h3>" + "<br /><br />" + '<input type="button" class="button BUTTON_req_info_tasks" value="Tareas" />' + '<input type="button" class="button BUTTON_req_info_material" value="Materiales" />' + '<input type="button" class="button BUTTON_req_info_photos_upload" value="Añadir Fotografías" />' + '<input type="button" class="button BUTTON_req_info_current_photos" value="Fotografías Actuales" />' + "<br /><br /><br />" + '<form name="requirements_report_form" class="req_info_tasks clean_form">' + '<table style="width:100%;">' + s + "</table>" + "</form>" + '<div class="req_info_material" style="display:none;">' + u + "</div>" + '<div class="req_info_photos_upload" style="display:none;">' + o + "</div>" + '<div class="req_info_current_photos" style="display:none;">' + a + "</div>" + "<br /><br />" + f + "</div>"), n.bindInputFiles(), n.bindButtons(), t && t();
                 });
             },
@@ -1877,7 +1953,6 @@
                 });
             },
             cancelShowRequirementsReport: function() {
-                //this.cleanModals();
                 location.reload()
             },
             saveRequirementsReport: function(e) {
@@ -1886,6 +1961,7 @@
                     url: "/authorization/saveRequirementsReport",
                     data: $("form[name=requirements_report_form]").serializeObject(),
                     success: function(t) {
+                        console.log(t)
                         t.result === !0 && e(t);
                     }
                 });
@@ -1982,14 +2058,16 @@
     }), e.define("/views/client/ClientAuthorizationHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.ClientAuthorizationHistoryTable = Backbone.View.extend({
             name: "client",
+            source: "/authorizationhistory",
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
+            hidden_columns: ['ot_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
                 }, null, null ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [ [ 2, "desc" ] ]
             },
             rowHandler: function(e, t) {
                 var n = $(e).find("td")[7];
@@ -2073,6 +2151,7 @@
     }), e.define("/views/client/ClientPayrollTable.js", function(e, t, n, r, i, s) {
         C.View.ClientPayrollTable = Backbone.View.extend({
             name: "client",
+            source: "/client",
             headers: [ "ID", "Nombre", "TAG", "C.U.I.T.", "I.V.A.", "Dirección", "Número", "Piso", "Dpto.", "Ciudad", "E-mail" ],
             attrs: [ "id", "name", "tag", "cuit", "iva_id", "address", "addressnumber", "floor", "apartment", "city_id", "email" ],
             hidden_colums: [ "iva_id", "city_id" ],
@@ -2098,9 +2177,10 @@
                     label: "Nombre",
                     check: "alpha"
                 },
-                username: {
+                user_id: {
                     label: "Usuario general para el cliente",
-                    check: "alpha"
+                    check: "alpha",
+                    type: 'select'
                 },
                 tag: {
                     label: "TAG",
@@ -2148,7 +2228,9 @@
                 var e = this;
                 F.getAllFromModel("iva", function(t) {
                     e.relations.ivas = t, F.getAllFromModel("city", function(t) {
-                        e.relations.citys = t, F.createForm(e);
+                        e.relations.citys = t, console.log(t), F.getAllFromModel('clientuser', function(t){
+                            e.relations.users = t, console.log(t), F.createForm(e);
+                        })
                     });
                 });
             },
@@ -2169,41 +2251,49 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".client_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addClient: function() {
                 var e = this;
-                this.collection.create($(".client_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El Cliente ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'POST',
+                    data: $('.client_form').serializeObject(),
+                    url: '/client',
+                    success: function(t){
+                        console.log(t, n)
+                        if (t.result) {
+                            F.cleanForm('.client_form');
+                            F.msgOK("El cliente ha sido creado");
+                            F.reloadDataTable('.client_table');
+                        }else{
+                            F.msgError(t.error);
+                        }
                     }
-                });
+                })
             },
             editClient: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".client_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El Cliente ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.client_form').serializeObject(),
+                    url: '/client/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.client_form');
+                        F.msgOK('El cliente ha sido actualizado');
+                        F.reloadDataTable('.client_table');
                     }
-                });
+                })
             },
             delClient: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Cliente?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El Cliente ha sido eliminado");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/client/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.client_form');
+                            F.msgOK('El cliente ha sido eliminado');
+                            F.reloadDataTable('.client_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -2499,7 +2589,7 @@
                             collection: t,
                             material_table: e.material_table
                         }), e.material_options = new C.View.MaterialOrderOptions({
-                            el: $("#material_left .fg-toolbar")[0],
+                            el: $("#material_left .toolbar")[0],
                             material_table: e.material_table,
                             material_infocard: e.material_infocard
                         });
@@ -2510,9 +2600,11 @@
     }), e.define("/views/material/MaterialOrderTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialOrderTable = Backbone.View.extend({
             name: "material",
+            source: "/materialorder",
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "ottask", "provider", "date" ],
             data: null,
+            hidden_columns: ["ot_id"],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, {
                     sType: "es_date"
@@ -2523,6 +2615,8 @@
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     e.showDetails(t);
+                    $('.material_order_infocard .selection_id').val(t.id)
+
                 });
             },
             events: {
@@ -2532,34 +2626,67 @@
                 this.selected_row = $(e.currentTarget);
             },
             showDetails: function(e) {
+                var id = e.ot_number
                 var t = this;
                 $.ajax({
                     url: "/materialorder/elements/" + e.id,
                     success: function(e) {
                         e.result === !0 && ($(".material_order_infocard").empty(), t.renderDetails(e.elements));
+                        var details = '<br /><div class="details"><h3>Detalles del pedido</h3></div>'
+                        $('.material_order_infocard').append(details);
+                        console.log(e.id)
+                        $('.material_order_infocard').append('<input type="hidden" name="selection_id" class="selection_id" value="'+id+'">') 
+                        _.each(e.elements, function(e){
+                            $.ajax({
+                                url: "/materialreception/byElements/" + e.id,
+                                success: function(e) {
+                                    e.forEach(function(e) {
+                                        var t, n;
+                                        e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
+                                    });
+                                }
+                            })
+                        })
                     }
                 });
             },
             renderDetails: function(e) {
                 var t, n, r;
-                $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>"), _.each(e, function(e) {
+                var details = [];
+                $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>")
+                 _.each(e, function(e) {
                     n = $("<input>", {
                         type: "checkbox",
                         checked: e.arrived == 1
                     }), $(n).on("click", function() {
-                        console.log(C.Session.getUser().area_id), console.log(C.Session.getUser().role_id), (C.Session.getUser().area_id < 2 || C.Session.getUser().area_id > 3) && C.Session.getUser().role_id != 7 ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
+                        (!((C.Session.getUser().area_id == 3) || (C.Session.getUser().role_id == 7 || C.Session.getUser().role_id == 5))) ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
                             $.unblockUI(), window.setTimeout(function() {
                                 $("#material_order_received").remove();
                             }, 1e3);
                         }), $("#material_order_received .BUTTON_proceed").on("click", function() {
-                            console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
-                                url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
-                                success: function(t) {
-                                    t.result === !1 && $(n).attr("checked", e.arrived);
-                                }
-                            }), $.unblockUI(), window.setTimeout(function() {
-                                $("#material_order_received").remove();
-                            }, 1e3);
+                            if (!isNaN($("#material_order_received input:text[name=quantity_received]").val())){
+                                console.log($("#material_order_received input:text[name=quantity_received]").val())
+                                console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
+                                    url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
+                                    success: function(t) {
+                                        console.log(e.id)
+                                        t.result === !1 && $(n).attr("checked", e.arrived);
+                                        $.ajax({
+                                            url: "/materialreception/byElements/" + e.id,
+                                            success: function(e) {
+                                                e.forEach(function(e) {
+                                                    var t, n;
+                                                    e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(".material_order_infocard .details").append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n + "<br />");
+                                                });
+                                            }
+                                        })
+                                    }
+                                }), $.unblockUI(), window.setTimeout(function() {
+                                    $("#material_order_received").remove();
+                                }, 1e3);
+                            }else{
+                                F.msgError('La cantidad debe ser expresada en números')
+                            }
                         }), $.blockUI({
                             message: $("#material_order_received"),
                             css: {
@@ -2616,13 +2743,12 @@
                         success: function(e) {
                             e.forEach(function(e) {
                                 var t, n;
-                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", $(r).append("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n);
+                                e.remito ? n = "Remito Nº " + e.remito : n = " ", e.observation != "sin observaciones" ? t = "<br /> Observaciones:" + e.observation : t = " ", details.push("<br />" + e.date + "-> <span>" + e.user + " </span>recibió:<span> " + e.quantity + '</span> "<span>' + e.mccat + ":</span> " + e.matname + '"' + t + "<br />" + n);
                             });
                         }
                     }).success(function() {
-                        console.log("DONE");
                     }), $(".material_order_infocard").append(r);
-                });
+                })
             }
         });
     }), e.define("/views/material/MaterialOrderInfoCard.js", function(e, t, n, r, i, s) {
@@ -2639,6 +2765,7 @@
                 this.render();
             },
             render: function() {
+                console.log(this.template())
                 return C.Session.isVigilance() || $(this.el).append(this.template()), this;
             },
             template: function() {
@@ -2678,7 +2805,8 @@
                             },
                             success: function(e) {
                                 e.result === !0 ? t(function() {
-                                    window.location.reload();
+                                    $('.blockUI').remove();
+                                    F.reloadDataTable('.material_table')
                                 }) : t(function() {
                                     F.msgError("Ocurrió un error al guardar el pedido");
                                 });
@@ -2697,14 +2825,23 @@
         C.View.MaterialCreateOrder = Backbone.View.extend({
             name: "material_create_order_window",
             initialize: function() {
+                e = this;
+                e.el.unbind
                 this.getMaterialCategories(), this.getMaterialUnits(), this.render();
+                $(document).on('change', '#order_elements select', function(){
+                    var id = $(this).val()
+                    var index = Number($(this).parent().find('.id').val())
+                    $(this).parent().find('.property').remove()
+                    console.log(index)
+                    e.appendProperties(id, index)
+                })
             },
             getMaterialCategories: function() {
                 var e = this;
                 $.ajax({
                     url: "/materialcategory",
                     success: function(t) {
-                        e.material_categories = t;
+                        e.material_categories = t.data;
                     }
                 });
             },
@@ -2724,15 +2861,47 @@
                     css: {
                         top: "10%",
                         left: "30%",
-                        width: "38%",
+                        width: "40%",
                         border: "none",
                         padding: "1%",
                         cursor: "default"
                     }
                 });
             },
+            appendProperties: function(id, index){
+                $.ajax({
+                    url:'/materialcategory/getProperties/'+id,
+                    success: function(data){
+                        console.log(data)
+                        var el = $('.material_container_'+index)
+                        if (data.material){
+                            $(el).append('<input class="property" type="text" name="material_element_'+index+'" placeholder="Material" style="width:80%; margin: 0 auto">')
+                        }
+                        if (data.externaldiameter) {
+                            $(el).append('<input type="text" class="property" name="externaldiameter_'+index+'" placeholder="Diámetro externo" style="width:19%; margin-right: 1%; display:inline">')
+                        }
+                        if (data.internaldiameter){
+                            $(el).append('<input type="text" class="property" name="internaldiameter_'+index+'" placeholder="Diámetro interno" style="width:19%; margin-right: 1%; display:inline">')
+                        }
+                        if (data.width) {
+                            $(el).append('<input type="text" class="property" name="width_'+index+'" placeholder="Ancho" style="width:19%; margin-right: 1%; display:inline">')
+                        };
+                        if (data.height) {
+                            $(el).append('<input type="text" class="property" name="height_'+index+'" placeholder="Alto" style="width:19%; margin-right: 1%; display:inline">')
+                        };
+                        if (data.longitude) {
+                            $(el).append('<input type="text" class="property" name="longitude_'+index+'" placeholder="Longitud" style="width:19%; margin-right: 1; display:inline">')
+                        };
+                        if (data.thickness) {
+                            $(el).append('<input type="text" class="property" name="thickness_'+index+'" placeholder="Espesor" style="width:19%; margin-right: 1; display:inline">')
+                        }
+                    }
+                })
+            },
             template: function() {
-                $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
+                var i = $('.material_order_infocard .selection_id').val()
+                if (i == 0){ i = ''}
+                $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" value="'+i+'" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
             },
             appendOrderMaterialsWidget: function() {
                 var e = this, t = 1, n = $("<input>", {
@@ -2740,15 +2909,15 @@
                     value: "Agregar Material"
                 }), r, i;
                 $("#order_elements").append(n), $(n).on("click", function() {
-                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" name="material_element_' + t + '" placeholder="Material" style="display:inline; width:75px; height:19px;">'), $(i).append(' <input type="text" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(i).append('<input type="hidden" class="id" name="id" value="'+t+'">'), $(r).on("click", function() {
                         $(this).parent().remove();
                     }), t += 1, r = null, i = null;
                 });
             },
             materialCategoriesList: function(e) {
-                var t = $("<select>", {
+                var t = $('<select>', {
                     name: "material_category_" + e,
-                    style: "display:inline; width:auto; height:25px; margin-right:10px;"
+                    style: "display:inline; width:250px; height:25px;"
                 });
                 return _.each(this.material_categories, function(e) {
                     $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
@@ -2834,6 +3003,7 @@
     }), e.define("/views/materialcategory/MaterialCategoryTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialCategoryTable = Backbone.View.extend({
             name: "materialcategory",
+            source: "/materialcategory",
             headers: [ "ID", "Categoría" ],
             attrs: [ "id", "name" ],
             data: null,
@@ -2857,11 +3027,51 @@
                 name: {
                     label: "Nombre",
                     check: "alpha"
-                }
+                },
             },
             isCRUD: !0,
             initialize: function() {
+                var e = this
                 F.createForm(this);
+                var check = [
+                    {
+                        name: 'Descripción',
+                        tag: 'material',
+                    },
+                    {
+                        name: 'Diametro interno',
+                        tag: 'internaldiameter',
+                    },
+                    {
+                        name: 'Diametro externo',
+                        tag: 'externaldiameter',
+                    },
+                    {
+                        name: 'Longitud',
+                        tag: 'longitude',
+                    },
+                    {
+                        name: 'Ancho',
+                        tag: 'width',
+                    },
+                    {
+                        name: 'Alto',
+                        tag: 'height',
+                    },
+                    {
+                        name: 'Espesor',
+                        tag: 'thickness',
+                    },
+                ]
+                $('.materialcategory_form input[type=text]').after('<br /><div class="check_section"></div>');
+                check.forEach(function(c){
+                    e.template(c.name, c.tag);
+                })
+                $('.check_section').append('<br />');
+            },
+            template: function(name, value){
+                var input = '<input style="margin:5px" type="checkbox" name="'+value+'"> '+name+'<br />';
+                $('.check_section').append(input);
             },
             events: {
                 "click .materialcategory_form .BUTTON_create": "addMaterial",
@@ -2880,43 +3090,40 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                return;
-                var t;
-            },
-            editTableRow: function(e) {},
             addMaterial: function() {
                 var e = this;
                 this.collection.create($(".materialcategory_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La categoria ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido creada");
+                        F.reloadDataTable('.materialcategory_table');
                     }
                 });
             },
             editMaterial: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".materialcategory_form").serializeObject(), {
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.materialcategory_form').serializeObject(),
+                    url: '/materialcategory/'+e.getSelectionID(),
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La categoria ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido actualizada");
+                        F.reloadDataTable('.materialcategory_table');
                     }
-                });
+                })
             },
             delMaterial: function() {
                 var e = this;
-                F.msgConfirm("¿Desea eliminar esta Categoría?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La categoria ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
-                        }
-                    });
-                });
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/materialcategory/'+e.getSelectionID(),
+                    success: function(t, n) {
+                        F.cleanForm('.materialcategory_form');
+                        F.msgOK("La categoria ha sido eliminada");
+                        F.reloadDataTable('.materialcategory_table');
+                    }
+                })
             }
         });
     }), e.define("/views/material/MaterialHistory.js", function(e, t, n, r, i, s) {
@@ -2944,14 +3151,16 @@
     }), e.define("/views/material/MaterialHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.MaterialHistoryTable = Backbone.View.extend({
             name: "material",
+            source: "/materialhistory",
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "provider", "date" ],
             data: null,
+            hidden_columns: ["ot_id"],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
                 } ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [[ 1, "desc" ]]
             },
             initialize: function() {
                 var e = this;
@@ -3022,6 +3231,7 @@
     }), e.define("/views/equipment/EquipmentTable.js", function(e, t, n, r, i, s) {
         C.View.EquipmentTable = Backbone.View.extend({
             name: "equipment",
+            source: "/equipment",
             headers: [ "ID", "Equipo (TAG)", "ID Motivo de intervención", "Motivo de intervención", "ID Cliente", "Cliente" ],
             attrs: [ "id", "name", "intervention_id", "intervention", "client_id", "client" ],
             data: null,
@@ -3062,8 +3272,8 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("intervention", function(t) {
-                    e.relations.interventions = t, F.getAllFromModel("client", function(t) {
-                        e.relations.clients = t, F.createForm(e);
+                    e.relations.interventions = t.data, F.getAllFromModel("client", function(t) {
+                        e.relations.clients = t.data, F.createForm(e);
                     });
                 });
             },
@@ -3093,33 +3303,37 @@
                 var e = this;
                 this.collection.create($(".equipment_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El equipo ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.equipment_form');
+                        F.msgOK("El equipo ha sido creado");
+                        F.reloadDataTable('.equipment_table');
                     }
                 });
             },
             editMaterial: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".equipment_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El equipo ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.equipment_form').serializeObject(),
+                    url: '/equipment/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.equipment_form');
+                        F.msgOK('El equipo ha sido actualizado');
+                        F.reloadDataTable('.equipment_table');
                     }
-                });
+                })
             },
             delMaterial: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Equipo?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El equipo ha sido eliminado");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/equipment/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.equipment_form');
+                            F.msgOK('El equipo ha sido eliminado');
+                            F.reloadDataTable('.equipment_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -3162,7 +3376,7 @@
                             collection: t
                         }), $("#right").bind("ot_form_loaded", function(t, n) {
                             $(".right_options").remove(), e.ot_options = new C.View.OtAdminOptions({
-                                el: $("#ot_left .fg-toolbar")[0],
+                                el: $("#ot_left .toolbar")[0],
                                 ot_table: e.ot_table,
                                 ot_form: n
                             });
@@ -3272,6 +3486,7 @@
     }), e.define("/views/ot/OtAdminTable.js", function(e, t, n, r, i, s) {
         C.View.OtAdminTable = Backbone.View.extend({
             name: "ot",
+            source: "/ot",
             headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
             attrs: [ "id", "number", "client_number", "equipment_id", "equipment", "client_id", "client", "intervention_id", "intervention", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
             hidden_columns: [ "workshop_suggestion", "client_suggestion", "remitoentrada", "reworked_number", "notify_client" ],
@@ -3285,9 +3500,13 @@
                 aaSorting:  [ [1,"desc"]],
             },
             initialize: function() {
+                var t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".ot_form"), e);
                 });
+                $(document).on('click', '.ot_table tr', function(evento){
+                    t.selectRow(evento);
+                })
             },
             events: {
                 "click .ot_table tr": "selectRow"
@@ -3377,10 +3596,10 @@
                 var e = this;
                 F.getNextOtNumber(function(t) {
                     e.fields.number.value = t.n, F.getAllFromModel("client", function(t) {
-                        e.relations.clients = t, F.getAllFromModel("equipment", function(t) {
-                            e.relations.equipments = t, F.getAllFromModel("intervention", function(t) {
-                                e.relations.interventions = t, F.getAllFromModel("plan", function(t) {
-                                    e.relations.plans = t, F.createForm(e, !1, function() {
+                        e.relations.clients = t.data, F.getAllFromModel("equipment", function(t) {
+                            e.relations.equipments = t.data, F.getAllFromModel("intervention", function(t) {
+                                e.relations.interventions = t.data, F.getAllFromModel("plan", function(t) {
+                                    e.relations.plans = t.data, F.createForm(e, !1, function() {
                                         $("#right").trigger("ot_form_loaded", [ e ]), $(".ot_form select[name=equipment_id]").after($("<span>", {
                                             "class": "equipment_ot_exists"
                                         })), $(".ot_form select[name=equipment_id]").on("change", function() {
@@ -3431,7 +3650,7 @@
                     success: function(e, t) {
                         var n = e.attributes;
                         F.msgOK("La O/T ha sido creada"), $(".ot_form select[name=client_id]").val(null), $(".ot_form select[name=equipment_id]").val(null);
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.reloadDataTable('.ot_table')
                     }
                 }) : F.msgError("Cargue al menos Cliente y TAG del equipo");
             },
@@ -3444,7 +3663,7 @@
                 success: function(n) {
                   var n = e.attributes;
                   F.msgOK("La O/T ha actualizaa");
-                  setTimeout(function(){location.reload()}, 1e3);
+                  F.reloadDataTable('.ot_table')
                 }
               });
             },
@@ -3467,7 +3686,7 @@
                 return $(e).append($("<input>", {
                     type: "button",
                     "class": "ot_conclude",
-                    value: "Concluír O/T",
+                    value: "Concluir O/T",
                     disabled: "disabled"
                 })), e;
             },
@@ -3485,7 +3704,7 @@
             },
             concludeOt: function() {
                 console.log("ME LLAMO")
-                var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n)[0], i = $(".ot_table").dataTable().fnGetData(n)[1];
+                var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n).id, i = $(".ot_table").dataTable().fnGetData(n).number;
                 F.msgConfirm("¿Realmente desea concluír la auditoría de la Órden de Trabajo Nº " + i + "?", function() {
                   new C.View.OtAdminConcludeForm({
                       el: $("body"),
@@ -3533,7 +3752,7 @@
                     open_ot_number_on_start: this.options.open_ot_number_on_start
                 }), $("#right").bind("ot_infocard_loaded", function(e, n) {
                     $(".right_options").remove(), t.ot_options = new C.View.OtAuditOptions({
-                        el: $("#ot_left .fg-toolbar")[0],
+                        el: $("#ot_left .toolbar")[0],
                         ot_table: t.ot_table,
                         ot_infocard: n
                     });
@@ -3549,7 +3768,11 @@
         C.View.OtAuditAddTask = Backbone.View.extend({
             name: "ot_add_task_window",
             initialize: function() {
-                this.render();
+                var e = this
+                $(document).bind("tasks_loaded", function() {
+                    e.render();
+                    console.log(e.tasks)
+                }),this.getTasks();
             },
             render: function() {
                 var e = this;
@@ -3569,25 +3792,46 @@
                     }
                 });
             },
+            getTasks: function() {
+                var e = this;
+                $.ajax({
+                    type: "GET",
+                    url: "/task",
+                    success: function(t) {
+                        e.tasks = t.data, $(document).trigger("tasks_loaded");
+                    }
+                });
+            },
+            buildTasksList: function(e) {
+                var t = $("<select>", {
+                    name: 'name'
+                });
+                return $(t).append($("<option>", {
+                    value: 0
+                }).text("Seleccione tarea...")), _.each(this.tasks, function(e) {
+                    $(t).append($("<option>", {
+                        value: e.name
+                    }).text(e.name));
+                }), t;
+            },
             template: function() {
-                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i)[0]);
-                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i)[0])+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Nombre</label><input type="text" name="new_task_name" /><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
+                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                $('#add_task_ot_form').prepend(this.buildTasksList('tareas')).prepend('<label>Nombre</label>')
+                $('#add_task_ot_form').append('<label>Tiempo estimado (dias)</label><input type="text" name="eta" style="width:50px;margin:0 auto"><input type="checkbox" name="reprogram">Reprogramar tareas')
             },
             cleanModals: function(e) {
-                $.unblockUI(), window.setTimeout(function() {
-                    $("#ot_add_task_window").remove(), e && e();
-                }, 1e3);
+                $(this).remove();
             },
             performAddTask: function() {
-        	console.log("Se ejecuta");
-                this.options.addNewTask({
-                    name: $("#add_task_ot_form input:text[name=new_task_name]").val(),
-                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val()
-                }, this.cleanModals);
+        	    this.options.addNewTask({
+                    name: $("#add_task_ot_form select").val(),
+                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
+                    eta: $('#add_task_ot_form input[name=eta]').val()
+                }, this.cleanModals());
             },
             cancelAddTask: function() {
-                location.reload()
-                //this.cleanModals();
+                this.cleanModals();
             }
         });
     }), e.define("/views/ot/OtAuditToggleTaskState.js", function(e, t, n, r, i, s) {
@@ -3608,7 +3852,7 @@
                     type: "GET",
                     url: "/employee",
                     success: function(t) {
-                        e.employees = t, $(document).trigger("employees_loaded");
+                        e.employees = t.data, $(document).trigger("employees_loaded");
                     }
                 });
             },
@@ -3799,29 +4043,11 @@
                 }, 500);
             },
             addTask: function() {
-                var e = this;
-                new C.View.OtAuditAddTask({
-                    addNewTask: function(t, n) {
-                        var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i)[0]);
-                        $(".selected_ottask").length && (s = parseInt($(".selected_ottask").attr("data-position"))), $.ajax({
-                            url: "/ottask/add",
-                            type: "POST",
-                            data: {
-                                ot_id: o,
-                                name: t.name,
-                                description: t.description,
-                                selected_row_position: s
-                            },
-                            success: function(t) {
-                                console.log("ROW = ", s), console.log("nose que es n() -->", n()), t === !0 && (n(), e.reloadRowDetails());
-                            }
-                        });
-                    }
-                });
+                this.initializeForm()
             },
             reworkTask: function() {
                 var e = this, t = $(".selection_ottask_id").val();
-                F.getOneFromModel("ottask/get/", $(".selection_ottask_id").val(), function(x){
+                F.getOneFromModel("ottask/get", $(".selection_ottask_id").val(), function(x){
                   if(x[0].completed==1){
                     F.msgConfirm("Esta opreación RETRABAJARÁ la Tarea.", function() {
                         var n = parseInt($(".selected_ottask").attr("data-position"));
@@ -3836,11 +4062,101 @@
                     F.msgError("La tarea debe estar completa para poder ser retrabajada")
                   }
                 })
+            },
+
+            //Formulario AddTasks
+
+            initializeForm: function() {
+                var e = this
+                $(document).unbind()
+                $(document).bind("tasks_loaded", function() {
+                    e.renderForm();
+                    console.log(e.tasks)
+                }),this.getTasks();
+            },
+            renderForm: function() {
+                var e = this;
+                $("#ot_add_task_window").length || (this.templateForm(), $("#ot_add_task_window .BUTTON_cancel").on("click", function() {
+                    e.cancelAddTask();
+                }), $("#ot_add_task_window .BUTTON_proceed").on("click", function() {
+                    e.performAddTask();
+                })), $.blockUI({
+                    message: $("#ot_add_task_window"),
+                    css: {
+                        top: "15%",
+                        left: "30%",
+                        width: "38%",
+                        border: "none",
+                        padding: "1%",
+                        cursor: "default"
+                    }
+                });
+            },
+            getTasks: function() {
+                var e = this;
+                $.ajax({
+                    type: "GET",
+                    url: "/task",
+                    success: function(t) {
+                        e.tasks = t.data, $(document).trigger("tasks_loaded");
+                    }
+                });
+            },
+            buildTasksList: function(e) {
+                var t = $("<select>", {
+                    name: 'name'
+                });
+                return $(t).append($("<option>", {
+                    value: 0
+                }).text("Seleccione tarea...")), _.each(this.tasks, function(e) {
+                    $(t).append($("<option>", {
+                        value: e.name
+                    }).text(e.name));
+                }), t;
+            },
+            templateForm: function() {
+                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
+                $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                $('#add_task_ot_form').prepend(this.buildTasksList('tareas')).prepend('<label>Nombre</label>')
+                $('#add_task_ot_form').append('<label>Tiempo estimado (dias)</label><input type="text" name="eta" style="width:50px;margin:0 auto"><input type="checkbox" name="reprogram">Reprogramar tareas')
+            },
+            cleanModals: function(e) {
+                $('.blockUI').remove();
+                $('#add_task_ot_form').remove()
+            },
+            performAddTask: function() {
+                this.addNewTask({
+                    name: $("#add_task_ot_form select").val(),
+                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
+                    eta: $('#add_task_ot_form input[name=eta]').val()
+                }, this.cleanModals());
+            },
+            cancelAddTask: function() {
+                this.cleanModals();
+            },
+            addNewTask: function(t, n) {
+                e = this
+                var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
+                $(".selected_ottask").length && (s = parseInt($(".selected_ottask").attr("data-position"))), $.ajax({
+                    url: "/ottask/add",
+                    type: "POST",
+                    data: {
+                        ot_id: o,
+                        name: t.name,
+                        description: t.description,
+                        eta: t.eta,
+                        selected_row_position: s
+                    },
+                    success: function(t) {
+                        e.reloadRowDetails();
+                    }
+                });
             }
         });
     }), e.define("/views/ot/OtAuditTable.js", function(e, t, n, r, i, s) {
         C.View.OtAuditTable = Backbone.View.extend({
             name: "ot",
+            source: "/ot",
             headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
             attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
             hidden_columns: [ "number", "reworked_number" ],
@@ -3853,33 +4169,41 @@
                 iDisplayLength: 50000
             },
             initialize: function() {
+                var t = this;
                 function e(e, n) {
                     var r = $(e).dataTable();
-                    $(".ot_table tbody tr").on("click", function() {
-                        r.fnIsOpen(this) ? ($(".task_form").fadeOut("slow", function() {
+                    $(document).on("click", ".ot_table tbody tr", function(evento) {
+                        $(".task_form").fadeOut("slow", function() {
                             $(this).remove();
-                        }), $("#ot_left .ot_rework_task").attr("disabled", !0).css({
-                            color: "graytext"
-                        }), r.fnClose(this)) : r.fnOpen(this, t.generateRowDetails(r, this), "details");
+                        })
+                        if(r.fnIsOpen(this)){
+                            r.fnClose(this)
+                            F.cleanInfocard($('.ot_infocard'));
+                        }else{
+                            if (!$(this).hasClass('details')){
+                                $('.ot_table tbody tr').each(function(){
+                                    r.fnClose(this);
+                                })
+                                t.selectRow(evento);
+                                r.fnOpen(this, t.generateRowDetails(r, this), "details");
+                                F.assignValuesToInfoCard($(".ot_infocard"), r.fnGetData(this));
+                            }
+                        }
                     });
-                    if (n !== undefined) {
-                        var i = $(".ot_table tbody tr td:contains('" + n + "')").parent();
-                        $(i).addClass("selected_row"), $(i).click();
-                    }
                 }
                 var t = this;
-                this.data = this.options.collection, this.area_id = this.options.area_id, F.createDataTable(this, function(e) {
-                    F.assignValuesToInfoCard($(".ot_infocard"), e);
-                }, e);
+                this.data = this.options.collection;
+                this.area_id = this.options.area_id; 
+                F.createDataTable(this, function() {}, e);
             },
             events: {
                 "click .ot_table tr": "selectRow"
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget), $("#ot_left .ot_add_task").attr("disabled", !1);
-            },
+            }, 
             generateRowDetails: function(e, t) {
-                var n = -1, r = -1, i = this, s = e.fnGetData(t), o = s[0], u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
+                var n = -1, r = -1, i = this, s = e.fnGetData(t), o = s.id, u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
                 return this.getOtTasks(o, function(e) {
                     var r, s, u;
                     if (e.length) {
@@ -3890,15 +4214,13 @@
                                 "class": "complete_task_" + e.id
                             }), u = "<span>" + e.name + " - </span> "+e.priority+" Descripción: "+e.description, u += '<span class="task_due_date">' + F.toHumanDate(e.due_date, !1) + "</span>", e.completed_date ? u += '<span class="task_completed_date">' + F.toHumanDate(e.completed_date, !1) + "</span>" : e.reworked != 0 ? u += '<span class="task_completed_date" style="color:darkred;">Retrabajada</span>' : u += '<span class="task_completed_date" style="color:#555;">Incompleta</span>', C.Session.roleID() >= 2 && $(r).append(s), $(r).append(u);
                             var t = C.Session.getUser().role_id, h = t == 4, p = t == 3 && i.area_id == e.area_id, d = i.area_id != e.area_id || t != 1 || t != 2 || t != 5;
-                            e.reworked != 0 ? ($(s).attr("disabled", !0), $(r).css({
+                            e.reworked != 0 ? ($(s).attr("disabled", !0),$(r).css({
                                 opacity: .5
                             })) : e.completed == 1 && ($(s).attr("checked", !0), $(s).parent().addClass("crossed"), a = e.id, f += 1), $(".ot_id_" + o).append(r).fadeIn(), i.bindRenderOtTaskForm(r, e, d), i.bindEnableTaskActions(r, e, d), $('input:checkbox[class="complete_task_' + e.id + '"]').on("click", function() {
                                 var t = this, n = null, r = F.doNothing, s = null;
-                                C.Session.getUser().role_id != 7 && e.area_id != C.Session.getUser().area_id ? (function(){console.log('heraldo')},r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
-                                    $(t).attr("checked", !1);
-                                }, s = !0, i(), F.msgError(r, function() {
-                                    i();
-                                })) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
+                                C.Session.getUser().role_id != 7 && e.area_id != C.Session.getUser().area_id ? (r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
+                                    $(t).attr("checked", !1)
+                                }, s = !0, i(), F.msgError(r)) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
                                     $(t).attr("checked", !1);
                                 }, s = !1) : (n = "Esta operación convertirá en INCOMPLETA la Tarea.", r = function() {
                                     $(t).attr("checked", !0);
@@ -3954,7 +4276,7 @@
             bindRenderOtTaskForm: function(e, t, n) {
                 var r = this;
                 $(e).on("click", function() {
-                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 2 && ($("#tasksCompletitionPercentage").remove(), $(".task_form").remove(), r.ottask_form = new C.View.OtTaskForm({
+                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 2 && ($("#tasksCompletitionPercentage").remove(),$('#ot_right').unbind(), $(".task_form").remove(), r.ottask_form = new C.View.OtTaskForm({
                         el: $("#ot_right"),
                         model: new C.Model.OtTask,
                         table: r,
@@ -4040,6 +4362,7 @@
     }), e.define("/views/ot/OtHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.OtHistoryTable = Backbone.View.extend({
             name: "ot",
+            source: "/othistory",
             headers: [ "ID", "O/T", "O/T Cliente", "Ingreso", "Salida", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida" ],
             attrs: [ "id",  "number", "client_number", "created_at", "salida", "equipment_id", "equipment", "client_id", "client", "delivery", "reworked_number", "remitoentrada", "remitosalida" ],
             hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada" ],
@@ -4061,7 +4384,7 @@
                     F.assignValuesToInfoCard($(".ot_infocard"), e);
                 }, function() {
                     var t = $(".ot_table").dataTable();
-                    $(".ot_table tbody tr").on("click", function() {
+                    $(document).on("click", ".ot_table tbody tr", function() {
                         t.fnIsOpen(this) ? t.fnClose(this) : t.fnOpen(this, e.generateRowDetails(t, this), "details");
                     });
                 });
@@ -4073,7 +4396,7 @@
                 this.selected_row = $(e.currentTarget), $("#ot_right .ot_add_task").attr("disabled", !1);
             },
             generateRowDetails: function(e, t) {
-                var n = this, r = e.fnGetData(t), i = r[0], s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
+                var n = this, r = e.fnGetData(t), i = r.id, s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
                 return this.getOtTasks(i, function(e) {
                     var t, r, s;
                     e.length ? (n.appendRowDetailsHeaders(i), _.each(e, function(e) {
@@ -4105,7 +4428,7 @@
             bindRenderOtTaskForm: function(e, t, n) {
                 var r = this;
                 $(e).on("click", function() {
-                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 3 && ($("#tasksCompletitionPercentage").remove(), $(".task_form").remove(), new C.View.OtTaskForm({
+                    $(".row_detail p").removeClass("selected_ottask"), $(this).addClass("selected_ottask"), C.Session.roleID() >= 3 && ($("#tasksCompletitionPercentage").remove(),$('#ot_right').unbind(), $(".task_form").remove(), new C.View.OtTaskForm({
                         el: $("#ot_right"),
                         model: new C.Model.OtTask,
                         table: r,
@@ -4161,10 +4484,15 @@
     }), e.define("/views/ot/OtPlansTable.js", function(e, t, n, r, i, s) {
         C.View.OtPlansTable = Backbone.View.extend({
             name: "plan",
+            source: "/plan",
             headers: [ "ID", "Nombre", "Descripción", "ID Tareas" ],
             attrs: [ "id", "name", "description", "task_id" ],
             data: null,
             initialize: function() {
+                t = function(){
+
+                }
+
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".plan_form"), e);
                 });
@@ -4189,9 +4517,12 @@
                     label: "Descripción",
                     type: "textarea"
                 },
-                task_id: {
-                    label: "Tarea(s)",
-                    type: "selectmultiple"
+                task_count: {
+                    type: 'hidden',
+                    value: 1,
+                    attrs:{
+                        class: 'task_count',
+                    }
                 }
             },
             isCRUD: !0,
@@ -4201,14 +4532,77 @@
             initialize: function() {
                 var e = this, t = [];
                 F.getAllFromModel("task", function(t) {
-                    e.relations.tasks = t, F.createForm(e);
+                    e.relations.tasks = t.data, F.createForm(e);
+                    $(".plan_form select").after()
+                    var t = 1, n = $("<input>", {
+                        type: "button",
+                        value: "Agregar tarea"
+                    }), r, i;
+                    var container = $('<div class="tasks"></div>')
+                    i = $('<div class="task task_container_0" style="margin-bottom:10px"></div>'), $(".plan_form .plan_form_description").after(container), $(container).append(i), $(i).append(e.addTask(0, 0)), $(i).append(' <input type="text" class="eta" name="eta_0" placeholder="Dias" style="display:inline; margin:0; width:70px; height:19px;">'), $(i).append("<br />")
+
+                    $(".plan_form").append(n), $(n).on("click", function() {
+                        $('.task_count').val(t)
+                        r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, 0)), $(i).append(' <input type="text" placeholder="Dias" class="eta" name="eta_'+t+'" style="display:inline; width:70px; margin:0; height:19px;">'), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                            $(this).parent().remove();
+                        }), t += 1, r = null, i = null;
+                        e.toogleButtonVisibility()
+                    });
+                    $(document).on('click', '.delete', function(){
+                        var fields = $('.task')
+                            t = 0
+                            _.each(fields, function(el){
+                                $(el).find('.eta').attr('name', 'eta_'+t)
+                                $(el).find('.id').attr('name', 'task_id_'+t)
+                                $(el).attr('class', 'task task_container_'+t)
+                                t++
+                            })
+                            $('.plan_form .task_count').val(Number($('.task_count').val())-1)
+                            e.toogleButtonVisibility()
+                    })
+                    $(document).on('click', '.plan_table tbody tr', function(){
+                        $.ajax({
+                            url: '/plan/task/'+e.getSelectionID(),
+                            success: function(data){
+                                $('.tasks').empty()
+                                t = 0;
+                                $('.task_count').val(data.length)
+                                    _.each(data, function(task){
+                                    r = $('<input class="delete" type="button" name="del_el_'+t+'" value="X" style="position:relative; top:1px; margin:0; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="task dispensable task_container_'+t+'" style="margin-bottom:10px"></div>'), $(".tasks").append(i), $(i).append(e.addTask(t, task.task_id)), $(i).append(' <input type="text" class="eta" name="eta_'+t+'" value="'+task.eta+'" placeholder="Dias" style="display:inline; width:70px; margin:0; height:19px;">'),$('.select_'+t+' option[value="'+task.task_id+'"]').prop('selected', true), $(i).append(r), $(i).append("<br />"), $(r).on("click", function() {
+                                        $(this).parent().remove();
+                                    }), t += 1, r = null, i = null;
+                                })
+                                $('.dispensable:first').removeClass('dispensable')
+                                $('.delete:first').addClass('dispensable')
+                                e.toogleButtonVisibility();
+                            }
+                        })
+                    })
                 });
+            },
+            toogleButtonVisibility: function(){
+                if ($('.dispensable').length > 0){
+                    $('.BUTTON_cancel').show()
+                }else{
+                    $('.BUTTON_cancel').hide()
+                }
+            },
+            addTask: function(e, value){
+                var t = $('<select>', {
+                    name: "task_id_" + e,
+                    style: "display:inline; width:75%; height:25px; margin:0;",
+                    class: 'id select_'+e,
+                });
+                $('.select_'+e+' option[value="'+value+'"]').prop('selected', true);
+                $(t).append('<option disabled selected value="0">Tarea</option>');
+                return _.each(this.relations.tasks, function(e) {
+                    $(t).append('<option value="' + e.id + '">' + e.name + "</option>");
+                }), t;
             },
             events: {
                 "click .plan_form .BUTTON_create": "addPlan",
                 "click .plan_form .BUTTON_save": "editPlan",
                 "click .plan_form .BUTTON_delete": "delPlan",
-                "click .plan_form .BUTTON_cancel": "cancelPlan"                
             },
             getTable: function() {
                 return this.options.plan_table;
@@ -4222,45 +4616,42 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".plan_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addPlan: function() {
                 var e = this;
+                console.log($('.plan_form').serializeObject());
                 this.collection.create($(".plan_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El Plan ha sido creado");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.plan_form');
+                        F.msgOK("El Plan ha sido creado");
+                        F.reloadDataTable('.plan_table');
                     }
                 });
             },
             editPlan: function() {
                 var e = this;
-                e.collection.get(this.getSelectionID()).save($(".plan_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        console.log($(".plan_form").serializeObject()), e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El Plan ha sido actualizado");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.plan_form').serializeObject(),
+                    url: '/plan/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.plan_form');
+                        F.msgOK('El plan ha sido actualizado');
+                        F.reloadDataTable('.plan_table');
                     }
-                });
+                })
             },
-            cancelPlan: function() {
-              location.reload()
-            },            
             delPlan: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Plan?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El Plan ha sido eliminado");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/plan/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.plan_form');
+                            F.msgOK('El plan ha sido eliminado');
+                            F.reloadDataTable('.plan_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4321,6 +4712,8 @@
                 "click .task_form .BUTTON_delete": "delTask",
                 "click .task_form .BUTTON_cancel": "cancelEditTask"
             },
+            closeForm: function(){
+            },
             getTask: function() {
                 return this.options.task;
             },
@@ -4348,10 +4741,7 @@
                     data: $(".task_form").serializeObject(),
                     success: function(t) {
                         F.msgOK("La Tarea Fué editada con Éxito")
-                        setTimeout(function(){
-                          window.location = "/#/ots/audit/Ot_"+t.ot_id;
-                          location.reload()
-                        }, 1e3);            
+                        e.reloadOtRowDetails()         
                     }
                 }) : F.msgError("No tiene suficientes permisos");
             },
@@ -4431,14 +4821,20 @@
     }), e.define("/views/person/PersonTable.js", function(e, t, n, r, i, s) {
         C.View.PersonTable = Backbone.View.extend({
             name: "person",
+            source: "/person",
             headers: [ "ID", "Nombre", "Apellido", "Teléfono", "E-mail" ],
             attrs: [ "id", "firstname", "lastname", "phone", "email" ],
             data: null,
             hidden_columns: [ "name" ],
             initialize: function() {
+                t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".person_form"), e);
                 });
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
             },
             events: {
                 "click .person_table tr": "selectRow"
@@ -4500,34 +4896,42 @@
             editTableRow: function(e) {},
             addPerson: function() {
                 var e = this;
-                this.collection.create($(".person_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La persona ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'POST',
+                    data: $(".person_form").serializeObject(),
+                    url: '/person',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK('La persona ha sido creada');
+                        F.reloadDataTable('.person_table');
                     }
-                });
+                })
             },
             editPerson: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".person_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La persona ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    url: '/person/'+this.getSelectionID(),
+                    data: $(".person_form").serializeObject(),
+                    type: 'PUT',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK("La persona ha sido actualizada");
+                        F.reloadDataTable('.person_table'); 
                     }
-                });
+                })
             },
             delPerson: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Persona?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La persona ha sido eliminada");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        url: '/person/'+e.getSelectionID(),
+                        type: 'DELETE',
+                        success: function(){
+                            F.cleanForm('.person_form');
+                            F.msgOK("La persona ha sido eliminada");
+                            F.reloadDataTable('.person_table')
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4558,7 +4962,6 @@
             data: null,
             hidden_columns: [ "name" ],
             initialize: function() {
-                console.log('heraldo')
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     //F.assignValuesToForm($(".person_form"), e);
                 });
@@ -4598,6 +5001,7 @@
     }), e.define("/views/personnel/EmployeeTable.js", function(e, t, n, r, i, s) {
         C.View.EmployeeTable = Backbone.View.extend({
             name: "employee",
+            source: "/employee",
             headers: [ "ID", "Legajo", "ID Persona", "Nombre", "ID Area", "Área", "Horario entrada ID", "Horario salida ID", "Horario", "Interno" ],
             attrs: [ "id", "payroll_number", "person_id", "person", "area_id", "area", "schedule_ini_id", "schedule_end_id", "schedule", "intern" ],
             data: null,
@@ -4666,7 +5070,7 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("person", function(t) {
-                    e.relations.persons = t, F.getAllFromModel("area", function(t) {
+                    e.relations.persons = t.data, F.getAllFromModel("area", function(t) {
                         e.relations.areas = t, F.getAllFromModel("schedule", function(t) {
                             e.relations.schedule_inis = t, e.relations.schedule_ends = t, F.createForm(e);
                         });
@@ -4699,32 +5103,37 @@
                 var e = this;
                 this.collection.create($(".employee_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("El empleado ha sido creado/a");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.employee_form');
+                        F.msgOK('El empleado ha sido creado/a');
+                        F.reloadDataTable('.employee_table');
                     }
                 });
             },
             editEmployee: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".employee_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El empleado ha sido actualizado/a");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.employee_form').serializeObject(),
+                    url: '/employee/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.employee_form');
+                        F.msgOK('El empleado ha sido actualizado/a');
+                        F.reloadDataTable('.employee_table');
                     }
-                });
+                })
             },
             delEmployee: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a este Empleado?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El empleado ha sido eliminado/a");setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/employee/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.employee_form');
+                            F.msgOK('El empleado ha sido eliminado/a');
+                            F.reloadDataTable('.employee_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4753,6 +5162,7 @@
     }), e.define("/views/personnel/InoutTable.js", function(e, t, n, r, i, s) {
         C.View.InoutTable = Backbone.View.extend({
             name: "inout",
+            source: "/inout",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
             data: null,
@@ -4825,6 +5235,7 @@
     }), e.define("/views/personnel/InoutHistoryTable.js", function(e, t, n, r, i, s) {
         C.View.InoutHistoryTable = Backbone.View.extend({
             name: "inout",
+            source: "/inouthistory",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
             data: null,
@@ -4861,7 +5272,7 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("employee", function(t) {
-                    e.relations.employees = t, F.createForm(e, $("#inout_right"), function() {
+                    e.relations.employees = t.data, F.createForm(e, $("#inout_right"), function() {
                         C.Session.doIfVigilance(function() {
                             $(".inout_form select[name=permitted], .inout_form label[for=permitted]").remove(), $($(".inout_form .chzn-container")[1]).remove();
                         });
@@ -4885,44 +5296,41 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                return;
-                var t;
-            },
-            editTableRow: function(e) {},
             addInout: function() {
                 var e = this;
                 this.collection.create($(".inout_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La Autorización ha sido creada");
-                        window.setTimeout(function() {
-                                location.reload();
-                        }, 1e3);
+                        F.cleanForm('.inout_form');
+                        F.msgOK("La Autorización ha sido creada");
+                        F.reloadDataTable('.inout_table');
                     }
                 });
             },
             editInout: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".inout_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La Autorización ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.inout_form').serializeObject(),
+                    url: '/inout/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.inout_form');
+                        F.msgOK('La Autorización ha sido actualizada');
+                        F.reloadDataTable('.inout_table');
                     }
-                });
+                })
             },
             delInout: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Autorización?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La Autorización ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/inout/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.inout_form');
+                            F.msgOK('La Aurorización ha sido eliminada');
+                            F.reloadDataTable('.inout_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -4951,6 +5359,7 @@
     }), e.define("/views/intervention/InterventionTable.js", function(e, t, n, r, i, s) {
         C.View.InterventionTable = Backbone.View.extend({
             name: "intervention",
+            source: "/intervention",
             headers: [ "ID", "Nombre", "Descripción" ],
             attrs: [ "id", "name", "description" ],
             data: null,
@@ -5002,41 +5411,40 @@
                 return this.getTable().selected_row;
             },
             addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".intervention_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
             },
-            editTableRow: function(e) {},
             addIntervention: function() {
                 var e = this;
                 this.collection.create($(".intervention_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La intervención ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.msgOK("La intervención ha sido creada");
+                        F.cleanForm('.intervention_form')
+                        F.reloadDataTable('.intervention_table')
                     }
                 });
             },
             editIntervention: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".intervention_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La intervención ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    url: '/intervention/'+e.getSelectionID(),
+                    data: $('.intervention_form').serializeObject(),
+                    success: function(t, n){
+                        F.msgOK("La intervención ha sido actualizada");
+                        F.reloadDataTable('.intervention_table');
                     }
-                });
+                })
             },
             delIntervention: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar este Motivo de Intervención?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La intervención ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/intervention/'+e.getSelectionID(),
+                        success: function(){
+                            F.msgOK("La intervención ha sido eliminada");
+                            F.reloadDataTable('.intervention_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5181,6 +5589,7 @@
     }), e.define("/views/query/QueryTable.js", function(e, t, n, r, i, s) {
         C.View.QueryTable = Backbone.View.extend({
             name: "query",
+            source: "/query",
             headers: null,
             attrs: null,
             data: null,
@@ -5249,7 +5658,7 @@
             template: function() {
                 var e = this, t = "";
                 F.getAllFromModel("employee", function(n) {
-                    _.each(n, function(e) {
+                    _.each(n.data, function(e) {
                         t += '<option value="' + e.id + '">' + e.name + "</option>";
                     }), $(e.el).append('<h3>Productividad de empleados:</h3><form name="productivityEmployees"><select name="employee_ids[]" multiple="multiple">' + t + "</select>" + '<input type="button" class="graphEmployeeProducivity" value="Graficar" />' + "</form>");
                 });
@@ -5323,6 +5732,7 @@
     }), e.define("/views/task/TaskTable.js", function(e, t, n, r, i, s) {
         C.View.TaskTable = Backbone.View.extend({
             name: "task",
+            source: "/task",
             headers: [ "ID", "Nombre", "Descripción", "prioridad", "ID Area", "Area" ],
             attrs: [ "id", "name", "description", "priority", "area_id", "area" ],
             data: null,
@@ -5387,42 +5797,41 @@
             getSelectionRow: function() {
                 return this.getTable().selected_row;
             },
-            addTableRow: function(e) {
-                var t = F.JSONValuesToArray($(".task_form").serializeObject());
-                t.unshift(e), this.getDataTable().fnAddData(t);
-            },
-            editTableRow: function(e) {},
             addTask: function() {
                 var e = this;
                 this.collection.create($(".task_form").serializeObject(), {
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.addTableRow(n.id), F.msgOK("La tarea ha sido creada");
-                        setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.task_form');
+                        F.msgOK("La tarea ha sido creada");
+                        F.reloadDataTable('.task_table');
                     }
                 });
             },
             editTask: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".task_form").serializeObject(), {
-                    success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("La tarea ha sido actualizada");setTimeout(function(){location.reload()}, 1e3);
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.task_form').serializeObject(),
+                    url: '/task/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.task_form');
+                        F.msgOK('La tarea ha sido actualizada');
+                        F.reloadDataTable('.task_table');
                     }
-                });
+                })
             },
             delTask: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a esta Tarea?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("La tarea ha sido eliminada");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/task/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.task_form');
+                            F.msgOK('La tarea ha sido eliminada');
+                            F.reloadDataTable('.task_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5451,6 +5860,7 @@
     }), e.define("/views/user/UserTable.js", function(e, t, n, r, i, s) {
         C.View.UserTable = Backbone.View.extend({
             name: "user",
+            source: "/user",
             headers: [ "ID", "Usuario", "ID Empleado", "Empleado", "ID Rol", "Rol", "ID Area", "Area" ],
             attrs: [ "id", "username", "employee_id", "employee", "role_id", "role", "area_id", "area" ],
             data: null,
@@ -5506,9 +5916,10 @@
             initialize: function() {
                 var e = this;
                 F.getAllFromModel("employee", function(t) {
-                    e.relations.employees = t, F.getAllFromModel("role", function(t) {
-                        delete t[4], e.relations.roles = t, F.getAllFromModel("area", function(t) {
-                            e.relations.areas = t, F.createForm(e);
+                    e.relations.employees = t.data, F.getAllFromModel("role", function(t) {
+                        e.relations.roles = t, F.getAllFromModel("area", function(t) {
+                            e.relations.areas = t;
+                            F.createForm(e);
                         });
                     });
                 });
@@ -5537,37 +5948,44 @@
             editTableRow: function(e) {},
             addUser: function() {
                 var e = this;
-                this.collection.create($(".user_form").serializeObject(), {
-                    success: function(t, n) {
-                        if (n.result === !0) {
-                            var r = t.attributes;
-                            e.addTableRow(n.user.id), F.msgOK("El usuario ha sido creado/a");
-                            setTimeout(function(){location.reload()}, 1e3);
-                        } else F.msgError(n.error);
+                $.ajax({
+                    data: $('.user_form').serializeObject(),
+                    type: 'POST',
+                    url: '/user',
+                    success: function(t, n){
+                        F.cleanForm('.user_form')
+                        if (t.result === !0) {
+                            F.msgOK("El usuario ha sido creado/a");
+                            F.reloadDataTable('.user_table');
+                        } else F.msgError(t.error);
                     }
-                });
+                })
             },
             editUser: function() {
                 var e = this;
-                this.collection.get(this.getSelectionID()).save($(".user_form").serializeObject(), {
+                $.ajax({
+                    type: 'PUT',
+                    url: '/user/'+e.getSelectionID(),
+                    data: $('.user_form').serializeObject(),
                     success: function(t, n) {
-                        var r = t.attributes;
-                        e.editTableRow(F.JSONValuesToArray(t.attributes)), F.msgOK("El usuario ha sido actualizado/a");setTimeout(function(){location.reload()}, 1e3);
+                        F.cleanForm('.user_form')
+                        F.msgOK("El usuario ha sido actualizado/a");
+                        F.reloadDataTable('.user_table');
                     }
-                });
+                })
             },
             delUser: function() {
                 var e = this;
                 F.msgConfirm("¿Desea eliminar a este Usuario?", function() {
-                    e.collection.get(e.getSelectionID()).destroy({
-                        success: function(t, n) {
-                            var r = t.attributes;
-                            $(e.getSelectionRow()).fadeOut("slow", function() {
-                                $(this).remove();
-                            }), F.msgOK("El usuario ha sido eliminado/a");
-                            setTimeout(function(){location.reload()}, 1e3);
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/user/'+e.getSelectionID(),
+                        success: function(){
+                            F.cleanForm('.user_form')
+                            F.msgOK("El usuario ha sido eliminado/a");
+                            F.reloadDataTable('.user_table');
                         }
-                    });
+                    })
                 });
             }
         });
@@ -5596,6 +6014,7 @@
     }), e.define("/views/errorreport/ErrorReportTable.js", function(e, t, n, r, i, s) {
         C.View.ErrorReportTable = Backbone.View.extend({
             name: "errorreport",
+            source: "/errorreport",
             headers: [ "ID", "Descripción", "Sugerencia", "Usuario", "Fecha" ],
             attrs: [ "id", "description", "suggestion", "user", "created_at" ],
             data: null,
@@ -5948,12 +6367,12 @@
                     C.Session.doIfInRolesList([ 2, 4, 5, 7 ], e);
                 },
                 getPerson: function() {
-                    /*var e = function() {
+                    var e = function() {
                         document.title = C.TITLE + "Personas", this.person_widget = C.Widget.CRUD.initialize("person"), this.person_view = new C.View.Person({
                             model: new C.Model.Person
                         }), F.R.highlightCurrentModule("crud/person");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 4, 5 ], e);*/
+                    C.Session.doIfInRolesList([ 2, 4, 5 ], e);
                 },
                 getUser: function() {
                     var e = function() {
@@ -6004,13 +6423,12 @@
                     C.Session.doIfInRolesList([ 5 ], e);
                 },
                 getOtReport: function() {
-                    console.log('heraldo')
-                    /*var e = function() {
+                    var e = function() {
                         document.title = C.TITLE + "Listado de OT", this.otreport_widget = C.Widget.Report.initialize(), this.otreport_view = new C.View.OtReport({
                             model: new C.Model.OtReport
-                        }), F.R.highlightCurrentModule("reports/OT");
+                        }), F.R.highlightCurrentModule("reports/ot");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 5 ], e);*/
+                    C.Session.doIfInRolesList([ 5 ], e);
                 }
             });
             C.Router = new e, Backbone.history.start();
@@ -6020,7 +6438,7 @@
             $(document).ajaxError(function(e, t, n) {
                 F.msgErrorTop("Error de servidor.<br />Recargue la aplicación e intente nuevamente");
             }), $(document).on("keyup", function(e) {
-                e.which == 27 && location.reload();//&& $.unblockUI(); en lugar del reload()
+                //e.which == 27 && location.reload();//&& $.unblockUI(); en lugar del reload()
             }), $("#logout_button").on("click", function() {
                 F.msgConfirm("¿Realmente desea salir?", function() {
                     window.location = "/logout";

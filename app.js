@@ -60,6 +60,6 @@ require('./routes')(app, routes);
 
 socketio = socketio.listen(app);
 socketio.set('log level', 1);
-app.listen(4000);
+app.listen(3000);
 
 require('./io')(socketio, DB);

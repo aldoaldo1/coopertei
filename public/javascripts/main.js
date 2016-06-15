@@ -398,13 +398,13 @@
                 "class": "selection_id",
                 value: 0
             }));
-            console.log(e);
         }, F.appendTitle = function(e, t) {
             $(e).append('<h3 class="formtitle">' + t + "</h3>");
         }, F.createDataTable = function(e, t, n) {
             var rows = '';
             var attrs = [];
             var hidden_columns = [0];
+            var date_columns = [];
             var order;
             if(e.datatableOptions){
                 if(e.datatableOptions.aaSorting){
@@ -417,6 +417,11 @@
             if (e.hidden_columns) {
                 (e.hidden_columns).forEach(function(hidden){
                     hidden_columns.push((e.attrs).indexOf(hidden));
+                });
+            };
+            if (e.date_columns) {
+                (e.date_columns).forEach(function(date){
+                    date_columns.push((e.attrs).indexOf(date));
                 });
             };
             (e.attrs).forEach(function(attr){
@@ -433,7 +438,6 @@
                         '</div>';
 
             $("#left").html(table);
-            
             var datatable = $('#'+e.name+'_table').dataTable({
                 ajax: e.source,
                 columns: attrs,
@@ -442,6 +446,10 @@
                         targets: hidden_columns,
                         visible: false,
                     },
+                    {
+                        targets: date_columns,
+                        type: 'date-euro',
+                    }
                 ],
                 order: order,
                 iDisplayLength: 25,
@@ -1529,6 +1537,7 @@
             headers: [ "ID", "O/T", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de entrega" ],
             attrs: [ "id", "number", "client_id", "client", "equipment", "delivery" ],
             data: null,
+            date_columns: ['delivery'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
@@ -1615,6 +1624,7 @@
             headers: [ "ID", "O/T", "Nombre", "Descripción", "Cliente", "Equipo (TAG)", "Fecha de vencimiento" ],
             attrs: [ "id", "number", "name", "description", "client", "equipment", "due_date" ],
             data: null,
+            date_columns: ['due_date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
@@ -2335,6 +2345,7 @@
             headers: [ "ID", "O/T", "Concepto", "Descripción", "Fecha" ],
             attrs: [ "id", "ot_number", "name", "description", "created_at" ],
             data: null,
+            date_columns: ['created_at'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, {
                     sType: "es_date"
@@ -2385,6 +2396,7 @@
             headers: [ "ID", "O/T", "ID Equipo", "Equipo (TAG)", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Acciones" ],
             attrs: [ "id", "number", "equipment_id", "equipment", "intervention_id", "intervention", "created_at", "delivery", "actions" ],
             data: null,
+            date_columns: ['created_at', 'delivery'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
@@ -2605,11 +2617,12 @@
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "ottask", "provider", "date" ],
             data: null,
             hidden_columns: ["ot_id"],
+            date_columns: ['date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, {
                     sType: "es_date"
                 } ],
-                aaSorting: [ [ 1, "desc" ] ]
+                aaSorting: [[ 1, "desc" ]]
             },
             initialize: function() {
                 var e = this;
@@ -2769,7 +2782,7 @@
                 return C.Session.isVigilance() || $(this.el).append(this.template()), this;
             },
             template: function() {
-                if (C.Session.getUser().area_id == 2 || C.Session.getUser().role_id == 7) {
+                if (C.Session.getUser().area_id == 2 || C.Session.getUser().area_id == 3 || C.Session.getUser().role_id == 7) {
                     var e = $("<div>", {
                         "class": "right_options"
                     });
@@ -2909,7 +2922,7 @@
                     value: "Agregar Material"
                 }), r, i;
                 $("#order_elements").append(n), $(n).on("click", function() {
-                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(i).append('<input type="hidden" class="id" name="id" value="'+t+'">'), $(r).on("click", function() {
+                    r = $('<input type="button" name="del_el_' + t + '" value="X" style="position:relative; top:1px; height:25px;' + ' margin-left:5px; padding:2px; font-weigth:bold; color:red;">'), i = $('<div class="material_container_' + t + '"></div>'), $(this).before(i), $(i).append("Categoría "), $(i).append(e.materialCategoriesList(t)), $(i).append(' <input type="text" class="quantity" name="material_quantity_' + t + '" placeholder="Cantidad" style="display:inline; width:75px; height:19px;"> '), $(i).append(e.materialUnitsList(t)), $(i).append(r), $(i).append("<br />"), $(i).append('<input type="hidden" class="id" name="id" value="'+t+'">'), $(r).on("click", function() {
                         $(this).parent().remove();
                     }), t += 1, r = null, i = null;
                 });
@@ -2969,12 +2982,27 @@
                 }, 1e3);
             },
             performCreateOrder: function() {
-                this.options.createNewOrder({
-                    ot_number: $("#material_order_window input:text[name=ot_number]").val(),
-                    ottask_id: $("#material_order_window select[name=ottask_id]").val(),
-                    provider: $("#material_order_window select[name=provider]").val(),
-                    materials: $("#order_elements").serializeObject()
-                }, this.cleanModals);
+                var errors = 0;
+                _.each($('.select_material'), function(material){
+                    if ($(material).val() == 0){
+                        errors++
+                    }
+                })
+                _.each($('.quantity'), function(material){
+                    if ($(material).val() == ''){
+                        errors++
+                    }
+                })
+                if (!errors){
+                    this.options.createNewOrder({
+                        ot_number: $("#material_order_window input:text[name=ot_number]").val(),
+                        ottask_id: $("#material_order_window select[name=ottask_id]").val(),
+                        provider: $("#material_order_window select[name=provider]").val(),
+                        materials: $("#order_elements").serializeObject()
+                    }, this.cleanModals);
+                }else{
+                    F.msgError('Falta completar algunos campos')
+                }
             },
             cancelCreateOrder: function() {
                  window.setTimeout(function() {location.reload()}, 1e3);
@@ -3158,6 +3186,7 @@
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "provider", "date" ],
             data: null,
             hidden_columns: ["ot_id"],
+            date_columns: ['date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
                     sType: "es_date"
@@ -3492,6 +3521,7 @@
             headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
             attrs: [ "id", "number", "client_number", "equipment_id", "equipment", "client_id", "client", "intervention_id", "intervention", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
             hidden_columns: [ "workshop_suggestion", "client_suggestion", "remitoentrada", "reworked_number", "notify_client" ],
+            date_columns: ['delivery', 'created_at'],
             data: null,
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, null, null, {
@@ -4094,6 +4124,7 @@
             headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
             attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
             hidden_columns: [ "number", "reworked_number" ],
+            date_columns: ['delivery'],
             data: null,
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, {
@@ -4300,15 +4331,9 @@
             headers: [ "ID", "O/T", "O/T Cliente", "Ingreso", "Salida", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida" ],
             attrs: [ "id",  "number", "client_number", "created_at", "salida", "equipment_id", "equipment", "client_id", "client", "delivery", "reworked_number", "remitoentrada", "remitosalida" ],
             hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada" ],
+            date_columns: ['created_at', 'salida'],
             data: null,
             datatableOptions: {
-                aoColumns: [ null, null, null, {
-                    sType: "es_date"
-                },{
-                    sType: "es_date"
-                },  null, null, null, null, {
-                    sType: "es_date"
-                }, null, null, null ],
                 aaSorting: [ [ 1, "desc" ] ]
             },
             iDisplayLength: 500,

@@ -213,6 +213,7 @@ Authorization.saveRequirementsReport = function(req, res, next) {
                           pass: process.env.STMP_PASS//'CoopSys'
                         }
                       })
+                    console.log(transport)
                     }, 20000);
                 		for (var i=contador;i<34;i++){ 
                 			task_inform +="<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>";
@@ -494,9 +495,8 @@ Authorization.notifyClient = function(req, res, next) {
 		   filePath: PATH.UPLOADS + ph.path
 		 });*/
 		});	
-
-		attached_photos.push({
-		       fileName: "Informes Pertinentes.pdf",
+    attached_photos.push({
+		       fileName: "OT-"+ot[0].id+" Cliente: "+ot[0].client_number+" Equipo: "+ot[0].name_equipment+".pdf",
 		       filePath: "/tmp/material_inform"+ot[0].id+".pdf"
 		});
     var to = ot[0].email;

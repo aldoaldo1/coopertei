@@ -3802,6 +3802,7 @@
             initialize: function() {
                 var e = this
                 $(document).unbind("tasks_loaded")
+                $('#ot_add_task_window').remove()
                 $(document).bind("tasks_loaded", function() {
                     e.render();
                     console.log(e.tasks)
@@ -3843,7 +3844,7 @@
                     value: 0
                 }).text("Seleccione tarea...")), _.each(this.tasks, function(e) {
                     $(t).append($("<option>", {
-                        value: e.name
+                        value: e.id
                     }).text(e.name));
                 }), t;
             },
@@ -3858,7 +3859,11 @@
                 $('.blockUI').remove();
             },
             performAddTask: function() {
-        	    this.options.addNewTask({
+                if ($('#add_task_ot_window').css('display') == 'none'){
+                    $('#add_task_ot_window').remove()
+                }
+                console.log($('#add_task_ot_window'))
+                this.options.addNewTask({
                     name: $("#add_task_ot_form select").val(),
                     description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
                     eta: $('#add_task_ot_form input[name=eta]').val()
@@ -3914,9 +3919,6 @@
             },
             template: function() {
                 $("body").append('<div id="ot_toggle_task_state_window" style="display:none; max-height:700px; overflow: auto"><h1 class="bold">Liste los empleados que trabajaron y horarios invertidos en esta tarea:</h1><br /><br /><form id="toggle_task_state_ot_form"><div></div></form><br /><br /><input type="button" class="BUTTON_cancel lefty button" value="Cancelar" /><input type="button" class="BUTTON_proceed righty button" value="Completar Tarea" /><input type="button" class="BUTTON_proceed_job righty button" value="Continuar Trabajando" /></div>');
-                /*
-                $("body").append('<div id="ot_toggle_task_state_window" style="display:none; max-height:700px; overflow: auto"><h1 class="bold">Liste los empleados que trabajaron y horarios invertidos en esta tarea:</h1><br /><br /><form id="toggle_task_state_ot_form"><div></div></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Completar Tarea" /><input type="button" class="BUTTON_proceed_job righty button" value="Continuar Trabajando" /></div>');                
-                */
                 for (var e = 1; e <= 5; e += 1) $("#toggle_task_state_ot_form div").append(this.buildEmployeesList("toggle_task_employee_" + e)[0]).append('<input type="text" name="toggle_task_schedule_' + e + '_h" maxlength="2" /> : ' + '<input type="text" name="toggle_task_schedule_' + e + '_m" maxlength="2" /> hs.').append("<br />Instrumentos/Herramientas <br /><select name='seleccion_" + e + "'" + this.buildToolsList() + "<br />");
                 $(".button").button();
             },

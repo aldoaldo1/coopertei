@@ -495,8 +495,11 @@ Authorization.notifyClient = function(req, res, next) {
 		   filePath: PATH.UPLOADS + ph.path
 		 });*/
 		});	
+    var clientNumber = ot[0].client_number;
+    clientNumber.replace('/', '');
+    clientNumber.replace('/', '');
     attached_photos.push({
-		       fileName: "OT-"+ot[0].id+" Cliente: "+ot[0].client_number+" Equipo: "+ot[0].name_equipment+".pdf",
+		       fileName: "OT-"+ot[0].number+" Cliente: "+ot[0].client_number+" Equipo: "+ot[0].name_equipment+".pdf",
 		       filePath: "/tmp/material_inform"+ot[0].id+".pdf"
 		});
     var to = ot[0].email;

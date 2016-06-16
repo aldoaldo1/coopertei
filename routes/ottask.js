@@ -83,37 +83,58 @@ Ottask.add = function(req, res, next) {
       WHERE ot_id = " + req.body.ot_id + " AND deleted_at IS NULL \
     ";
   }
-  console.log(q)
-  DB._.query(q, function(err, result) {
-    var pos;
-
-    if (new_task_position !== null) {
-      pos = new_task_position;
-    } else {
-      pos = parseInt(result[0].max_position) + 1;
+  DB._.query('SELECT * FROM task WHERE id = '+req.body.name, function(err, task){
+    DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+req.body.ot_id+' AND priority = '+task[0].priority, function(err, max){
+      console.log(task);
+      var diference = Number(req.body.eta) - Number(max[0].max);
+      console.log('Max priority eta: '+Number(max[0].max)+' | Current eta: '+Number(task[0].eta)+' | Diference :'+diference);
+      if (diference > 0){
+        DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+req.body.ot_id+' AND priority > '+task[0].priority);
+      }
+    })
+    var q_start = '';
+    if (task[0].priority < 1){
+      q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+task[0].priority;
     }
-    var dp= req.body.description.split(":::")
-    DB.Ottask.build({
-      name: req.body.name,
-      sent:0,
-      description: dp[0],
-      due_date: moment().format('YYYY-MM-DD'),
-      position: pos,
-      priority: dp[1],
-      area_id: dp[2],
-      completed: 0,
-      completed_date: null,
-      materials_tools: null,
-      reworked: 0,
-      derived_to: 0,
-      observation: null,
-      ot_id: req.body.ot_id
-    }).save().on('success', function() {
-      res.send(true);
-    }).on('error', function(err) {
-      res.send(false, err);
-    });
-  });
+    else{
+      q_start = 'SELECT created_at AS start FROM ot where id = '+req.body.ot_id;
+    }
+    DB._.query(q_start, function(err, start){
+      DB._.query(q, function(err, result) {
+        var pos;
+        console.log(start)
+        var startDay = start[0].start
+        if (new_task_position !== null) {
+          pos = new_task_position;
+        } else {
+          pos = parseInt(result[0].max_position) + 1;
+        }
+        var dp= req.body.description.split(":::")
+        DB.Ottask.build({
+          name: task[0].name,
+          sent:0,
+          description: dp[0],
+          due_date: moment(startDay).add('days', req.body.eta).format('YYYY-MM-DD'),
+          position: pos,
+          priority: dp[1],
+          area_id: dp[2],
+          completed: 0,
+          completed_date: null,
+          materials_tools: null,
+          reworked: 0,
+          derived_to: 0,
+          observation: null,
+          ot_id: req.body.ot_id,
+          eta: req.body.eta
+        }).save().on('success', function() {
+          res.send(true);
+        }).on('error', function(err) {
+          res.send(false, err);
+        });
+      });
+    })
+  })
+  
 };
 
 Ottask.rework = function(req, res, next) {

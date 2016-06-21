@@ -64,6 +64,8 @@ module.exports = function(app, routes) {
 
   app.get('/plan/task/:id', Auth.restrict, routes.plan.getTasks);
 
+  app.get('/ot/alterdate/:id', Auth.restrict, routes.ot.updateDate);
+
   var models = ['ot', 'ottask', 'othistory', 'person', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',
                 'authorization', 'authorizationhistory', 'otstate', 'schedule', 'module',

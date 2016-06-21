@@ -1,4 +1,5 @@
-var util = require('util'),
+var moment = require('moment'),
+     util = require('util'),
     async = require('async');
 var DB, Everyone;
 
@@ -124,7 +125,7 @@ Plan.put = function(req, res, next) {
 
 Plan.delete = function(req, res, next) {
   DB.Plan.find({ where: { id: req.params.id } }).on('success', function(p) {
-    p.destroy().on('success', function(p) {
+    p.updateAttributes({deleted_at: moment().format('YYYY-MM-DD')}).on('success', function(p) {
       res.send({ "id": p.id });
     }).on('error', function(error) {
       res.send(error);

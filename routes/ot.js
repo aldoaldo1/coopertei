@@ -360,14 +360,6 @@ Ot.update = function(req, res, next) {
                       };
                     })
                   });
-                  if (ot.delivery == 'NaN/NaN/NaN') {
-                    var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
-                    DB._.query(query, function(err, deadline){
-                      if (deadline[0]){
-                        ot.updateAttributes({delivery:deadline[0].deadline})
-                      }
-                    })
-                  }
                 }
               });
             });
@@ -379,6 +371,20 @@ Ot.update = function(req, res, next) {
    }
   });
 };
+
+Ot.updateDate = function(req, res, next){
+  console.log('Actualizar fecha')
+  DB.Ot.find({where:{id: req.params.id}}).on('success', function(ot){
+  var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
+    DB._.query(query, function(err, deadline){
+      if (deadline[0]){
+        console.log(deadline[0].deadline)
+        ot.updateAttributes({delivery:deadline[0].deadline})
+      }
+    })
+  })
+  res.send(true)
+}
 
 Ot.post = function(req, res, next) {
 if(req.body.client_id > 0){

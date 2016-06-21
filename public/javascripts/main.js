@@ -3535,6 +3535,24 @@
                 var t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".ot_form"), e);
+                    if (e.plan_id == 0 && C.Session.roleID() == 1){
+                        $('.BUTTON_save').hide()
+                    }
+                    var items = $("#select > option").map(function() {
+                        var arr = [];
+                        arr.push(Number($(this).val()))
+                        return arr;
+                    }).get();
+                    if (items.indexOf(e.plan_id) < 1){
+                        console.log(items.indexOf(e.plan_id))
+                        console.log(e.plan_id)
+                        console.log(items)
+                        $('#select').attr('disabled', 'disabled').trigger('liszt:updated');
+                    }
+                    else
+                        {
+                            $('#select').removeAttr('disabled').trigger('liszt:updated')
+                        }
                 });
                 $(document).on('click', '.ot_table tr', function(evento){
                     t.selectRow(evento);
@@ -3599,7 +3617,8 @@
                 },
                 plan_id: {
                     label: "Plan de Tareas (inicial/tentativo)",
-                    type: "select"
+                    type: "select",
+                    attrs: {id: 'select'},
                 },
                 reworked_number: {
                     label: "Es retrabajo de",
@@ -3693,9 +3712,18 @@
                 url: "/ot/update/" + $(".selection_id").val(),
                 data: $(".ot_form").serialize(),
                 success: function(n) {
-                  var n = e.attributes;
-                  F.msgOK("La O/T ha actualizaa");
-                  F.reloadDataTable('.ot_table')
+                    setTimeout(function(){
+                        $.ajax({
+                            type: 'GET',
+                            url: '/ot/alterdate/'+  $(".selection_id").val(),
+                            success: function(){
+                                console.log('heraldo')
+                                var n = e.attributes;
+                                F.msgOK("La O/T ha actualizada");
+                                F.reloadDataTable('.ot_table')
+                            }
+                        })
+                    }, 500)
                 }
               });
             },

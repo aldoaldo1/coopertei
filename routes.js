@@ -12,6 +12,8 @@ module.exports = function(app, routes) {
   app.post('/profile/changePassword', Auth.restrict, routes.profile.changePassword);
 
   app.get('/ot/next', Auth.restrict, routes.ot.nextNumber);
+  app.get('/ot/alterdate/:id', Auth.restrict, routes.ot.updateDate);
+  app.put('/ot/reprogram/:id', Auth.restrict, routes.ot.reprogram);
   app.post('/ot/inaugurate', Auth.restrict, routes.ot.inaugurate);
   app.post('/ot/conclude/:ot_id', Auth.restrict, routes.ot.conclude);
   app.get('/ot/findByEquipmentAndClient/:equipment_id/:client_id', Auth.restrict, routes.ot.findByEquipmentAndClient);
@@ -64,9 +66,8 @@ module.exports = function(app, routes) {
 
   app.get('/plan/task/:id', Auth.restrict, routes.plan.getTasks);
 
-  app.get('/ot/alterdate/:id', Auth.restrict, routes.ot.updateDate);
 
-  var models = ['ot', 'ottask', 'othistory', 'person', 'employee', 'client', 'task', 'query',
+  var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',
                 'authorization', 'authorizationhistory', 'otstate', 'schedule', 'module',
                 'city', 'material', 'materialcategory', 'materialorder', 'materialhistory',

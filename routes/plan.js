@@ -23,7 +23,7 @@ Plan.get = function(req, res, next) {
     data.forEach(function(p) {
       queries.push(function(fn) {
         var tasks = [];  
-	DB._.query("SELECT * FROM taskplan WHERE plan_id = " + p.id , function(err, data){	
+	DB._.query("SELECT * FROM taskplan WHERE deleted_at IS NULL AND plan_id = " + p.id , function(err, data){	
           data.forEach(function(tp) {
             tasks.push(tp.task_id);
           });
@@ -43,7 +43,7 @@ Plan.get = function(req, res, next) {
 };
 
 Plan.getTasks = function(req, res, next){
-  DB.Taskplan.findAll({where: {plan_id: Number(req.params.id)}}).on('success', function(result){
+  DB.Taskplan.findAll({where: {plan_id: Number(req.params.id), deleted_at: null}}).on('success', function(result){
     res.send(result)
   })
 }
@@ -56,7 +56,6 @@ Plan.getOne = function(req, res, next) {
 
 
 Plan.post = function(req, res, next) {
-  console.log(req.body)
   DB.Plan.build({
     "name": req.body.name,
     "description": req.body.description
@@ -98,24 +97,37 @@ Plan.put = function(req, res, next) {
         "name": req.body.name,
         "description": req.body.description
       }).on('success', function() {
-        var q = " \
+        /*var q = " \
           DELETE FROM taskplan \
           WHERE plan_id = " + req.params.id + " \
         ";
         console.log(q)
-        DB._.query(q, function(err, data) {
+        DB._.query(q, function(err, data) {*/
           var task_count = Number(req.body.task_count);
+          var ids = []
+          var etas = []
           for (var i = 0; i <= task_count; i++) {
             var id = Number(eval('req.body.task_id_'+i));
             var eta = Number(eval('req.body.eta_'+i));
-            DB.Taskplan.build({
-                "plan_id": p.id,
-                "task_id": id,
-                "eta": eta
-              }).save();
-          };
+            ids.push(id)
+            etas.push(eta);
+          }  
+          console.log(ids)
+          DB.Taskplan.findAll({where:{plan_id: p.id}}).on('success', function(tasks){
+            tasks.forEach(function(task){
+              console.log(task.task_id)
+              if (ids.indexOf(task.task_id) >= 0) {
+                console.log('estoy aca')
+                task.updateAttributes({eta: eta[ids.indexOf(task.task_id)]})
+              }
+              else{
+                console.log('tambien aca')
+                task.updateAttributes({deleted_at: moment().format('YYYY-MM-DD')})
+              }
+            })
+          })
           res.send(req.body);
-        });
+        //});
       }).on('error', function(err) {
         res.send(false);
       });

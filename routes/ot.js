@@ -231,6 +231,21 @@ Ot.conclude = function(req, res, next) {
   });
 };
 
+Ot.reprogram = function(req, res, next){
+  DB.Ot.find({where: {id: req.params.id}}).on('success', function(ot){
+    prev = ot.delivery;
+    ot.updateAttributes({
+      delivery: moment(req.body.newDate).format('YYYY-MM-DD')
+    })
+    DB.Otdelay.create({
+      ot_id: req.params.id,
+      delay_id: req.body.delay_id,
+      observation: req.body.observation
+    })
+  })
+  res.send(true);
+}
+
 Ot.update = function(req, res, next) {
   console.log(req.body)
   DB.Authorization.find({where: {ot_id: req.params.ot_id}}).on('success',function(auth){

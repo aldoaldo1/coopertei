@@ -774,7 +774,7 @@
     }), e.define("/widgets/CRUD.js", function(e, t, n, r, i, s) {
         C.Widget.CRUD = {
             initialize: function(e) {
-                $("#head #tabs").empty().append('<a href="/#/crud/person">Personas</a><a href="/#/crud/user">Usuarios</a><a href="/#/crud/intervention">Intervenciones</a><a href="/#/crud/task">Tareas</a><a href="/#/crud/materialcategory">Categ. de Materiales</a><a href="/#/crud/equipment">Equipos</a>'), C.Session.doIfSysadmin(function(e) {
+                $("#head #tabs").empty().append('<a href="/#/crud/person">Personas</a><a href="/#/crud/user">Usuarios</a><a href="/#/crud/intervention">Intervenciones</a><a href="/#/crud/delay">Demoras</a><a href="/#/crud/task">Tareas</a><a href="/#/crud/materialcategory">Categ. de Materiales</a><a href="/#/crud/equipment">Equipos</a>'), C.Session.doIfSysadmin(function(e) {
                     $("#head #tabs").append('<a href="/#/crud/errorreport">Reportes de errores</a>');
                 }), $("#left .inner").empty().append('<div id="' + (e || "crud") + '_left">' + "</div>"), $("#right .inner").empty().append('<div id="' + (e || "crud") + '_right">' + "</div>");
             }
@@ -3563,6 +3563,7 @@
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget), $("#ot_left .ot_conclude").attr("disabled", !1);
+                $('#ot_left .ot_reprogram').attr('disabled', !1);
             }
         });
     }), e.define("/views/ot/OtAdminForm.js", function(e, t, n, r, i, s) {
@@ -3717,7 +3718,6 @@
                             type: 'GET',
                             url: '/ot/alterdate/'+  $(".selection_id").val(),
                             success: function(){
-                                console.log('heraldo')
                                 var n = e.attributes;
                                 F.msgOK("La O/T ha actualizada");
                                 F.reloadDataTable('.ot_table')
@@ -3734,6 +3734,13 @@
     }), e.define("/views/ot/OtAdminOptions.js", function(e, t, n, r, i, s) {
         C.View.OtAdminOptions = Backbone.View.extend({
             initialize: function() {
+                var e = this;
+                $(document).unbind("delays_loaded")
+                $('#ot_add_task_window').remove()
+                $(document).bind("delays_loaded", function() {
+                    e.render();
+                    console.log(e.delays)
+                }),this.getDelays();
                 this.render();
             },
             render: function() {
@@ -3748,10 +3755,16 @@
                     "class": "ot_conclude",
                     value: "Concluir O/T",
                     disabled: "disabled"
+                })), $(e).append($('<input>', {
+                    type: 'button',
+                    value: 'Reprogramar O/T',
+                    disabled: 'disabled',
+                    class: 'ot_reprogram'
                 })), e;
             },
             events: {
-                "click #ot_left .ot_conclude": "concludeOt"
+                "click #ot_left .ot_conclude": "concludeOt",
+                "click #ot_left .ot_reprogram": "reprogramOt"
             },
             getForm: function() {
                 return this.options.ot_form;
@@ -3782,7 +3795,89 @@
                       }
                   });
               });
-            }
+            },
+            reprogramOt: function(){
+              var e = this, t = $(".ot_table"),
+              n = F.getDataTableSelection(t)[0],
+              r = $(t).dataTable().fnGetData(n)[0],
+              i = $(".ot_table").dataTable().fnGetData(n).id
+              console.log(r);
+                (this.templatet(),
+                 $("#ot_reprogramar_window .BUTTON_cancel").on("click", function() {
+                    $('.blockUI').remove();
+                $()
+                $(document).on('click', '.blockOverlay', function(){
+                    $('.blockUI').remove();
+                })
+                }), $("#ot_reprogramar_window .BUTTON_proceed").on("click", function() {
+                    //var sacomani = true;
+                    repForm = $("#reprogramar_ot_form").serializeObject();
+                    if((repForm.fechaVto!='')
+                    && (repForm.observation!='')){
+                        console.log(repForm);   
+                      F.msgConfirm("Está seguro de Reprogramar la OT?", function() {
+                        $.ajax({
+                          type: "PUT",
+                          url: "/ot/reprogram/"+i,
+                          data: repForm,//$("#reprogramar_ot_form").serialize(),
+                          success: function(nia) {
+                            if(nia){
+                                    F.msgOK("O/T reprogramada exitosamente");
+                                  setTimeout(function(){location.reload()},1e3)
+                            }else{
+                                    F.msgError("La O/T tiene tareas posteriores al vencimiento seleccionado");
+                                  //setTimeout(function(){location.reload()},1e3)
+                            }
+                          }
+                        })
+                      });
+                    }else{
+                      F.msgError("Todos los campos son obligatorios") // OT->SEGUIMIENTO REPGROGRAMAR VTO
+                    }
+                }))
+            },
+            getDelays: function() {
+                var e = this;
+                $.ajax({
+                    type: "GET",
+                    url: "/delay",
+                    success: function(t) {
+                        e.delays = t.data, $(document).trigger("delays_loaded");
+                    }
+                });
+            },
+            buildDelaysList: function(e) {
+                var e = this;
+                console.log(e.delays)
+                var t = $("<select>", {
+                    name: 'delay_id'
+                });
+                return $(t).append($("<option>", {
+                    value: 0
+                }).text("Seleccione razón de demora...")), _.each(e.delays, function(e) {
+                    $(t).append($("<option>", {
+                        value: e.id
+                    }).text(e.reason));
+                }), t;
+            },
+            templatet: function() {
+              var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n)[0], i = $(".ot_table").dataTable().fnGetData(n).number;
+              console.log(e.buildDelaysList('demoras'))
+              /* FORM REPROGRAMAR VTO */
+              $("body").append('<div id="ot_reprogramar_window" style="display:none;"><h1 class="bold">¿Está seguro de querer Reprogramar la O/T Nº '+i+"?</h1>" + '<form id="reprogramar_ot_form" >' + "<br /><br />" +'<input id="tess" name="newDate" type="date" placeholder="Fecha Vto nueva"><br /><br />'+'Observaciones: <br /><textarea id="tesss" name="observation" style="width:100%; height:50px;"></textarea>'+ "</form>" + '<input type="button" class="BUTTON_cancel lefty button" value="Cancelar" />'+ '<input type="button" class="BUTTON_proceed righty button" value="Proceder" />' + "</div>"), $('#reprogramar_ot_form').append(e.buildDelaysList('demoras'))
+              /* FIN FORM REPGROGRAMAR VTO */
+              $.blockUI({
+                message: $("#ot_reprogramar_window"),
+                css: {
+                  top: "15%",
+                  left: "30%",
+                  width: "38%",
+                  border: "none",
+                  padding: "1%",
+                  cursor: "default"
+                }
+              });
+            },
         });
     }), e.define("/views/ot/OtAudit.js", function(e, t, n, r, i, s) {
         C.View.OtAudit = Backbone.View.extend({
@@ -4540,10 +4635,14 @@
                     $(document).on('click', '.delete', function(){
                         var fields = $('.task')
                             t = 0
+                            var dispensable = '';
                             _.each(fields, function(el){
+                                if (t > 0){
+                                    dispensable = 'dispensable';
+                                }
                                 $(el).find('.eta').attr('name', 'eta_'+t)
                                 $(el).find('.id').attr('name', 'task_id_'+t)
-                                $(el).attr('class', 'task task_container_'+t)
+                                $(el).attr('class', 'task '+dispensable+' task_container_'+t)
                                 t++
                             })
                             $('.plan_form .task_count').val(Number($('.task_count').val())-1)
@@ -4730,7 +4829,7 @@
                     data: $(".task_form").serializeObject(),
                     success: function(t) {
                         F.msgOK("La Tarea Fué editada con Éxito")
-                        e.reloadOtRowDetails()         
+                        e.reloadOtRowDetails()       
                     }
                 }) : F.msgError("No tiene suficientes permisos");
             },
@@ -5437,7 +5536,118 @@
                 });
             }
         });
-    }), e.define("/views/profile/Profile.js", function(e, t, n, r, i, s) {
+    }), 
+    //Vista de demoras
+    e.define("/views/delay/Delay.js", function(e, t, n, r, i, s) {
+        C.View.Delay = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                e.delay_table = new C.View.DelayTable({
+                    el: $("#delay_left"),
+                    collection: t
+                }), e.delay_form = new C.View.DelayForm({
+                    el: $("#delay_right"),
+                    collection: t,
+                    model: {},
+                    delay_table: e.delay_table
+                });
+            }
+        });
+    }), e.define("/views/delay/DelayTable.js", function(e, t, n, r, i, s) {
+        C.View.DelayTable = Backbone.View.extend({
+            name: "delay",
+            source: "/delay",
+            headers: [ "ID", "Razón" ],
+            attrs: [ "id", "reason" ],
+            data: null,
+            initialize: function() {
+                F.createDataTable(this, function(e) {
+                    F.assignValuesToForm($(".intervention_form"), e);
+                });
+            },
+            events: {
+                "click .intervention_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/delay/DelayForm.js", function(e, t, n, r, i, s) {
+        C.View.DelayForm = Backbone.View.extend({
+            name: "delay_form",
+            title: "Datos de la demora",
+            fields: {
+                reason: {
+                    label: "Razón",
+                    check: "alpha"
+                }
+            },
+            isCRUD: !0,
+            initialize: function() {
+                this.model.attributes = {reason: null}
+                F.createForm(this);
+            },
+            events: {
+                "click .delay_form .BUTTON_create": "addDelay",
+                "click .delay_form .BUTTON_save": "editDelay",
+                "click .delay_form .BUTTON_delete": "delDelay"
+            },
+            getTable: function() {
+                return this.options.delay_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+            addTableRow: function(e) {
+            },
+            addDelay: function() {
+                var e = this;
+                $.ajax({
+                    type: 'POST',
+                    url: '/delay/',
+                    data: $('.delay_form').serializeObject(),
+                    success: function(t, n) {
+                        F.msgOK("La demora ha sido creada");
+                        F.cleanForm('.delay_form')
+                        F.reloadDataTable('.delay_table')
+                    }
+                });
+            },
+            editDelay: function() {
+                var e = this;
+                $.ajax({
+                    type: 'PUT',
+                    url: '/delay/'+e.getSelectionID(),
+                    data: $('.delay_form').serializeObject(),
+                    success: function(t, n){
+                        F.msgOK("La demora ha sido actualizada");
+                        F.reloadDataTable('.delay_table');
+                    }
+                })
+            },
+            delDelay: function() {
+                var e = this;
+                F.msgConfirm("¿Desea eliminar este Motivo de demora?", function() {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: '/delay/'+e.getSelectionID(),
+                        success: function(){
+                            F.msgOK("La demora ha sido eliminada");
+                            F.reloadDataTable('.delay_table');
+                        }
+                    })
+                });
+            }
+        });
+    }),
+    //Fin vista de demoras
+    e.define("/views/profile/Profile.js", function(e, t, n, r, i, s) {
         C.View.Profile = Backbone.View.extend({
             el: $("body"),
             initialize: function() {
@@ -6110,6 +6320,7 @@
                     "/crud/person": "getPerson",
                     "/crud/user": "getUser",
                     "/crud/intervention": "getIntervention",
+                    "/crud/delay": "getDelay",
                     "/crud/task": "getTask",
                     "/crud/materialcategory": "getMaterialCategory",
                     "/crud/equipment": "getEquipment",
@@ -6379,6 +6590,14 @@
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5 ], e);
                 },
+                getDelay: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Demoras", this.intervention_widget = C.Widget.CRUD.initialize("delay"), this.delay_view = new C.View.Delay({
+                            //model: new C.Model.Delay
+                        }), F.R.highlightCurrentModule("crud/delay");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5 ], e);
+                },
                 getTask: function() {
                     var e = function() {
                         document.title = C.TITLE + "Tareas", this.task_widget = C.Widget.CRUD.initialize("task"), this.task_view = new C.View.Task({
@@ -6548,6 +6767,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./widgets/Reports"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/OtReport"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/reports/Ot"), e("./views/reports/OtTable"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./widgets/Reports"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/OtReport"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/reports/Ot"), e("./views/reports/OtTable"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

@@ -479,11 +479,9 @@
                     $('.dataTables_filter input').focus();
                 },
                 rowCallback: function(row, data, index){
-                    console.log(row, data, index)
                     e.rowHandler && e.rowHandler(row, data);
                 }
             });
-            console.log(e.data.models)
             $(document).on('click', '#'+e.name+'_table tbody tr', function()
             {
                 if (!$(this).hasClass('details')){
@@ -3550,9 +3548,6 @@
                         return arr;
                     }).get();
                     if (items.indexOf(e.plan_id) < 0){
-                        console.log(items.indexOf(e.plan_id))
-                        console.log(e.plan_id)
-                        console.log(items)
                         $('#select').attr('disabled', 'disabled').trigger('liszt:updated');
                     }
                     else
@@ -3569,7 +3564,9 @@
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget), $("#ot_left .ot_conclude").attr("disabled", !1);
-                $('#ot_left .ot_reprogram').attr('disabled', !1);
+                if (C.Session.roleID() > 2 && C.Session.roleID() < 6){
+                    $('#ot_left .ot_reprogram').attr('disabled', !1);
+                }
             }
         });
     }), e.define("/views/ot/OtAdminForm.js", function(e, t, n, r, i, s) {
@@ -3818,8 +3815,9 @@
                 }), $("#ot_reprogramar_window .BUTTON_proceed").on("click", function() {
                     //var sacomani = true;
                     repForm = $("#reprogramar_ot_form").serializeObject();
-                    if((repForm.fechaVto!='')
-                    && (repForm.observation!='')){
+                    if((repForm.newDate!='')
+                    && (repForm.observation!='')
+                    && (repForm.delay_id!=0)){
                         console.log(repForm);   
                       F.msgConfirm("Está seguro de Reprogramar la OT?", function() {
                         $.ajax({
@@ -5577,7 +5575,7 @@
             data: null,
             initialize: function() {
                 F.createDataTable(this, function(e) {
-                    F.assignValuesToForm($(".intervention_form"), e);
+                    F.assignValuesToForm($(".delay_form"), e);
                 });
             },
             events: {

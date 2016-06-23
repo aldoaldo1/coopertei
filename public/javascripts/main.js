@@ -478,8 +478,12 @@
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
                 },
+                rowCallback: function(row, data, index){
+                    console.log(row, data, index)
+                    e.rowHandler && e.rowHandler(row, data);
+                }
             });
-
+            console.log(e.data.models)
             $(document).on('click', '#'+e.name+'_table tbody tr', function()
             {
                 if (!$(this).hasClass('details')){
@@ -1537,6 +1541,7 @@
             headers: [ "ID", "O/T", "ID Cliente", "Cliente", "Equipo (TAG)", "Fecha de entrega" ],
             attrs: [ "id", "number", "client_id", "client", "equipment", "delivery" ],
             data: null,
+            hidden_columns: ['client_id'],
             date_columns: ['delivery'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
@@ -1711,7 +1716,7 @@
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
-            hidden_columns: ['ot_id'],
+            hidden_columns: ['ot_id', 'client_id', 'otstate_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
@@ -2072,7 +2077,7 @@
             headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
             attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
             data: null,
-            hidden_columns: ['ot_id'],
+            hidden_columns: ['ot_id', 'client_id', 'otstate_id'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
@@ -2616,7 +2621,7 @@
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "ottask", "provider", "date" ],
             data: null,
-            hidden_columns: ["ot_id"],
+            hidden_columns: ["ot_id", 'ottask_id'],
             date_columns: ['date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, null, {
@@ -2778,11 +2783,11 @@
                 this.render();
             },
             render: function() {
-                console.log(this.template())
+                console.log(C.Session.roleID(), C.Session.getUser().area_id)
                 return C.Session.isVigilance() || $(this.el).append(this.template()), this;
             },
             template: function() {
-                if (C.Session.getUser().area_id == 2 || C.Session.getUser().area_id == 3 || C.Session.getUser().role_id == 7) {
+                if (C.Session.getUser().area_id == 2 || C.Session.getUser().area_id == 3 || C.Session.getUser().role_id == 7 || C.Session.getUser().role_id == 5) {
                     var e = $("<div>", {
                         "class": "right_options"
                     });
@@ -3185,7 +3190,7 @@
             headers: [ "ID", "O/T ID", "O/T", "Equipo (TAG)", "ID Tarea", "Proveedor", "Fecha" ],
             attrs: [ "id", "ot_id", "ot_number", "tag", "ottask_id", "provider", "date" ],
             data: null,
-            hidden_columns: ["ot_id"],
+            hidden_columns: ["ot_id", 'ottask_id'],
             date_columns: ['date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, null, {
@@ -3265,6 +3270,7 @@
             source: "/equipment",
             headers: [ "ID", "Equipo (TAG)", "ID Motivo de intervención", "Motivo de intervención", "ID Cliente", "Cliente" ],
             attrs: [ "id", "name", "intervention_id", "intervention", "client_id", "client" ],
+            hidden_columns: ['intervention_id', 'client_id'],
             data: null,
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
@@ -3520,7 +3526,7 @@
             source: "/ot",
             headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
             attrs: [ "id", "number", "client_number", "equipment_id", "equipment", "client_id", "client", "intervention_id", "intervention", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
-            hidden_columns: [ "workshop_suggestion", "client_suggestion", "remitoentrada", "reworked_number", "notify_client" ],
+            hidden_columns: [ "workshop_suggestion", "client_suggestion", "remitoentrada", "reworked_number", "notify_client", 'equipment_id', 'client_id', 'intervention_id', 'plan_id'],
             date_columns: ['delivery', 'created_at'],
             data: null,
             datatableOptions: {
@@ -3543,7 +3549,7 @@
                         arr.push(Number($(this).val()))
                         return arr;
                     }).get();
-                    if (items.indexOf(e.plan_id) < 1){
+                    if (items.indexOf(e.plan_id) < 0){
                         console.log(items.indexOf(e.plan_id))
                         console.log(e.plan_id)
                         console.log(items)
@@ -4248,7 +4254,7 @@
             source: "/ot",
             headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
             attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
-            hidden_columns: [ "number", "reworked_number" ],
+            hidden_columns: [ "ot_number", "number", "reworked_number", 'equipment_id', 'client_id' ],
             date_columns: ['delivery'],
             data: null,
             datatableOptions: {
@@ -4455,7 +4461,7 @@
             source: "/othistory",
             headers: [ "ID", "O/T", "O/T Cliente", "Ingreso", "Salida", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida" ],
             attrs: [ "id",  "number", "client_number", "created_at", "salida", "equipment_id", "equipment", "client_id", "client", "delivery", "reworked_number", "remitoentrada", "remitosalida" ],
-            hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada" ],
+            hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada", 'client_id', 'equipment_id'],
             date_columns: ['created_at', 'salida'],
             data: null,
             datatableOptions: {
@@ -4571,6 +4577,7 @@
             source: "/plan",
             headers: [ "ID", "Nombre", "Descripción", "ID Tareas" ],
             attrs: [ "id", "name", "description", "task_id" ],
+            hidden_columns: ['task_id'],
             data: null,
             initialize: function() {
                 t = function(){
@@ -5092,6 +5099,7 @@
             source: "/employee",
             headers: [ "ID", "Legajo", "ID Persona", "Nombre", "ID Area", "Área", "Horario entrada ID", "Horario salida ID", "Horario", "Interno" ],
             attrs: [ "id", "payroll_number", "person_id", "person", "area_id", "area", "schedule_ini_id", "schedule_end_id", "schedule", "intern" ],
+            hidden_columns:['person_id', 'area_id', 'schedule_ini_id', 'schedule_end_id'],
             data: null,
             rowHandler: function(e, t) {
                 var n = $("<img>", {
@@ -5253,13 +5261,18 @@
             source: "/inout",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
+            hidden_columns: ['employee_id'],
             data: null,
             rowHandler: function(e, t) {
+                console.log(e)
+                console.log(t)
                 function n(n, r, i) {
+                    console.log(r)
                     var s = $(e).find("td")[r], o = $("<input>", {
                         type: "checkbox",
                         "class": n + "_" + t.id + "_checkbox"
                     });
+                    console.log()
                     $(o).on("click", function() {
                         if(C.Session.isVigilance() || C.Session.isSysadmin()){
                           F.msgConfirm("¿Está seguro?", function() {
@@ -5271,9 +5284,10 @@
                           });
                         }
                     }), $(s).empty().append(o);
+                    console.log(s)
                 }
                 var r = this, i = $("inout_table").dataTable();
-                t.out === null ? n("out", 4, r.registerOut) : t.comeback === null && n("comeback", 5, r.registerComeback);
+                t.out === null ? n("out", 2, r.registerOut) : t.comeback === null && n("comeback", 3, r.registerComeback);
             },
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
@@ -5326,6 +5340,7 @@
             source: "/inouthistory",
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
+            hidden_columns: ['employee_id'],
             data: null,
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this);
@@ -5934,6 +5949,7 @@
             source: "/task",
             headers: [ "ID", "Nombre", "Descripción", "prioridad", "ID Area", "Area" ],
             attrs: [ "id", "name", "description", "priority", "area_id", "area" ],
+            hidden_columns: ['area_id'],
             data: null,
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
@@ -6062,6 +6078,7 @@
             source: "/user",
             headers: [ "ID", "Usuario", "ID Empleado", "Empleado", "ID Rol", "Rol", "ID Area", "Area" ],
             attrs: [ "id", "username", "employee_id", "employee", "role_id", "role", "area_id", "area" ],
+            hidden_columns: ['employee_id', 'role_id', 'area_id'],
             data: null,
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {

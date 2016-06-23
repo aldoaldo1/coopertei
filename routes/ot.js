@@ -99,7 +99,7 @@ if(req.body.client_id > 0){
 Ot.get = function(req, res, next) {
   var where = 'otstate_id <> 6';
   if (req.session.role_id == 1){
-    where = 'otstate_id = 1'
+    where = 'otstate_id = 1 AND plan_id = 0'
   }
   var q = " \
     SELECT ot.*, c.name AS client, e.name AS equipment, i.name AS intervention, \
@@ -481,7 +481,7 @@ if(req.body.client_id > 0){
         },
         function(err, results) {
           var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
-          DB._.query(q, function(err, data) {   
+          DB._.query(q, function(err, data) { 
             DB.News.build({
               name: 'Nueva O/T',
               description: 'El equipo<a href="#">' + data[0].name + '</a> ha sido inaugurado',

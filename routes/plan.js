@@ -112,13 +112,12 @@ Plan.put = function(req, res, next) {
             ids.push(id)
             etas.push(eta);
           }  
-          console.log(ids)
           DB.Taskplan.findAll({where:{plan_id: p.id}}).on('success', function(tasks){
             tasks.forEach(function(task){
-              console.log(task.task_id)
               if (ids.indexOf(task.task_id) >= 0) {
-                console.log('estoy aca')
-                task.updateAttributes({eta: eta[ids.indexOf(task.task_id)]})
+                console.log(etas)
+                console.log('etas['+ids.indexOf(task.task_id)+']')
+                task.updateAttributes({eta: etas[ids.indexOf(task.task_id)]})
               }
               else{
                 console.log('tambien aca')

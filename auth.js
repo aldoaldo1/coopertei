@@ -28,7 +28,6 @@ Auth.restrict = function(req, res, next) {
 
   //En caso de estar en entorno de desarrollo no pide autentificación
   if (process.env.ENV == 'dev'){
-    console.log('heraldo')
     req.session.username = process.env.USERNAME;
     req.session.user_id = process.env.USER_ID;
     req.session.role_id = process.env.ROLE_ID;

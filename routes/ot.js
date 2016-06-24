@@ -205,10 +205,14 @@ Ot.conclude = function(req, res, next) {
 		            if (a) {
 		              a.updateAttributes({ otstate_id: 6 }).on('success', function() {
                   var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
-                    DB._.query(q, function(err, data) {   		              
+                    DB._.query(q, function(err, data) {
+                      var description = 'La OT n° '+ot.number+' ha sido conclu$iacute;da sin TAG';
+                      if (data){
+                        description = 'El equipo <href="#">Nº ' + data[0].name + '</a> ha sido conclu&iacute;do';
+                      }		              
 		                  DB.News.build({
 		                    name: 'O/T Finalizada',
-		                    description: 'El equipo <href="#">Nº ' + data[0].name + '</a> ha sido conclu&iacute;do',
+		                    description: description,
 		                    related_model: 'ot',
 		                    related_model_id: ot.id
 		                  }).save().on('success', function() {
@@ -353,7 +357,8 @@ Ot.update = function(req, res, next) {
                         startDay.add('days', Number(max[0].eta) + Number(t.eta));
                       }
                       else{
-                        startDay = moment(ot.created_at).format('YYYY-MM-DD') 
+                        startDay = moment(ot.created_at)
+                        startDay.add('days', Number(t.eta));
                       }
                       DB.Ottask.build({
                         name: t.name,
@@ -372,6 +377,9 @@ Ot.update = function(req, res, next) {
                       position += 1;
                       if (max[0].eta) {
                         startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
+                      }
+                      else{
+                        startDay.subtract('days', Number(t.eta)).format('YYYY-MM-DD')
                       };
                     })
                   });
@@ -429,32 +437,55 @@ if(req.body.client_id > 0){
         {
           tasks: function(fn) {
             // Create instance of chosen Taskplan so it can be editable for this OT
-            var q = " \
-              SELECT tp.*, t.* \
-              FROM taskplan tp \
-              INNER JOIN task t ON tp.task_id = t.id \
-              WHERE tp.plan_id = " + ot.plan_id;
-            DB._.query(q, function(err, tasks) {
-              if (tasks && tasks.length) {
-                var position = 1;
-                tasks.forEach(function(t) {
-                  DB.Ottask.build({
-                    name: t.name,
-                    sent: 0,                    
-                    priority: t.priority,                    
-                    description: t.description,
-                    due_date: ot_delivery,
-                    position: position,
-                    area_id: t.area_id,
-                    completed: 0,
-                    reworked: 0,
-                    derived_to: 0,
-                    ot_id: ot.id
-                  }).save();
-
-                  position += 1;
-                });
-              }
+            var q1 = "DELETE FROM ottask WHERE ot_id = " + ot.id;
+            DB._.query(q1, function(err, data) {
+              var q2 = " \
+                SELECT tp.*, t.* \
+                FROM taskplan tp \
+                INNER JOIN task t ON tp.task_id = t.id \
+                WHERE tp.plan_id = " + req.body.plan_id;
+              DB._.query(q2, function(err, tasks) {
+                if (tasks && tasks.length){
+                  var position = 1;
+                  var priority = 1;
+                  tasks.forEach(function(t) {
+                  var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
+                    DB._.query(q3, function(err, max){
+                      var startDay = moment(ot.created_at);
+                      
+                      if (max[0].eta){
+                        startDay = moment(ot.created_at);
+                        startDay.add('days', Number(max[0].eta) + Number(t.eta));
+                      }
+                      else{
+                        startDay = moment(ot.created_at) 
+                        startDay.add('days', Number(t.eta));
+                      }
+                      DB.Ottask.build({
+                        name: t.name,
+                        sent: 0,                      
+                        priority: t.priority,
+                        description: t.description,
+                        position: position,
+                        due_date: moment(startDay).format('YYYY-MM-DD'),
+                        area_id: t.area_id,
+                        completed: 0,
+                        reworked: 0,
+                        derived_to: 0,
+                        ot_id: ot.id,
+                        eta: t.eta
+                      }).save();
+                      position += 1;
+                      if (max[0].eta) {
+                        startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
+                      }
+                      else{
+                        startDay.subtract('days', Number(t.eta)).format('YYYY-MM-DD')
+                      };
+                    })
+                  });
+                }
+              });
             });
             fn(null, data);
           },
@@ -482,9 +513,13 @@ if(req.body.client_id > 0){
         function(err, results) {
           var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
           DB._.query(q, function(err, data) { 
+            var description = 'La OT n° '+ot.number+' ha sido inagurada sin TAG';
+            if (data){
+              description = 'El equipo <a href="#">' + data[0].name + '</a> ha sido inaugurado'
+            }
             DB.News.build({
               name: 'Nueva O/T',
-              description: 'El equipo<a href="#">' + data[0].name + '</a> ha sido inaugurado',
+              description: description,
               related_model: 'ot',
               related_model_id: ot.id
             }).save();

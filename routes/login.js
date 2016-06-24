@@ -43,7 +43,7 @@ Login.post = function(req, res, next) {
 
         var ini_routes = [
           null, // Dummy
-          '/#/ots/audit',
+          '/#/personnel/inouts',
           '/#/ots/audit',
           '/#/ots/audit',
           '/',

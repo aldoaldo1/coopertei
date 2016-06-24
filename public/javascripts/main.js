@@ -3539,6 +3539,7 @@
                 var t = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".ot_form"), e);
+                    $('.plan_alert').remove()
                     if (e.plan_id == 0 && C.Session.roleID() == 1){
                         $('.BUTTON_save').hide()
                     }
@@ -3547,8 +3548,11 @@
                         arr.push(Number($(this).val()))
                         return arr;
                     }).get();
+                    console.log(e.plan_id)
+                    console.log(items.indexOf(e.plan_id))
                     if (items.indexOf(e.plan_id) < 0){
-                        $('#select').attr('disabled', 'disabled').trigger('liszt:updated');
+                        console.log('heraldo')
+                        $('#select').before('<span class="equipment_ot_exists plan_alert">La OT posee un plan de tareas actualmente eliminado</span>');
                     }
                     else
                         {
@@ -3701,12 +3705,25 @@
             editTableRow: function(e) {},
             addOt: function() {
                 var e = this;
-                $(".ot_form").serializeObject().client_id != "" || $(".ot_form").serializeObject().equipment_id != "" && $(".ot_form").serializeObject().equipament_new != "" ? this.collection.create($(".ot_form").serializeObject(), {
+                $(".ot_form").serializeObject().client_id != "" || $(".ot_form").serializeObject().equipment_id != "" && $(".ot_form").serializeObject().equipament_new != "" ? $.ajax({
+                    data: $(".ot_form").serializeObject(),
+                    url: '/ot',
+                    type: 'POST',
                     success: function(e, t) {
-                        var n = e.attributes;
-                        F.msgOK("La O/T ha sido creada"), $(".ot_form select[name=client_id]").val(null), $(".ot_form select[name=equipment_id]").val(null);
-                        F.reloadDataTable('.ot_table')
-                    }
+                        console.log(e)
+                        setTimeout(function(){
+                            $.ajax({
+                                type: 'GET',
+                                url: '/ot/alterdate/'+e.id,
+                                success: function(){
+                                    var n = e.attributes;
+                                    F.msgOK("La O/T ha sido creada"), $(".ot_form select[name=client_id]").val(null), $(".ot_form select[name=equipment_id]").val(null);
+                                    F.reloadDataTable('.ot_table')
+                                }
+                                
+                            })
+                        })
+                    }//this.collection.create($(".ot_form").serializeObject(), {
                 }) : F.msgError("Cargue al menos Cliente y TAG del equipo");
             },
             editOt: function() {
@@ -3731,7 +3748,7 @@
               });
             },
             cancelOt: function() {
-              location.reload()
+              //location.reload()
             }            
         });
     }), e.define("/views/ot/OtAdminOptions.js", function(e, t, n, r, i, s) {
@@ -5276,6 +5293,7 @@
                           F.msgConfirm("¿Está seguro?", function() {
                               i(t, function(e) {
                                   $(s).empty().append(e);
+                                  F.reloadDataTable('.inout_table')
                               });
                           }, function() {
                               $(o).attr("checked", !1);

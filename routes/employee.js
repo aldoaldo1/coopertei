@@ -11,7 +11,7 @@ var Employee = function(db, everyone) {
 Employee.get = function(req, res, next) {
 console.log(req.session.area_id);
   var q;
-  if(req.session.role_id < 4){console.log("con area");
+  if(req.session.role_id < 0){console.log("con area");
   q = " \
     SELECT e.*, e.id AS id, \
            CONCAT(p.lastname, ', ', p.firstname) AS person, \

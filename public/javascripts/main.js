@@ -3551,7 +3551,6 @@
                     console.log(e.plan_id)
                     console.log(items.indexOf(e.plan_id))
                     if (items.indexOf(e.plan_id) < 0){
-                        console.log('heraldo')
                         $('#select').before('<span class="equipment_ot_exists plan_alert">La OT posee un plan de tareas actualmente eliminado</span>');
                     }
                     else
@@ -3705,7 +3704,9 @@
             editTableRow: function(e) {},
             addOt: function() {
                 var e = this;
-                $(".ot_form").serializeObject().client_id != "" || $(".ot_form").serializeObject().equipment_id != "" && $(".ot_form").serializeObject().equipament_new != "" ? $.ajax({
+                console.log($(".ot_form").serializeObject().equipment_new != '')
+                console.log($(".ot_form").serializeObject().equipment_id != "")
+                $(".ot_form").serializeObject().client_id != "" && $(".ot_form").serializeObject().equipment_id != "" || $(".ot_form").serializeObject().equipment_new != "" ? $.ajax({
                     data: $(".ot_form").serializeObject(),
                     url: '/ot',
                     type: 'POST',
@@ -3759,7 +3760,6 @@
                 $('#ot_add_task_window').remove()
                 $(document).bind("delays_loaded", function() {
                     e.render();
-                    console.log(e.delays)
                 }),this.getDelays();
                 this.render();
             },
@@ -3945,11 +3945,23 @@
             name: "ot_add_task_window",
             initialize: function() {
                 var e = this
-                $(document).unbind("tasks_loaded")
-                $('#ot_add_task_window').remove()
+                $(document).on('click', 'input[name="reprogram"]', function(){
+                    var c = this;
+                    //$(document).bind('delays_loaded', function(){
+                        if ($(c).is(':checked')){
+                            $('#add_task_ot_form').append('<div class="explaination"><label for="observation">Observación</label><textarea name="observation"></textarea></div>')
+                            $('.explaination').append(e.buildDelaysList('delays'))
+                        }
+                        else{
+                            $('.explaination').remove()
+                        }
+                    //}), e.getDelays();
+                })
                 $(document).bind("tasks_loaded", function() {
-                    e.render();
-                    console.log(e.tasks)
+                    $(document).bind("delays_loaded", function() {
+                        e.render();
+                        console.log(e.tasks)
+                    }), e.getDelays();
                 }),this.getTasks();
             },
             render: function() {
@@ -3992,6 +4004,30 @@
                     }).text(e.name));
                 }), t;
             },
+            getDelays: function() {
+                var e = this;
+                $.ajax({
+                    type: "GET",
+                    url: "/delay",
+                    success: function(t) {
+                        e.delays = t.data, $(document).trigger("delays_loaded");
+                    }
+                });
+            },
+            buildDelaysList: function(e) {
+                var e = this;
+                console.log(e.delays)
+                var t = $("<select>", {
+                    name: 'delay_id'
+                });
+                return $(t).append($("<option>", {
+                    value: 0
+                }).text("Seleccione razón de demora...")), _.each(e.delays, function(e) {
+                    $(t).append($("<option>", {
+                        value: e.id
+                    }).text(e.reason));
+                }), t;
+            },
             template: function() {
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                 $("body").append('<div id="ot_add_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><label for="new_task_name">Prioridad</label><input type="text" name="new_task_priority" /><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><label for="new_task_description">Descripción</label><textarea name="new_task_description" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
@@ -4006,12 +4042,32 @@
                 if ($('#add_task_ot_window').css('display') == 'none'){
                     $('#add_task_ot_window').remove()
                 }
-                console.log($('#add_task_ot_window'))
-                this.options.addNewTask({
-                    name: $("#add_task_ot_form select").val(),
-                    description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
-                    eta: $('#add_task_ot_form input[name=eta]').val()
-                }, this.cleanModals());
+                var form = $('#add_task_ot_form').serializeObject()
+                console.log(form)
+                if (form.name != '' && form.priority != '' && form.area != '' && form.new_task_description != ''){
+                    if ($('#add_task_ot_form input[name=reprogram]').is(':checked')){
+                        if (form.observation != '' && form.delay_id != ''){
+                            this.options.addNewTask({
+                                name: $("#add_task_ot_form select[name=name]").val(),
+                                description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
+                                eta: $('#add_task_ot_form input[name=eta]').val(),
+                                reprogram: $('#add_task_ot_form input[name=reprogram]').is(':checked'),
+                                observation: $('#add_task_ot_form textarea[name=observation]').val(),
+                                delay_id: $("#add_task_ot_form select[name=delay_id]").val(),
+                            }, this.cleanModals());
+                        }else{
+                            F.msgError('Complete la observación y la razon de demora')
+                        }
+                    }
+                    else{
+                        this.options.addNewTask({
+                            name: $("#add_task_ot_form select").val(),
+                            description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
+                            eta: $('#add_task_ot_form input[name=eta]').val(),
+                            reprogram: $('#add_task_ot_form input[name=reprogram]').is(':checked')
+                        }, this.cleanModals());
+                    }
+                }
             },
             cancelAddTask: function() {
                 this.cleanModals();
@@ -4224,8 +4280,13 @@
             },
             addTask: function() {
                 var e = this;
+                $(document).unbind("tasks_loaded")
+                $('#foot').unbind()
+                $('#ot_add_task_window').remove()
                 new C.View.OtAuditAddTask({
+                    el: $('#foot'),
                     addNewTask: function(t, n) {
+                        console.log(t)
                         var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                         $(".selected_ottask").length && (s = parseInt($(".selected_ottask").attr("data-position"))), $.ajax({
                             url: "/ottask/add",
@@ -4235,10 +4296,14 @@
                                 name: t.name,
                                 description: t.description,
                                 eta: t.eta,
-                                selected_row_position: s
+                                selected_row_position: s,
+                                reprogram: t.reprogram,
+                                observation: t.observation,
+                                delay_id: t.delay_id,
                             },
                             success: function(t) {
-                                e.reloadRowDetails();
+                                location.reload()
+                                //e.reloadRowDetails();
                             }
                         });
                     }
@@ -4269,7 +4334,7 @@
             source: "/ot",
             headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
             attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
-            hidden_columns: [ "ot_number", "number", "reworked_number", 'equipment_id', 'client_id' ],
+            hidden_columns: [ "ot_number", "reworked_number", 'equipment_id', 'client_id' ],
             date_columns: ['delivery'],
             data: null,
             datatableOptions: {
@@ -5279,15 +5344,11 @@
             hidden_columns: ['employee_id'],
             data: null,
             rowHandler: function(e, t) {
-                console.log(e)
-                console.log(t)
                 function n(n, r, i) {
-                    console.log(r)
                     var s = $(e).find("td")[r], o = $("<input>", {
                         type: "checkbox",
                         "class": n + "_" + t.id + "_checkbox"
                     });
-                    console.log()
                     $(o).on("click", function() {
                         if(C.Session.isVigilance() || C.Session.isSysadmin()){
                           F.msgConfirm("¿Está seguro?", function() {
@@ -5300,7 +5361,6 @@
                           });
                         }
                     }), $(s).empty().append(o);
-                    console.log(s)
                 }
                 var r = this, i = $("inout_table").dataTable();
                 t.out === null ? n("out", 2, r.registerOut) : t.comeback === null && n("comeback", 3, r.registerComeback);

@@ -67,6 +67,7 @@ Ottask.resources = function(req, res, next) {
 Ottask.add = function(req, res, next) {
   var q, new_task_position = 1;
   console.log(req.body)
+  console.log(req.body.reprogram)
   if (req.body.selected_row_position > 0) {
     q = " \
       UPDATE ottask \
@@ -87,10 +88,16 @@ Ottask.add = function(req, res, next) {
     DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+req.body.ot_id+' AND priority = '+task[0].priority, function(err, max){
       console.log(task);
       var diference = Number(req.body.eta) - Number(max[0].max);
-      console.log('Max priority eta: '+Number(max[0].max)+' | Current eta: '+Number(task[0].eta)+' | Diference :'+diference);
-      if (diference > 0){
-        DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+req.body.ot_id+' AND priority > '+task[0].priority);
-      }
+      if (req.body.reprogram == 'true') {
+        if (diference > 0){
+          DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+req.body.ot_id+' AND priority > '+task[0].priority);
+        }
+        DB.Otdelay.create({
+          delay_id: req.body.delay_id,
+          ot_id: req.body.ot_id,
+          observation: req.body.observation
+        })
+      };
     })
     var q_start = '';
     if (task[0].priority < 1){

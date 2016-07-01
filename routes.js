@@ -16,6 +16,7 @@ module.exports = function(app, routes) {
   app.put('/ot/reprogram/:id', Auth.restrict, routes.ot.reprogram);
   app.post('/ot/inaugurate', Auth.restrict, routes.ot.inaugurate);
   app.post('/ot/conclude/:ot_id', Auth.restrict, routes.ot.conclude);
+  app.get('/ot/materialrecieved/:id', Auth.restrict, routes.ot.materialrecieved   );
   app.get('/ot/findByEquipmentAndClient/:equipment_id/:client_id', Auth.restrict, routes.ot.findByEquipmentAndClient);
   app.post('/ot/update/:ot_id', Auth.restrict, routes.ot.update);
   app.get('/clientots', Auth.restrict, routes.clients.getOts);

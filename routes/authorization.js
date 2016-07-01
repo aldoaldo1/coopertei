@@ -567,7 +567,7 @@ Authorization.notifyClient = function(req, res, next) {
 Authorization.confirm = function(req, res, next) {
   DB.Authorization.find({ where: { ot_id: req.params.ot_id } }).on('success', function(a) {
     if (a) {
-      a.updateAttributes({ otstate_id: 5 }).on('success', function() {
+      a.updateAttributes({ otstate_id: 4 }).on('success', function() {
         res.send(true);
       }).on('error', function(err) {
         res.send(false);

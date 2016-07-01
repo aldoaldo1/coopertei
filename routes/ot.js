@@ -125,6 +125,7 @@ Ot.get = function(req, res, next) {
         number: ot.number,
         client_number: ot.client_number,
         equipment_id: ot.equipment_id,
+        equipment_new: ot.equipment,
         equipment: ot.equipment,
         delivery: ot.delivery ? moment(ot.delivery).format('DD/MM/YYYY') : "Sin DEFINIR",
         created_at: moment(ot.created_at).format('DD/MM/YYYY'),
@@ -269,21 +270,48 @@ Ot.update = function(req, res, next) {
    }
    console.log(delivery)
    if(ot){
-    if(ot.plan_id == req.body.plan_id){
-    //Actualizo Todo menos plan de tareas
-      var equipment;
-      if(req.body.equipment_new){
-        DB.Equipment.build({
-          name: req.body.equipment_new,
-          intervention_id: req.body.intervention_id,
-          client_id: req.body.client_id
-        }).save().on('success', function(e) {
-        	qe="\
-          	UPDATE ot\
+    DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
+      console.log('Heraldo')
+      console.log(plan)
+
+      if(ot.plan_id == req.body.plan_id || (plan.length == 0 && req.body.plan_id == '')){
+      //Actualizo Todo menos plan de tareas
+        var equipment;
+        if(req.body.equipment_new){
+          DB.Equipment.build({
+            name: req.body.equipment_new,
+            intervention_id: req.body.intervention_id,
+            client_id: req.body.client_id
+          }).save().on('success', function(e) {
+            console.log(e)
+            qe="\
+            	UPDATE ot\
+              SET remitoentrada = '"+req.body.remitoentrada+"',\
+              client_number = '"+req.body.client_number+"',\
+              client_id = '"+req.body.client_id+"',\
+              equipment_id = '"+e.id+"',\
+              delivery = '"+delivery+"',\
+              intervention_id = '"+req.body.intervention_id+"',\
+              workshop_suggestion = '"+req.body.workshop_suggestion+"',\
+              client_suggestion = '"+req.body.client_suggestion+"',\
+              reworked_number = '"+req.body.reworked_number+"',\
+              notify_client = '"+req.body.notify_client+"'\
+              WHERE id = " + req.params.ot_id + "\
+              ";
+              console.log(qe)
+            DB._.query(qe, function(errq, data) {
+              res.send({ result: true });
+            }).on('error', function(err) {
+              res.send({ result: false, error: err });
+            });
+          });
+        }else{
+          qe="\
+            UPDATE ot\
             SET remitoentrada = '"+req.body.remitoentrada+"',\
             client_number = '"+req.body.client_number+"',\
             client_id = '"+req.body.client_id+"',\
-            equipment_id = '"+e.id+"',\
+            equipment_id = '"+req.body.equipment_id+"',\
             delivery = '"+delivery+"',\
             intervention_id = '"+req.body.intervention_id+"',\
             workshop_suggestion = '"+req.body.workshop_suggestion+"',\
@@ -292,105 +320,86 @@ Ot.update = function(req, res, next) {
             notify_client = '"+req.body.notify_client+"'\
             WHERE id = " + req.params.ot_id + "\
             ";
-        	DB._.query(qe, function(errq, data) {
-            res.send({ result: true });
+            console.log(qe)
+          DB._.query(qe, function(errq, data) {
+    	      res.send({ result: true });
           }).on('error', function(err) {
-            res.send({ result: false, error: err });
+              res.send({ result: false, error: err });
           });
-        });
+        };
       }else{
-        qe="\
-          UPDATE ot\
-          SET remitoentrada = '"+req.body.remitoentrada+"',\
-          client_number = '"+req.body.client_number+"',\
-          client_id = '"+req.body.client_id+"',\
-          equipment_id = '"+req.body.equipment_id+"',\
-          delivery = '"+delivery+"',\
-          intervention_id = '"+req.body.intervention_id+"',\
-          workshop_suggestion = '"+req.body.workshop_suggestion+"',\
-          client_suggestion = '"+req.body.client_suggestion+"',\
-          reworked_number = '"+req.body.reworked_number+"',\
-          notify_client = '"+req.body.notify_client+"'\
-          WHERE id = " + req.params.ot_id + "\
-          ";
-        DB._.query(qe, function(errq, data) {
-  	      res.send({ result: true });
-        }).on('error', function(err) {
-            res.send({ result: false, error: err });
-        });
-      };
-    }else{
-     //Actualizo Todo
-      ot.updateAttributes({
-        remitoentrada: req.body.remitoentrada,
-	      client_number: req.body.client_number,
-	      client_id: req.body.client_id,
-	      delivery: delivery,
-	      intervention_id: req.body.intervention_id,
-	      workshop_suggestion: req.body.workshop_suggestion,
-	      client_suggestion: req.body.client_suggestion,
-	      reworked_number: req.body.reworked_number,
-	      notify_client: req.body.notify_client,
-	      plan_id: req.body.plan_id,
-      }).on('success', function() {
-        async.parallel(
-        {
-          tasks: function(fn) {
-            var q1 = "DELETE FROM ottask WHERE ot_id = " + ot.id;
-            DB._.query(q1, function(err, data) {
-              var q2 = " \
-                SELECT tp.*, t.* \
-                FROM taskplan tp \
-                INNER JOIN task t ON tp.task_id = t.id \
-                WHERE tp.plan_id = " + req.body.plan_id;
-              DB._.query(q2, function(err, tasks) {
-                if (tasks && tasks.length){
-                  var position = 1;
-                  var priority = 1;
-                  tasks.forEach(function(t) {
-                  var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
-                    DB._.query(q3, function(err, max){
-                      var startDay = moment(ot.created_at);
-                      
-                      if (max[0].eta){
-                        startDay = moment(ot.created_at);
-                        startDay.add('days', Number(max[0].eta) + Number(t.eta));
-                      }
-                      else{
-                        startDay = moment(ot.created_at)
-                        startDay.add('days', Number(t.eta));
-                      }
-                      DB.Ottask.build({
-                        name: t.name,
-                        sent: 0,                      
-                        priority: t.priority,
-                        description: t.description,
-                        position: position,
-                        due_date: moment(startDay).format('YYYY-MM-DD'),
-                        area_id: t.area_id,
-                        completed: 0,
-                        reworked: 0,
-                        derived_to: 0,
-                        ot_id: ot.id,
-                        eta: t.eta
-                      }).save();
-                      position += 1;
-                      if (max[0].eta) {
-                        startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
-                      }
-                      else{
-                        startDay.subtract('days', Number(t.eta)).format('YYYY-MM-DD')
-                      };
-                    })
-                  });
-                }
+       //Actualizo Todo
+        ot.updateAttributes({
+          remitoentrada: req.body.remitoentrada,
+  	      client_number: req.body.client_number,
+  	      client_id: req.body.client_id,
+  	      delivery: delivery,
+  	      intervention_id: req.body.intervention_id,
+  	      workshop_suggestion: req.body.workshop_suggestion,
+  	      client_suggestion: req.body.client_suggestion,
+  	      reworked_number: req.body.reworked_number,
+  	      notify_client: req.body.notify_client,
+  	      plan_id: req.body.plan_id,
+        }).on('success', function() {
+          async.parallel(
+          {
+            tasks: function(fn) {
+              var q1 = "DELETE FROM ottask WHERE ot_id = " + ot.id;
+              DB._.query(q1, function(err, data) {
+                var q2 = " \
+                  SELECT tp.*, t.* \
+                  FROM taskplan tp \
+                  INNER JOIN task t ON tp.task_id = t.id \
+                  WHERE tp.plan_id = " + req.body.plan_id;
+                DB._.query(q2, function(err, tasks) {
+                  if (tasks && tasks.length){
+                    var position = 1;
+                    var priority = 1;
+                    tasks.forEach(function(t) {
+                    var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
+                      DB._.query(q3, function(err, max){
+                        var startDay = moment(ot.created_at);
+                        
+                        if (max[0].eta){
+                          startDay = moment(ot.created_at);
+                          startDay.add('days', Number(max[0].eta) + Number(t.eta));
+                        }
+                        else{
+                          startDay = moment(ot.created_at)
+                          startDay.add('days', Number(t.eta));
+                        }
+                        DB.Ottask.build({
+                          name: t.name,
+                          sent: 0,                      
+                          priority: t.priority,
+                          description: t.description,
+                          position: position,
+                          due_date: moment(startDay).format('YYYY-MM-DD'),
+                          area_id: t.area_id,
+                          completed: 0,
+                          reworked: 0,
+                          derived_to: 0,
+                          ot_id: ot.id,
+                          eta: t.eta
+                        }).save();
+                        position += 1;
+                        if (max[0].eta) {
+                          startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
+                        }
+                        else{
+                          startDay.subtract('days', Number(t.eta)).format('YYYY-MM-DD')
+                        };
+                      })
+                    });
+                  }
+                });
               });
-            });
-          }
+            }
+          });
+          res.send({ result: true });
         });
-        res.send({ result: true });
-      });
-    }
+      }
+    })
    }
   });
 };
@@ -614,6 +623,13 @@ Ot.put = function(req, res, next) {
     updateOt(null);
   }
 };
+
+Ot.materialrecieved = function(req, res, next){
+  DB.Ot.find({where: {id:req.params.id}}).on('success', function(ot) {
+    ot.updateAttributes({otstate_id: 5})
+    res.send(true)
+  })
+}
 
 Ot.delete = function(req, res, next) {
   DB.Ot.find({ where: { id: req.params.id } }).on('success', function(ot) {

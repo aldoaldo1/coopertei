@@ -66,9 +66,83 @@ Ottask.resources = function(req, res, next) {
 
 Ottask.add = function(req, res, next) {
   var q, new_task_position = 1;
-  console.log(req.body)
-  console.log(req.body.reprogram)
-  if (req.body.selected_row_position > 0) {
+  var params = req.body
+
+  DB._.query("SELECT MAX(position) AS position FROM ottask WHERE ot_id = "+params.ot_id+" AND (priority <= "+params.priority+")", function(err, position){
+    var pos = 1
+    if (position.length > 0){
+      pos = position[0].position;  
+    }
+    DB._.query("UPDATE ottask SET position = position + 1 WHERE position >= "+pos+" AND ot_id = "+params.ot_id+" AND deleted_at IS NULL");
+    if(params.reprogramTask == 'true'){
+      if (params.type == 'par'){
+        DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, max){
+          var diference = Number(params.eta) - Number(max[0].max);
+          if (diference > 0){
+            DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND priority > '+params.priority);
+          }
+        })
+      }
+      else{
+        DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+params.eta+' DAY) WHERE ot_id = '+params.ot_id+' AND priority >= '+params.priority);
+      }
+    }
+    if(params.reprogram == 'true'){
+      DB.Otdelay.create({
+        delay_id: req.body.delay_id,
+        ot_id: req.body.ot_id,
+        observation: req.body.observation
+      })
+      DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
+      var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
+        DB._.query(query, function(err, deadline){
+          if (deadline[0]){
+            ot.updateAttributes({delivery:deadline[0].deadline})
+          }
+        })
+      })
+    }
+    var q_start = '';
+    if (params.priority < 1){
+      q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+params.priority;
+    }
+    else{
+      q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
+    }
+    DB._.query(q_start, function(err, start){
+      var startDay = start[0].start
+      var dp= req.body.description.split(":::")
+      DB.Ottask.build({
+        name: params.name,
+        sent:0,
+        description: dp[0],
+        due_date: moment(startDay).add('days', params.eta).format('YYYY-MM-DD'),
+        position: pos,
+        priority: params.priority,
+        area_id: dp[2],
+        completed: 0,
+        completed_date: null,
+        materials_tools: null,
+        reworked: 0,
+        derived_to: 0,
+        observation: null,
+        ot_id: params.ot_id,
+        eta: params.eta
+      }).save().on('success', function(data) {
+        if (params.type == 'seq'){
+          DB._.query("SELECT priority FROM ottask WHERE ot_id = "+params.ot_id+" AND priority = "+params.priority , function(err, e){
+            if (e.length > 0) {
+              DB._.query("UPDATE ottask SET priority = priority + 1 WHERE priority >= "+params.priority+" AND id != "+data.id+" AND ot_id = "+params.ot_id)
+            };
+          })
+        }
+        res.send(true);
+      }).on('error', function(err) {
+        res.send(false, err);
+      });
+    })
+  })
+  /*if (req.body.selected_row_position > 0) {
     q = " \
       UPDATE ottask \
       SET position = position + 1 \
@@ -88,15 +162,26 @@ Ottask.add = function(req, res, next) {
     DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+req.body.ot_id+' AND priority = '+task[0].priority, function(err, max){
       console.log(task);
       var diference = Number(req.body.eta) - Number(max[0].max);
-      if (req.body.reprogram == 'true') {
+      if (req.body.reprogramTask == 'true') {
         if (diference > 0){
           DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+req.body.ot_id+' AND priority > '+task[0].priority);
         }
-        DB.Otdelay.create({
-          delay_id: req.body.delay_id,
-          ot_id: req.body.ot_id,
-          observation: req.body.observation
-        })
+        if(req.body.reprogram == 'true'){
+          DB.Otdelay.create({
+            delay_id: req.body.delay_id,
+            ot_id: req.body.ot_id,
+            observation: req.body.observation
+          })
+          DB.Ot.find({where:{id: req.params.id}}).on('success', function(ot){
+          var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
+            DB._.query(query, function(err, deadline){
+              if (deadline[0]){
+                console.log(deadline[0].deadline)
+                ot.updateAttributes({delivery:deadline[0].deadline})
+              }
+            })
+          })
+        }
       };
     })
     var q_start = '';
@@ -140,7 +225,7 @@ Ottask.add = function(req, res, next) {
         });
       });
     })
-  })
+  })*/
   
 };
 
@@ -349,3 +434,38 @@ Ottask.delete = function(req, res, next) {
 };
 
 module.exports = Ottask;
+
+
+/*TODO
+
+* Calcular la posicion 
+  "SELECT MAX(position) FROM ottask WHERE ot_id = (id de la ot) AND (priority <= (prioridad))";
+
+* Correr las tareas siguientes 
+  "UPDATE ottask SET position = position + 1 WHERE position >= (posicion) AND ot_id = (id de la ot) AND deleted_at IS NULL";
+
+* Si es secuencial consultar si hay tareas de esa misma prioridad
+  "SELECT priority FROM ottask WHERE ot_id = (id de la ot) AND priority = (prioridad)";
+  - si las hay desplazar las de prioridad menor (mayor numero)
+    "UPDATE ottask SET priority = priority + 1 WHERE priority > (prioridad) AND ot_id = (id de la ot);"
+
+* Si esta tildado para reprogramar las fechas
+  PARALELAS: 
+  -Seleccionar el maximo tiempo estimado entre las tareas de su misma prioridad
+    "SELECT MAX(eta) AS max FROM ottask WHERE ot_id = (id de la ot) AND priority = (prioridad)";
+  -Calcular la diferencia de el tiempo estimado que ingresamos contra el maximo tiempo estimado seleccionado, de ser menor a 0 el tiempo la diferencia es 0
+  SECUENCIALES:
+  -La cantidad de dias a desplazar es igual al tiempo estimado ingresado
+
+* Desplazar las fechas de las tareas con prioridad mayor a la ingresada la cantidad de dias establecida en el paso anterior
+  "UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL (diferencia) DAY) WHERE ot_id = (id de la ot) AND priority > (prioridad)"
+
+* Si esta tildado para reprogramar OT 
+  -Seleccionar la fecha de la ultima tarea
+    "SELECT due_date AS deadline FROM ottask WHERE ot_id = (ot_id) ORDER BY id DESC LIMIT 1";
+  -Establecer como vencimiento de la ot la fecha seleccionada el paso anterior
+    "UPDATE ot SET delivery = (fecha del paso anterior) WHERE id = (id de la ot)";
+
+* Insertar la tarea
+  
+*/

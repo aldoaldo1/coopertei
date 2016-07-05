@@ -142,136 +142,110 @@ Ottask.add = function(req, res, next) {
       });
     })
   })
-  /*if (req.body.selected_row_position > 0) {
-    q = " \
-      UPDATE ottask \
-      SET position = position + 1 \
-      WHERE position > " + req.body.selected_row_position + " \
-      AND ot_id = " + req.body.ot_id + " \
-      AND deleted_at IS NULL \
-    ";
-    new_task_position = parseInt(req.body.selected_row_position) + 1;
-  } else {
-    q = " \
-      SELECT MAX(position) AS max_position \
-      FROM ottask \
-      WHERE ot_id = " + req.body.ot_id + " AND deleted_at IS NULL \
-    ";
-  }
-  DB._.query('SELECT * FROM task WHERE id = '+req.body.name, function(err, task){
-    DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+req.body.ot_id+' AND priority = '+task[0].priority, function(err, max){
-      console.log(task);
-      var diference = Number(req.body.eta) - Number(max[0].max);
-      if (req.body.reprogramTask == 'true') {
-        if (diference > 0){
-          DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+req.body.ot_id+' AND priority > '+task[0].priority);
+};
+
+Ottask.rework = function(req, res, next) {
+  var params = req.body;
+  var type;
+  console.log('healdo', req.body)
+  DB._.query('SELECT * FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, data){
+    if (data.length > 1){
+      type = 'par';
+    }
+    else{
+      type = 'seq';
+    }
+    DB.Ottask.find({ where: { id: params.id } }).on('success', function(t) {
+      if (t) {
+        q = " \
+          UPDATE ottask \
+          SET position = position + 1 \
+          WHERE position > " + req.params.position + " \
+          AND ot_id = " + t.ot_id + " \
+          AND deleted_at IS NULL \
+        ";
+        if(params.reprogramTask == 'true'){
+          if (type == 'par'){
+            DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, max){
+              var diference = Number(params.eta) - Number(max[0].max);
+              if (diference > 0){
+                console.log('actualizo todo')
+                console.log(diference)
+                DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND priority > '+params.priority);
+              }
+            })
+          }
+          else{
+            DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+params.eta+' DAY) WHERE ot_id = '+params.ot_id+' AND priority >= '+params.priority);
+          }
         }
-        if(req.body.reprogram == 'true'){
+        if(params.reprogram == 'true'){
           DB.Otdelay.create({
-            delay_id: req.body.delay_id,
-            ot_id: req.body.ot_id,
-            observation: req.body.observation
+            delay_id: params.delay_id,
+            ot_id: params.ot_id,
+            observation: params.explaination
           })
-          DB.Ot.find({where:{id: req.params.id}}).on('success', function(ot){
-          var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
+          DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
+          var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
             DB._.query(query, function(err, deadline){
               if (deadline[0]){
-                console.log(deadline[0].deadline)
                 ot.updateAttributes({delivery:deadline[0].deadline})
               }
             })
           })
         }
-      };
-    })
-    var q_start = '';
-    if (task[0].priority < 1){
-      q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+task[0].priority;
-    }
-    else{
-      q_start = 'SELECT created_at AS start FROM ot where id = '+req.body.ot_id;
-    }
-    DB._.query(q_start, function(err, start){
-      DB._.query(q, function(err, result) {
-        var pos;
-        console.log(start)
-        var startDay = start[0].start
-        if (new_task_position !== null) {
-          pos = new_task_position;
-        } else {
-          pos = parseInt(result[0].max_position) + 1;
-        }
-        var dp= req.body.description.split(":::")
-        DB.Ottask.build({
-          name: task[0].name,
-          sent:0,
-          description: dp[0],
-          due_date: moment(startDay).add('days', req.body.eta).format('YYYY-MM-DD'),
-          position: pos,
-          priority: dp[1],
-          area_id: dp[2],
-          completed: 0,
-          completed_date: null,
-          materials_tools: null,
-          reworked: 0,
-          derived_to: 0,
-          observation: null,
-          ot_id: req.body.ot_id,
-          eta: req.body.eta
-        }).save().on('success', function() {
-          res.send(true);
-        }).on('error', function(err) {
-          res.send(false, err);
+        DB._.query(q, function(err, result) {
+          var q_start = '';
+          if (params.priority < 1){
+            q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+params.priority;
+          }
+          else{
+            q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
+          }
+          DB._.query(q_start, function(err, start){
+            var startDay = start[0].start
+            DB.Ottask.build({
+              name: t.name,
+              sent: 0,
+              priority: t.priority,
+              description: t.description,
+              due_date: moment(startDay).add('days', params.eta).format('YYYY-MM-DD'),
+              position: parseInt(req.params.position) + 1,
+              area_id: t.area_id,
+              completed: 0,
+              completed_date: null,
+              materials_tools: null,
+              reworked: 0,
+              eta: params.eta,
+              derived_to: 0,
+              observation: null,
+              ot_id: t.ot_id
+            }).save().on('success', function(new_ottask) {
+              if (type == 'seq'){
+                DB._.query("SELECT priority FROM ottask WHERE ot_id = "+params.ot_id+" AND priority = "+params.priority , function(err, e){
+                  if (e.length > 0) {
+                    DB._.query("UPDATE ottask SET priority = priority + 1 WHERE priority >= "+params.priority+" AND id != "+new_ottask.id+" AND ot_id = "+params.ot_id)
+                  };
+                })
+              }
+              t.updateAttributes({
+                reworked: new_ottask.id
+              }).on('success', function() {
+                res.send(true);
+              });
+            }).on('error', function(err) {
+              res.send(false);
+            });
+          })
         });
-      });
-    })
-  })*/
-  
-};
-
-Ottask.rework = function(req, res, next) {
-  DB.Ottask.find({ where: { id: req.params.task_id } }).on('success', function(t) {
-    if (t) {
-      q = " \
-        UPDATE ottask \
-        SET position = position + 1 \
-        WHERE position > " + req.params.position + " \
-        AND ot_id = " + t.ot_id + " \
-        AND deleted_at IS NULL \
-      ";
-      DB._.query(q, function(err, result) {
-        DB.Ottask.build({
-          name: t.name,
-          sent: 0,
-          priority: t.priority,
-          description: t.description,
-          due_date: t.due_date,
-          position: parseInt(req.params.position) + 1,
-          area_id: t.area_id,
-          completed: 0,
-          completed_date: null,
-          materials_tools: null,
-          reworked: 0,
-          derived_to: 0,
-          observation: null,
-          ot_id: t.ot_id
-        }).save().on('success', function(new_ottask) {
-          t.updateAttributes({
-            reworked: new_ottask.id
-          }).on('success', function() {
-            res.send(true);
-          });
-        }).on('error', function(err) {
-          res.send(false);
-        });
-      });
-    }
-  });
+      }
+    });
+  })
 };
 
 Ottask.complete = function(req, res, next) {
   id=req.params.task_id.split( "**");
-  DB.Ottask.find({ where: { id: /*req.params.task_id*/id[0] } }).on('success', function(t) {
+  DB.Ottask.find({ where: { id: id[0] } }).on('success', function(t) {
     if(id[1]!="error"){
     if (t) {
       t.updateAttributes({

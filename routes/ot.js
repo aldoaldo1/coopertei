@@ -99,7 +99,7 @@ if(req.body.client_id > 0){
 Ot.get = function(req, res, next) {
   var where = 'otstate_id <> 6';
   if (req.session.role_id == 1){
-    where = 'otstate_id = 1 AND plan_id = 0'
+    where = 'otstate_id = 1'
   }
   var q = " \
     SELECT ot.*, c.name AS client, e.name AS equipment, i.name AS intervention, \

@@ -822,7 +822,7 @@
     }), e.define("/widgets/Purchases.js", function(e, t, n, r, i, s) {
         C.Widget.Purchase = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/purchases/purchases">Ordenes de trabajo</a>'), $("#left .inner").empty().append('<div id="purchase_left"></div>'), $("#right .inner").empty().append('<div id="purchase_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/purchases/purchases">Compras</a>'), $("#left .inner").empty().append('<div id="purchase_left"></div>'), $("#right .inner").empty().append('<div id="purchase_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -3563,7 +3563,7 @@
                     F.assignValuesToForm($(".ot_form"), e);
                     console.log(e)
                     $('.plan_alert').remove()
-                    if (e.plan_id == 0 && C.Session.roleID() == 1){
+                    if (e.plan_id != 0 && C.Session.roleID() == 1){
                         $('.BUTTON_save').hide()
                     }
                     var items = $("#select > option").map(function() {
@@ -4141,7 +4141,7 @@
                 var e = this;
                 $("#ot_toggle_task_state_window").length || this.template(), $("#ot_toggle_task_state_window .BUTTON_cancel").on("click", function() {
                     e.cancelToggleState();
-                }), $("#ot_toggle_task_state_window .BUTTON_proceed").on("click", function() {
+                }), $("#ot_toggle_task_state_window .BUTTON_proceed").on("click", function(evento) {
                     e.performToggleState();
                 }), $("#ot_toggle_task_state_window .BUTTON_proceed_job").on("click", function() {
                     e.performToggleStateJob();
@@ -4631,7 +4631,8 @@
                             data: $("#toggle_task_state_ot_form").serialize(),
                             success: function(t) {
                                 F.onSuccess(t, function(t) {
-                                    i.reloadRowDetails();
+                                    //i.reloadRowDetails();
+                                    location.reload();
                                 }, function(e) {
                                     F.msgError("Ocurrió un error al completar la Tarea");
                                 }), r(t);
@@ -5260,6 +5261,7 @@
     }), e.define("/views/purchase/PurchaseTable.js", function(e, t, n, r, i, s) {
         C.View.PurchaseTable = Backbone.View.extend({
             name: "purchase",
+            source: "/person",
             headers: [ "ID", "Nombre", "Apellido", "Teléfono", "E-mail" ],
             attrs: [ "id", "firstname", "lastname", "phone", "email" ],
             data: null,
@@ -6853,7 +6855,7 @@
                 },
                 getPurchase: function() {
                     var e = function() {
-                        document.title = C.TITLE + "Listado de compras", this.otreport_widget = C.Widget.Purchase.initialize(), this.purchase_view = new C.View.Purchase({
+                        document.title = C.TITLE + "Compras", this.otreport_widget = C.Widget.Purchase.initialize(), this.purchase_view = new C.View.Purchase({
                             model: new C.Model.Purchase
                         }), F.R.highlightCurrentModule("purchases/purchase");
                     }.bind(this);

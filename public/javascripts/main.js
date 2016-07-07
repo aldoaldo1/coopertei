@@ -624,6 +624,7 @@
                 value: "Buscar"
             }));
         }, F.createForm = function(e, t, n) {
+            console.log(e)
             var r = e.model.attributes, i = $("<form>", {
                 "class": e.name
             }), s = $("<div>");
@@ -784,7 +785,7 @@
     }), e.define("/widgets/Material.js", function(e, t, n, r, i, s) {
         C.Widget.Material = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/materials/orders">Pedidos</a>'), C.Session.isVigilance() || $("#head #tabs").append(/*<a href="/#/materials/stock">Stock</a>*/'<a href="/#/materials/history">Historial</a>'), $("#left .inner").empty().append('<div id="material_left"></div><style>#tabs {}#tabs a {  border-bottom: none;}.ui-widget-header {  background: #cfe7d2 url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */    background: -moz-linear-gradient(top, #cfe7d2 0%, #cfe7d2 100%); /* FF3.6+ */    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cfe7d2), color-stop(100%,#cfe7d2)); /* Chrome,Safari4+ */    background: -webkit-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Chrome10+,Safari5.1+ */    background: -o-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Opera11.10+ */    background: -ms-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* IE10+ */    background: linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* W3C */}.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {   background: #cfe7d2 url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */    background: -moz-linear-gradient(top, #cfe7d2 0%, #cfe7d2 100%); /* FF3.6+ */    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cfe7d2), color-stop(100%,#cfe7d2)); /* Chrome,Safari4+ */    background: -webkit-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Chrome10+,Safari5.1+ */    background: -o-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Opera11.10+ */    background: -ms-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* IE10+ */    background: linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* W3C */  -webkit-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;  -moz-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;}#foot { border-top: 1px solid #cfe7d2;}</style>'), $("#right .inner").empty().append('<div id="material_right"style=" overflow:auto;"></div>');
+                $("#head #tabs").empty().append('<a href="/#/materials/orders">Pedidos</a>'), C.Session.isVigilance() || $("#head #tabs").append(/*<a href="/#/materials/stock">Stock</a>*/'<a href="/#/materials/history">Historial</a><a href="/#/materials/purchases">Compras</a>'), $("#left .inner").empty().append('<div id="material_left"></div><style>#tabs {}#tabs a {  border-bottom: none;}.ui-widget-header {  background: #cfe7d2 url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */    background: -moz-linear-gradient(top, #cfe7d2 0%, #cfe7d2 100%); /* FF3.6+ */    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cfe7d2), color-stop(100%,#cfe7d2)); /* Chrome,Safari4+ */    background: -webkit-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Chrome10+,Safari5.1+ */    background: -o-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Opera11.10+ */    background: -ms-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* IE10+ */    background: linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* W3C */}.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {   background: #cfe7d2 url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */    background: -moz-linear-gradient(top, #cfe7d2 0%, #cfe7d2 100%); /* FF3.6+ */    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cfe7d2), color-stop(100%,#cfe7d2)); /* Chrome,Safari4+ */    background: -webkit-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Chrome10+,Safari5.1+ */    background: -o-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* Opera11.10+ */    background: -ms-linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* IE10+ */    background: linear-gradient(top, #cfe7d2 0%,#cfe7d2 100%); /* W3C */  -webkit-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;  -moz-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;}#foot { border-top: 1px solid #cfe7d2;}</style>'), $("#right .inner").empty().append('<div id="material_right"style=" overflow:auto;"></div>');
             }
         };
     }), e.define("/widgets/News.js", function(e, t, n, r, i, s) {
@@ -817,12 +818,6 @@
         C.Widget.Query = {
             initialize: function() {
                 $("#head #tabs").empty().append('<a href="/#/queries/general">Consultas</a>'), $("#left .inner").empty().append('<div id="query_left"></div>'), $("#right .inner").empty().append('<div id="query_right"></div>');
-            }
-        };
-    }), e.define("/widgets/Purchases.js", function(e, t, n, r, i, s) {
-        C.Widget.Purchase = {
-            initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/purchases/purchases">Compras</a>'), $("#left .inner").empty().append('<div id="purchase_left"></div>'), $("#right .inner").empty().append('<div id="purchase_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -5241,7 +5236,7 @@
         });
     }), 
     // Vista listado de OT
-    e.define("/views/purchase/Purchase.js", function(e, t, n, r, i, s) {
+    e.define("/views/material/Purchase.js", function(e, t, n, r, i, s) {
         C.View.Purchase = Backbone.View.extend({
             el: $("body"),
             initialize: function() {
@@ -5253,22 +5248,30 @@
                         e.purchase_table = new C.View.PurchaseTable({
                             el: $("#purchase_left"),
                             collection: t
+                        }), e.purchase_form = new C.View.PurchaseForm({
+                            el: $("#material_right"),
+                            model: {},
+                            collection: t,
+                            purchase_table: e.purchase_table
                         });
                     }
                 });
             }
         });
-    }), e.define("/views/purchase/PurchaseTable.js", function(e, t, n, r, i, s) {
+    }), e.define("/views/material/PurchaseTable.js", function(e, t, n, r, i, s) {
         C.View.PurchaseTable = Backbone.View.extend({
             name: "purchase",
-            source: "/person",
-            headers: [ "ID", "Nombre", "Apellido", "Teléfono", "E-mail" ],
-            attrs: [ "id", "firstname", "lastname", "phone", "email" ],
+            source: "/purchase",
+            headers: [ "ID", "O/T", "Nombre", "Cantidad", "Fecha de recepcion", "TAG" ],
+            attrs: [ "id", "ot", "name", "quantity", "arrivaldate", "tag" ],
             data: null,
-            hidden_columns: [ "name" ],
-            initialize: function() {
+            hidden_columns: ["ot_id", 'ottask_id'],
+            date_columns: ['date'],
+            datatableOptions: {
+                aaSorting: [ [ 5, "asc" ] ]
+            },initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
-                    //F.assignValuesToForm($(".person_form"), e);
+                    F.assignValuesToForm($(".purchase_form"), e);
                 });
             },
             events: {
@@ -5277,6 +5280,59 @@
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
             }
+        });
+    }), e.define("/views/material/PurchaseForm.js", function(e, t, n, r, i, s) {
+        C.View.PurchaseForm = Backbone.View.extend({
+            name: "purchase_form",
+            title: "Fecha de recepción",
+            fields: {
+                arrivaldate: {
+                    label: "Fecha de recepción",
+                    type: 'datepicker'
+                },
+            },
+            buttons: {
+                cancel: !0,
+                save: !0
+            },
+            isCRUD: !0,
+            initialize: function() {
+                this.model.attributes = {arrivaldate: null}
+                F.createForm(this);
+            },
+            events: {
+                "click .purchase_form .BUTTON_save": "editDate",
+            },
+            getTable: function() {
+                return this.options.purchase_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+            addTableRow: function(e) {
+                return;
+                var t;
+            },
+            editDate: function() {
+                console.log('estoy aca')
+                var e = this;
+                $.ajax({
+                    type: 'PUT',
+                    data: $('.purchase_form').serializeObject(),
+                    url: '/purchase/'+e.getSelectionID(),
+                    success: function(){
+                        F.cleanForm('.purchase_form');
+                        F.msgOK('La fecha de recepción ha sido actualizada');
+                        F.reloadDataTable('.purchase_table');
+                    }
+                })
+            },
         });
     }), 
     //Termina vista OT
@@ -6523,6 +6579,7 @@
                     "/materials/orders": "getMaterialOrders",
                     "/materials/stock": "getMaterialStock",
                     "/materials/history": "getMaterialHistory",
+                    "/materials/purchases": "getPurchase",
                     "/clients": "getClientAuthorizations",
                     "/clients/authorizations": "getClientAuthorizations",
                     "/clients/authorizationshistory": "getClientAuthorizationsHistory",
@@ -6536,8 +6593,6 @@
                     "/client/events": "getClientEvents",
                     "/client/events/:ot_id": "getClientEvents",
                     "/client/notifications": "getClientNotifications",
-                    "/purchases": "getPurchase",
-                    "/purchases/purchases": "getPurchase",
                     "/options/profile": "getProfile",
                     "/options/controlpanel": "getControlpanel",
                     "/crud/person": "getPerson",
@@ -6855,9 +6910,9 @@
                 },
                 getPurchase: function() {
                     var e = function() {
-                        document.title = C.TITLE + "Compras", this.otreport_widget = C.Widget.Purchase.initialize(), this.purchase_view = new C.View.Purchase({
+                        document.title = C.TITLE + "Compras", this.otreport_widget = C.Widget.Material.initialize(), this.purchase_view = new C.View.Purchase({
                             model: new C.Model.Purchase
-                        }), F.R.highlightCurrentModule("purchases/purchase");
+                        }), F.R.highlightCurrentModule("materials/purchases");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 5 ], e);
                 }
@@ -6990,6 +7045,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./widgets/Purchases"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/purchase/Purchase"), e("./views/purchase/PurchaseTable"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

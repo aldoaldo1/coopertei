@@ -91,6 +91,7 @@ Plan.post = function(req, res, next) {
 };
 
 Plan.put = function(req, res, next) {
+  console.log(req.body)
   DB.Plan.find({ where: { id: req.params.id } }).on('success', function(p) {
     if (p) {
       p.updateAttributes({
@@ -112,16 +113,28 @@ Plan.put = function(req, res, next) {
             ids.push(id)
             etas.push(eta);
           }  
-          DB.Taskplan.findAll({where:{plan_id: p.id}}).on('success', function(tasks){
+          DB.Taskplan.findAll({where:{plan_id: p.id, deleted_at: null}}).on('success', function(tasks){
+            var prevTaskIds = []
             tasks.forEach(function(task){
               if (ids.indexOf(task.task_id) >= 0) {
-                console.log(etas)
-                console.log('etas['+ids.indexOf(task.task_id)+']')
                 task.updateAttributes({eta: etas[ids.indexOf(task.task_id)]})
               }
               else{
                 console.log('tambien aca')
                 task.updateAttributes({deleted_at: moment().format('YYYY-MM-DD')})
+              }
+              prevTaskIds.push(task.task_id);
+            })
+            console.log(prevTaskIds)
+            console.log(ids)
+            ids.forEach(function(id){
+              if (prevTaskIds.indexOf(id) < 0){
+                console.log('heraldo', id)
+                DB.Taskplan.create({
+                  plan_id: p.id,
+                  id: id,
+                  eta: etas[ids.indexOf(id)]
+                })
               }
             })
           })

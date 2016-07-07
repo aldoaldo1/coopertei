@@ -73,7 +73,7 @@ module.exports = function(app, routes) {
                 'authorization', 'authorizationhistory', 'otstate', 'schedule', 'module',
                 'city', 'material', 'materialcategory', 'materialorder', 'materialhistory',
                 'unit', 'otstate', 'inout', 'inouthistory', 'equipment', 'news', 'iva',
-                'clientnotification', 'materialreception'];/*AGREGUE materialreception*/
+                'clientnotification', 'materialreception', 'purchase'];/*AGREGUE materialreception*/
 
   models.forEach(function(m) {
     app.get('/' + m, Auth.restrict, routes[m].get);

@@ -12,7 +12,7 @@ var Index = function(db, everyone) {
 };
 
 Index.get = function(req, res, next) {
-  var role_per_template = [null, 'vigilance', 'operator', 'supervisor', 'admin', 'sysadmin', 'client', 'boss'];
+  var role_per_template = [null, 'vigilance', 'operator', 'supervisor', 'admin', 'sysadmin', 'client', 'boss', 'purchases'];
 
   var getAllFrom = function(table) {
     return "SELECT * FROM " + table + " WHERE deleted_at IS NULL";

@@ -49,7 +49,8 @@ Login.post = function(req, res, next) {
           '/',
           '/#/options/controlpanel',
           '/#/client/notifications',
-	  '/',
+          '/',
+          '/#/materials/purchases'
         ];
 
         res.redirect(ini_routes[user.role_id]);

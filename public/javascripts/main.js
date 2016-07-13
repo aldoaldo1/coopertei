@@ -798,7 +798,7 @@
     }), e.define("/widgets/Ot.js", function(e, t, n, r, i, s) {
         C.Widget.Ot = {
             initialize: function(e) {
-                C.Session.roleID() != 1 ? $("#head #tabs").empty().append('<a href="/#/ots/audit">Seguimiento</a>') : $("#head #tabs").empty().append('<a href="/#/ots/admin">Administración</a>'), C.Session.roleID() >= 3 && $("#head #tabs").append('<a href="/#/ots/admin">Administración</a><a href="/#/ots/plans">Planes de Tareas</a><a href="/#/ots/history">Historial</a>'), $("#left .inner").empty().append('<div id="' + (e || "ot") + '_left">' + "</div>" + "<style>" + "#tabs {" + "}" + "#tabs a {" + "  border-bottom: none;" + "}" + ".ui-widget-header {" + "  background: #d9e1ee url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */" + "    background: -moz-linear-gradient(top, #d9e1ee 0%, #d9e1ee 100%); /* FF3.6+ */" + "    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d9e1ee), color-stop(100%,#d9e1ee)); /* Chrome,Safari4+ */" + "    background: -webkit-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Chrome10+,Safari5.1+ */" + "    background: -o-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Opera11.10+ */" + "    background: -ms-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* IE10+ */" + "    background: linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* W3C */" + "}" + ".ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { " + "  background: #d9e1ee url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */" + "    background: -moz-linear-gradient(top, #d9e1ee 0%, #d9e1ee 100%); /* FF3.6+ */" + "    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d9e1ee), color-stop(100%,#d9e1ee)); /* Chrome,Safari4+ */" + "    background: -webkit-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Chrome10+,Safari5.1+ */" + "    background: -o-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Opera11.10+ */" + "    background: -ms-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* IE10+ */" + "    background: linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* W3C */" + "  -webkit-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "  -moz-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "}" + "#foot {" + " border-top: 1px solid #d9e1ee;" + "}" + "</style>"), $("#right .inner").empty().append('<div id="' + (e || "ot") + '_right">' + "</div>");
+                C.Session.roleID() != 1 ? $("#head #tabs").empty().append('<a href="/#/ots/audit">Seguimiento</a>') : $("#head #tabs").empty().append('<a href="/#/ots/admin">Administración</a>'), (C.Session.roleID() >= 3 && C.Session.roleID() < 8) && $("#head #tabs").append('<a href="/#/ots/admin">Administración</a><a href="/#/ots/plans">Planes de Tareas</a><a href="/#/ots/history">Historial</a>'), $("#left .inner").empty().append('<div id="' + (e || "ot") + '_left">' + "</div>" + "<style>" + "#tabs {" + "}" + "#tabs a {" + "  border-bottom: none;" + "}" + ".ui-widget-header {" + "  background: #d9e1ee url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */" + "    background: -moz-linear-gradient(top, #d9e1ee 0%, #d9e1ee 100%); /* FF3.6+ */" + "    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d9e1ee), color-stop(100%,#d9e1ee)); /* Chrome,Safari4+ */" + "    background: -webkit-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Chrome10+,Safari5.1+ */" + "    background: -o-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Opera11.10+ */" + "    background: -ms-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* IE10+ */" + "    background: linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* W3C */" + "}" + ".ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { " + "  background: #d9e1ee url(images/bg_fallback.png) 0 0 repeat-x; /* Old browsers */" + "    background: -moz-linear-gradient(top, #d9e1ee 0%, #d9e1ee 100%); /* FF3.6+ */" + "    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d9e1ee), color-stop(100%,#d9e1ee)); /* Chrome,Safari4+ */" + "    background: -webkit-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Chrome10+,Safari5.1+ */" + "    background: -o-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* Opera11.10+ */" + "    background: -ms-linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* IE10+ */" + "    background: linear-gradient(top, #d9e1ee 0%,#d9e1ee 100%); /* W3C */" + "  -webkit-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "  -moz-box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;" + "}" + "#foot {" + " border-top: 1px solid #d9e1ee;" + "}" + "</style>"), $("#right .inner").empty().append('<div id="' + (e || "ot") + '_right">' + "</div>");
             }
         };
     }), e.define("/widgets/Personnel.js", function(e, t, n, r, i, s) {
@@ -1793,38 +1793,44 @@
                 }, 1e3);
             },
             showRequirementsReport: function(e) {
-                var t = this;
-                $("#requirements_report_window").length || this.requirementsReportTemplate(e, function() {
-                    $(document).on("keyup", function(e) {
-                        e.which == 27 && t.cancelShowRequirementsReport();
-                    }), $("#requirements_report_window .BUTTON_cancel").on("click", function() {
-                        t.cancelShowRequirementsReport();
-                    }), $("#requirements_report_window .BUTTON_save").on("click", function() {
-                        var e = this;
-                        $(e).attr("disabled", !0), t.saveRequirementsReport(function() {
-                            $(e).attr("disabled", !1), F.msgOK("Observaciones añadidas al Informe");  setTimeout(function(){location.reload()}, 1e3);
-                        });
-                    }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
-                        var n = this;
-                        t.saveRequirementsReport(function() {
-                            $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
-                                t.cleanModals(function() {
-                                    F.msgOK("El Informe de Requerimientos fue enviado al cliente");
-                                }), $(n).attr("disabled", !1);
+                if (!C.Session.isPurchases()){
+
+                    var t = this;
+                    $("#requirements_report_window").length || this.requirementsReportTemplate(e, function() {
+                        $(document).on("keyup", function(e) {
+                            e.which == 27 && t.cancelShowRequirementsReport();
+                        }), $("#requirements_report_window .BUTTON_cancel").on("click", function() {
+                            t.cancelShowRequirementsReport();
+                        }), $("#requirements_report_window .BUTTON_save").on("click", function() {
+                            var e = this;
+                            $(e).attr("disabled", !0), t.saveRequirementsReport(function() {
+                                $(e).attr("disabled", !1), F.msgOK("Observaciones añadidas al Informe");  setTimeout(function(){location.reload()}, 1e3);
                             });
+                        }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
+                            var n = this;
+                            t.saveRequirementsReport(function() {
+                                $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
+                                    t.cleanModals(function() {
+                                        F.msgOK("El Informe de Requerimientos fue enviado al cliente");
+                                    }), $(n).attr("disabled", !1);
+                                });
+                            });
+                        }), $.blockUI({
+                            message: $("#requirements_report_window"),
+                            css: {
+                                top: "7.5%",
+                                left: "24%",
+                                width: "50%",
+                                border: "none",
+                                padding: "1%",
+                                cursor: "default"
+                            }
                         });
-                    }), $.blockUI({
-                        message: $("#requirements_report_window"),
-                        css: {
-                            top: "7.5%",
-                            left: "24%",
-                            width: "50%",
-                            border: "none",
-                            padding: "1%",
-                            cursor: "default"
-                        }
                     });
-                });
+                }
+                else{
+                    F.msgError('No posee permisos para realizar esta tarea');
+                }
             },
             requirementsReportTemplate: function(e, t) {
                 var n = this;
@@ -2261,49 +2267,65 @@
                 return this.getTable().selected_row;
             },
             addClient: function() {
-                var e = this;
-                $.ajax({
-                    type: 'POST',
-                    data: $('.client_form').serializeObject(),
-                    url: '/client',
-                    success: function(t){
-                        console.log(t, n)
-                        if (t.result) {
-                            F.cleanForm('.client_form');
-                            F.msgOK("El cliente ha sido creado");
-                            F.reloadDataTable('.client_table');
-                        }else{
-                            F.msgError(t.error);
+                if (C.Session.isPurchases()){
+                    var e = this;
+                    $.ajax({
+                        type: 'POST',
+                        data: $('.client_form').serializeObject(),
+                        url: '/client',
+                        success: function(t){
+                            console.log(t, n)
+                            if (t.result) {
+                                F.cleanForm('.client_form');
+                                F.msgOK("El cliente ha sido creado");
+                                F.reloadDataTable('.client_table');
+                            }else{
+                                F.msgError(t.error);
+                            }
                         }
-                    }
-                })
+                    })
+                }
+                else{
+                    F.msgError('No posee permisos para realizar esta tarea')
+                }
             },
             editClient: function() {
-                var e = this;
-                $.ajax({
-                    type: 'PUT',
-                    data: $('.client_form').serializeObject(),
-                    url: '/client/'+e.getSelectionID(),
-                    success: function(){
-                        F.cleanForm('.client_form');
-                        F.msgOK('El cliente ha sido actualizado');
-                        F.reloadDataTable('.client_table');
-                    }
-                })
-            },
-            delClient: function() {
-                var e = this;
-                F.msgConfirm("¿Desea eliminar este Cliente?", function() {
+                if (!C.Session.isPurchases()){
+                    var e = this;
                     $.ajax({
-                        type: 'DELETE',
+                        type: 'PUT',
+                        data: $('.client_form').serializeObject(),
                         url: '/client/'+e.getSelectionID(),
                         success: function(){
                             F.cleanForm('.client_form');
-                            F.msgOK('El cliente ha sido eliminado');
+                            F.msgOK('El cliente ha sido actualizado');
                             F.reloadDataTable('.client_table');
                         }
                     })
-                });
+                }
+                else{
+                    F.msgError('No tiene permisos para realizar esta tarea')
+                }
+            },
+            delClient: function() {
+                console.log(C.Session.isPurchases())
+                if (!C.Session.isPurchases()){
+                    var e = this;
+                    F.msgConfirm("¿Desea eliminar este Cliente?", function() {
+                        $.ajax({
+                            type: 'DELETE',
+                            url: '/client/'+e.getSelectionID(),
+                            success: function(){
+                                F.cleanForm('.client_form');
+                                F.msgOK('El cliente ha sido eliminado');
+                                F.reloadDataTable('.client_table');
+                            }
+                        })
+                    });
+                }
+                else{
+                    F.msgError('No tiene permisos para realizar esta tarea')
+                }
             }
         });
     }), e.define("/views/clients/ClientsEvents.js", function(e, t, n, r, i, s) {
@@ -4674,6 +4696,10 @@
             initialize: function() {
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
+                    console.log(e)
+                    if (e.delay){
+                        $('.ot_infocard').append('<p><label>Demoras:</label></p>'+e.delay)
+                    }
                     F.assignValuesToInfoCard($(".ot_infocard"), e);
                 }, function() {
                     var t = $(".ot_table").dataTable();
@@ -4746,6 +4772,7 @@
                 client: "Cliente",
                 delivery: "Fecha pactada de entrega",
                 reworked_number: "Es retrabajo de",
+                delay: 'Demoras',
             },
             initialize: function() {
                 var e = this;
@@ -6681,7 +6708,7 @@
                             model: new C.Model.Ot
                         }), F.R.highlightCurrentModule("ots/audit");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7, 8 ], e);
                 },
                 getOtAuditAt: function(e) {
                     var t = function() {
@@ -6690,7 +6717,7 @@
                             open_ot_number_on_start: e
                         }), F.R.highlightCurrentModule("ots/audit");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7 ], t);
+                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7, 8 ], t);
                 },
                 getOtAdmin: function() {
                     var e = function() {
@@ -6698,7 +6725,7 @@
                             model: new C.Model.Ot
                         }), F.R.highlightCurrentModule("ots/admin");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 1, 2, 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 1, 2, 3, 4, 5, 7, 8 ], e);
                 },
                 getOtInauguration: function() {
                     var e = function() {
@@ -6749,7 +6776,7 @@
                             model: new C.Model.Material
                         }), F.R.highlightCurrentModule("materials/history");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 3, 4, 5, 7, 8 ], e);
                 },
                 iniClientWidget: function() {
                     this.client_widget = C.Widget.Client.initialize();
@@ -6760,7 +6787,7 @@
                             model: new C.Model.Authorization
                         }), F.R.highlightCurrentModule("clients/authorizations");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7, 8 ], e);
                 },
                 getClientAuthorizationsHistory: function() {
                     var e = function() {
@@ -6768,7 +6795,7 @@
                             model: new C.Model.AuthorizationHistory
                         }), F.R.highlightCurrentModule("clients/authorizationshistory");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7, 8 ], e);
                 },
                 getClientPayroll: function() {
                     var e = function() {
@@ -6776,7 +6803,7 @@
                             model: new C.Model.Client
                         }), F.R.highlightCurrentModule("clients/payroll");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7 ], e);
+                    C.Session.doIfInRolesList([ 2, 3, 4, 5, 7, 8 ], e);
                 },
                 iniPersonnelWidget: function(e) {
                     this.personnel_widget = C.Widget.Personnel.initialize(e);
@@ -6864,7 +6891,7 @@
                             model: new C.Model.Person
                         }), F.R.highlightCurrentModule("crud/person");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 2, 4, 5 ], e);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 8 ], e);
                 },
                 getUser: function() {
                     var e = function() {
@@ -6928,7 +6955,7 @@
                             model: new C.Model.Purchase
                         }), F.R.highlightCurrentModule("materials/purchases");
                     }.bind(this);
-                    C.Session.doIfInRolesList([ 5 ], e);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);
                 }
             });
             C.Router = new e, Backbone.history.start();
@@ -7023,8 +7050,14 @@
                 isVigilance: function() {
                     return C.Session.getUser().role_id == 1;
                 },
+                isPurchases: function() {
+                    return C.Session.getUser().role_id == 8;
+                },
                 doIfBoss: function(e) {
                     C.Session.isBoss() && e(C.Session.getUser());
+                },
+                doIfPurchases: function(e) {
+                    C.Session.isPurchases() && e(C.Session.getUser());
                 },
                 doIfClient: function(e) {
                     C.Session.isClient() && e(C.Session.getUser());
@@ -7045,8 +7078,9 @@
                     C.Session.isVigilance() && e(C.Session.getUser());
                 },
                 doIfInRolesList: function(e, t, n) {
+                    console.log(e, t, n)
                     if (_.indexOf(e, 0) != -1) t(); else {
-                        var r = !1, i = [ null, "isVigilance", "isOperator", "isSupervisor", "isAdmin", "isSysadmin", "isClient", "isBoss" ];
+                        var r = !1, i = [ null, "isVigilance", "isOperator", "isSupervisor", "isAdmin", "isSysadmin", "isClient", "isBoss", "isPurchases" ];
                         _.each(e, function(e) {
                             r = r || C.Session[i[e]]();
                         }), r ? t() : n !== !0 && C.Router.notAllowed();

@@ -47,7 +47,7 @@ Purchase.put = function(req, res, next){
       var date = req.body.arrivaldate; 
       date = date.split('/')[2]+'-'+date.split('/')[1]+'-'+date.split('/')[0];
                     
-      e.updateAttributes({arrivaldate: date}).on('success', function() {
+      e.updateAttributes({arrivaldate: new Date(date)}).on('success', function() {
         console.log('heraldo')
         res.send(true);
       }).on('error', function(err) {

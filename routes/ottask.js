@@ -103,8 +103,10 @@ Ottask.add = function(req, res, next) {
       })
     }
     var q_start = '';
-    if (params.priority < 1){
-      q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+params.priority;
+    console.log('prioridad', params.priority)
+    if (params.priority > 1){
+      q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE ot_id = '+params.ot_id+' AND priority < '+params.priority;
+      console.log(q_start)
     }
     else{
       q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
@@ -112,6 +114,8 @@ Ottask.add = function(req, res, next) {
     DB._.query(q_start, function(err, start){
       var startDay = start[0].start
       var dp= req.body.description.split(":::")
+      console.log(moment(startDay).format('YYYY-MM-DD'))
+      console.log(moment(startDay).add('days', params.eta).format('YYYY-MM-DD'))
       DB.Ottask.build({
         name: params.name,
         sent:0,
@@ -157,34 +161,34 @@ Ottask.rework = function(req, res, next) {
     }
     DB.Ottask.find({ where: { id: params.id } }).on('success', function(t) {
       if (t) {
-        q = " \
-          UPDATE ottask \
-          SET position = position + 1 \
-          WHERE position > " + req.params.position + " \
-          AND ot_id = " + t.ot_id + " \
-          AND deleted_at IS NULL \
-        ";
         if(params.reprogramTask == 'true'){
           if (type == 'par'){
-            DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, max){
+            DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+t.priority, function(err, max){
               var diference = Number(params.eta) - Number(max[0].max);
-              if (diference > 0){
+              if (diference > 1){
                 console.log('actualizo todo')
                 console.log(diference)
-                DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND priority > '+params.priority);
+                DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND id != '+t.id+' AND priority > '+params.priority);
               }
             })
           }
           else{
-            DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+params.eta+' DAY) WHERE ot_id = '+params.ot_id+' AND priority >= '+params.priority);
+            var diference = 0
+            diference = Number(params.eta) - Number(t.eta);
+            if (diference > 0){
+              console.log(diference)
+              DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND id != '+t.id+' AND priority >= '+params.priority);
+            }
           }
         }
+        console.log(params.reprogram)
         if(params.reprogram == 'true'){
-          DB.Otdelay.create({
+          console.log({
             delay_id: params.delay_id,
             ot_id: params.ot_id,
             observation: params.explaination
           })
+          DB._.query('INSERT INTO otdelay (delay_id, ot_id, observation, created_at, updated_at) VALUES ("'+params.delay_id+'", "'+params.ot_id+'", "'+params.explaination+'", NOW(), NOW())')
           DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
           var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
             DB._.query(query, function(err, deadline){
@@ -194,50 +198,52 @@ Ottask.rework = function(req, res, next) {
             })
           })
         }
-        DB._.query(q, function(err, result) {
-          var q_start = '';
-          if (params.priority < 1){
-            q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE priority < '+params.priority;
-          }
-          else{
-            q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
-          }
-          DB._.query(q_start, function(err, start){
-            var startDay = start[0].start
-            DB.Ottask.build({
-              name: t.name,
-              sent: 0,
-              priority: t.priority,
-              description: t.description,
-              due_date: moment(startDay).add('days', params.eta).format('YYYY-MM-DD'),
-              position: parseInt(req.params.position) + 1,
-              area_id: t.area_id,
-              completed: 0,
-              completed_date: null,
-              materials_tools: null,
-              reworked: 0,
-              eta: params.eta,
-              derived_to: 0,
-              observation: null,
-              ot_id: t.ot_id
-            }).save().on('success', function(new_ottask) {
-              if (type == 'seq'){
-                DB._.query("SELECT priority FROM ottask WHERE ot_id = "+params.ot_id+" AND priority = "+params.priority , function(err, e){
-                  if (e.length > 0) {
-                    DB._.query("UPDATE ottask SET priority = priority + 1 WHERE priority >= "+params.priority+" AND id != "+new_ottask.id+" AND ot_id = "+params.ot_id)
-                  };
-                })
-              }
-              t.updateAttributes({
-                reworked: new_ottask.id
-              }).on('success', function() {
-                res.send(true);
-              });
-            }).on('error', function(err) {
-              res.send(false);
-            });
-          })
-        });
+        var q_start = '';
+        console.log('prioridad', params.priority)
+        if (params.priority > 1){
+          q_start = 'SELECT MAX(due_date) AS start FROM ottask WHERE ot_id = '+params.ot_id+' AND priority < '+params.priority;
+          console.log(q_start)
+        }
+        else{
+          q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
+        }
+        DB._.query(q_start, function(err, start){
+          console.log(err, start)
+          var startDay = start[0].start
+          DB.Ottask.build({
+            name: t.name,
+            sent: 0,
+            priority: t.priority,
+            description: t.description,
+            due_date: moment(startDay).add('days', params.eta).format('YYYY-MM-DD'),
+            position: parseInt(req.params.position) + 1,
+            area_id: t.area_id,
+            completed: 0,
+            completed_date: null,
+            materials_tools: null,
+            reworked: 0,
+            eta: params.eta,
+            derived_to: 0,
+            observation: null,
+            ot_id: t.ot_id
+          }).save().on('success', function(new_ottask) {
+            if (type == 'seq'){
+              DB._.query("SELECT * FROM ottask WHERE ot_id = "+params.ot_id+" AND priority = "+params.priority , function(err, e){
+                console.log(e)
+                if (e.length > 0) {
+                  DB._.query("UPDATE ottask SET priority = priority + 1 WHERE priority >= "+params.priority+" AND id != "+params.id+" AND id != "+new_ottask.id+" AND ot_id = "+params.ot_id)
+                };
+              })
+            }
+            t.updateAttributes({
+              reworked: new_ottask.id
+            })
+            res.send(true)
+          }).on('error', function(err) {
+            res.send(false);
+          });
+        })
+      
       }
     });
   })

@@ -407,7 +407,7 @@ Ot.update = function(req, res, next) {
 Ot.updateDate = function(req, res, next){
   console.log('Actualizar fecha')
   DB.Ot.find({where:{id: req.params.id}}).on('success', function(ot){
-  var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY id DESC LIMIT 1';
+  var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY priority DESC, eta DESC LIMIT 1';
     DB._.query(query, function(err, deadline){
       if (deadline[0]){
         console.log(deadline[0].deadline)

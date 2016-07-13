@@ -43,9 +43,13 @@ Purchase.put = function(req, res, next){
     if (e) {
       delete req.body.created_at;
       delete req.body.updated_at;
-
-      e.updateAttributes({arrivaldate: DB.toMySqlDate(req.body.arrivaldate.substr(0, 10))}).on('success', function() {
-        res.send(req.body);
+      
+      var date = req.body.arrivaldate; 
+      date = date.split('/')[2]+'-'+date.split('/')[1]+'-'+date.split('/')[0];
+                    
+      e.updateAttributes({arrivaldate: date}).on('success', function() {
+        console.log('heraldo')
+        res.send(true);
       }).on('error', function(err) {
         res.send(false);
       });

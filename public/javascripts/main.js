@@ -748,7 +748,8 @@
         location.reload();
     })
     $(document).on('click', '.blockUI .BUTTON_cancel, .blockOverlay', function(){
-        $('.blockUI').remove()
+        //$('.blockUI').remove()
+        location.reload();
     }),
     e.define("/widgets/Alert.js", function(e, t, n, r, i, s) {
         C.Widget.Alert = {
@@ -4417,9 +4418,7 @@
                         type: 'POST',
                         data: task,
                         success: function(t) {
-                            $('.blockUI').remove();
-                            $('#ot_rework_task_window').remove();
-                            i.reloadRowDetails();
+                            location.reload()
                         }
                     });
                 })
@@ -5322,16 +5321,31 @@
             editDate: function() {
                 console.log('estoy aca')
                 var e = this;
-                $.ajax({
-                    type: 'PUT',
-                    data: $('.purchase_form').serializeObject(),
-                    url: '/purchase/'+e.getSelectionID(),
-                    success: function(){
-                        F.cleanForm('.purchase_form');
-                        F.msgOK('La fecha de recepción ha sido actualizada');
-                        F.reloadDataTable('.purchase_table');
+                if (C.Session.getUser().area_id == 8){
+                    console.log('llegue hasta aca')
+                    var date = $('input[name="arrivaldate"]').val()
+                    date = date.split('/')[1]+'-'+date.split('/')[0]+'-'+date.split('/')[2];
+                    if (new Date(date) != 'Invalid Date'){
+                        console.log(new Date(date))
+                        $.ajax({
+                            type: 'PUT',
+                            data: $('.purchase_form').serializeObject(),
+                            url: '/purchase/'+e.getSelectionID(),
+                            success: function(data){
+                                console.log(data)
+                                F.cleanForm('.purchase_form');
+                                F.msgOK('La fecha de recepción ha sido actualizada');
+                                F.reloadDataTable('.purchase_table');
+                            }
+                        })
                     }
-                })
+                    else{
+                        F.msgError('La fecha introducida es inválida');
+                    }
+                }
+                else{
+                    F.msgError('No pertenece al AREA correspondiente para realizar esta tarea');
+                }
             },
         });
     }), 

@@ -436,6 +436,10 @@
                 },
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
+                    if (e.options.open_ot_number_on_start){
+                        console.log('heraldo')
+                        $('.dataTables_filter input').val(e.options.open_ot_number_on_start)
+                    }
                 },
             });
             /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];

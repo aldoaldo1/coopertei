@@ -477,6 +477,10 @@
                     ],
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
+                    if(e.options.open_ot_number_on_start){
+                        $('.dataTables_filter input').val(e.options.open_ot_number_on_start);
+                        $('.dataTables_filter input').keyup()
+                    }
                 },
                 rowCallback: function(row, data, index){
                     e.rowHandler && e.rowHandler(row, data);
@@ -2863,7 +2867,8 @@
                             success: function(e) {
                                 e.result === !0 ? t(function() {
                                     $('.blockUI').remove();
-                                    F.reloadDataTable('.material_table')
+                                    //F.reloadDataTable('.material_table')
+                                    location.reload()
                                 }) : t(function() {
                                     F.msgError("Ocurrió un error al guardar el pedido");
                                 });
@@ -3946,6 +3951,7 @@
         C.View.OtAudit = Backbone.View.extend({
             el: $("body"),
             initialize: function() {
+                console.log(this)
                 var e = this;
                 this.ots = new C.Collection.Ots(null, {
                     view: this
@@ -4096,7 +4102,8 @@
                 console.log(form)
                 if (form.name != '' && form.priority != '' && form.area != '' && form.new_task_description != '' && form.eta != ''){
                     if ($('#add_task_ot_form input[name=reprogram]').is(':checked')){
-                        if (form.delay_id != ''){
+                        console.log(form)
+                        if (form.delay_id != 0){
                             this.options.addNewTask({
                                 name: $("#add_task_ot_form input[name=name]").val(),
                                 priority: $("#add_task_ot_form input:text[name=new_task_priority]").val(),
@@ -4288,6 +4295,7 @@
                 reworked_number: "Es retrabajo de"
             },
             initialize: function() {
+                $('.delays').remove();
                 var e = this;
                 $(".ot_infocard").remove(), F.createInfoCard(this, $("#ot_right"), function() {
                     $("#right").trigger("ot_infocard_loaded", [ e ]);
@@ -4435,14 +4443,29 @@
                     task.explaination = $('#rework_task_ot_form textarea[name="observation"]').val();
                     task.delay_id = $('#rework_task_ot_form select[name="delay_id"]').val()
                     console.log(task)
-                    $.ajax({
-                        url: "/ottask/rework/" + task.id + "/after/" + task.position,
-                        type: 'POST',
-                        data: task,
-                        success: function(t) {
-                            location.reload()
+                    if($('input[name="reprogram"]').is(':checked')){
+                        if (task.delay_id != 0){
+                            $.ajax({
+                                url: "/ottask/rework/" + task.id + "/after/" + task.position,
+                                type: 'POST',
+                                data: task,
+                                success: function(t) {
+                                    location.reload()
+                                }
+                            });
+                        }else{
+                            F.msgError('Elija una razón de demora');
                         }
-                    });
+                    }else{
+                        $.ajax({
+                            url: "/ottask/rework/" + task.id + "/after/" + task.position,
+                            type: 'POST',
+                            data: task,
+                            success: function(t) {
+                                location.reload()
+                            }
+                        });
+                    }
                 })
                 
             },
@@ -4492,12 +4515,22 @@
                 function e(e, n) {
                     var r = $(e).dataTable();
                     $(document).on("click", ".ot_table tbody tr", function(evento) {
+                        console.log('remover')
+                        $('.delays').remove();
+                        var i = r.fnGetData(this)
+                        console.log(i)
+                        
+                        if (i.delay){
+                            $('.ot_infocard').append('<div class="delays"><p><label>Demoras:</label></p>'+i.delay+'</div>')
+                        }
+                        
                         $(".task_form").fadeOut("slow", function() {
                             $(this).remove();
                         })
                         if(r.fnIsOpen(this)){
                             r.fnClose(this)
                             F.cleanInfocard($('.ot_infocard'));
+                            $('.delays').remove();
                         }else{
                             if (!$(this).hasClass('details')){
                                 $('.ot_table tbody tr').each(function(){
@@ -4639,7 +4672,7 @@
                     checkbox: e,
                     currentTaskState: n,
                     performToggleTaskState: function(e, n) {
-                        console.log(n);
+                        console.log('heraldo', n);
                         var s;
                         n ? (s = "error", console.log("existe")) : s = "good", $.ajax({
                             type: "POST",
@@ -4696,9 +4729,10 @@
             initialize: function() {
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
+                    $('.delays').remove();
                     console.log(e)
                     if (e.delay){
-                        $('.ot_infocard').append('<p><label>Demoras:</label></p>'+e.delay)
+                        $('.ot_infocard').append('<div class="delays"><p><label>Demoras:</label></p>'+e.delay+'</div>')
                     }
                     F.assignValuesToInfoCard($(".ot_infocard"), e);
                 }, function() {
@@ -5288,8 +5322,8 @@
         C.View.PurchaseTable = Backbone.View.extend({
             name: "purchase",
             source: "/purchase",
-            headers: [ "ID", "O/T", "Nombre", "Cantidad", "Fecha de recepcion", "TAG" ],
-            attrs: [ "id", "ot", "name", "quantity", "arrivaldate", "tag" ],
+            headers: [ "ID", "O/T", "Categoría", "Nombre", "Cantidad", "Fecha de recepcion", "TAG" ],
+            attrs: [ "id", "ot", "category", "name", "quantity", "arrivaldate", "tag" ],
             data: null,
             hidden_columns: ["ot_id", 'ottask_id'],
             date_columns: ['date'],

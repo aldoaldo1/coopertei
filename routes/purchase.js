@@ -9,10 +9,11 @@ var Purchase = function(db, everyone) {
 
 Purchase.get = function(req, res, next) {
   var q = " \
-    SELECT moe.*, ot.number AS ot_number, ot.equipment_id AS tag_id, \
+    SELECT moe.*, mc.name as category, ot.number AS ot_number, ot.equipment_id AS tag_id, \
            e.name AS tag, ott.name AS ottask \
     FROM materialorderelement moe \
     INNER JOIN materialorder mo ON  moe.materialorder_id = mo.id \
+    INNER JOIN materialcategory mc ON mc.id = moe.materialcategory_id \
     LEFT JOIN ot ON mo.ot_id = ot.id \
     LEFT JOIN equipment e ON ot.equipment_id = e.id \
     LEFT JOIN ottask ott ON mo.ottask_id = ott.id \
@@ -28,6 +29,7 @@ Purchase.get = function(req, res, next) {
         id: el.id,
         ot: el.ot_number,
         name: el.name,
+        category: el.category,
         quantity: el.quantity,
         arrivaldate: date,
         tag: el.tag

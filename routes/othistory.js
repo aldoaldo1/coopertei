@@ -38,7 +38,7 @@ Othistory.get = function(req, res, next) {
             reason: delay,
             observation: ot.delaytext.split(';')[index],
           })
-          delayfield+= '<p><span>'+delay+'</span><br/>'+ot.delaytext.split(';')[index]+'</p><br/>'
+          delayfield+= '<p><span>'+delay+'</span><br/>'+ot.delaytext.split(';')[index]+'</p>'
           index++;
         })
       }

@@ -78,6 +78,7 @@ Ottask.add = function(req, res, next) {
       if (params.type == 'par'){
         DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, max){
           var diference = Number(params.eta) - Number(max[0].max);
+          console.log(diference)
           if (diference > 0){
             DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND priority > '+params.priority);
           }
@@ -86,21 +87,6 @@ Ottask.add = function(req, res, next) {
       else{
         DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+params.eta+' DAY) WHERE ot_id = '+params.ot_id+' AND priority >= '+params.priority);
       }
-    }
-    if(params.reprogram == 'true'){
-      DB.Otdelay.create({
-        delay_id: req.body.delay_id,
-        ot_id: req.body.ot_id,
-        observation: req.body.observation
-      })
-      DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
-      var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
-        DB._.query(query, function(err, deadline){
-          if (deadline[0]){
-            ot.updateAttributes({delivery:deadline[0].deadline})
-          }
-        })
-      })
     }
     var q_start = '';
     console.log('prioridad', params.priority)
@@ -138,6 +124,21 @@ Ottask.add = function(req, res, next) {
             if (e.length > 0) {
               DB._.query("UPDATE ottask SET priority = priority + 1 WHERE priority >= "+params.priority+" AND id != "+data.id+" AND ot_id = "+params.ot_id)
             };
+          })
+        }
+        if(params.reprogram == 'true'){
+          DB.Otdelay.create({
+            delay_id: req.body.delay_id,
+            ot_id: req.body.ot_id,
+            observation: req.body.observation
+          })
+          DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
+          var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
+            DB._.query(query, function(err, deadline){
+              if (deadline[0]){
+                ot.updateAttributes({delivery:deadline[0].deadline})
+              }
+            })
           })
         }
         res.send(true);
@@ -320,7 +321,7 @@ Ottask.complete = function(req, res, next) {
     if (t) {
       t.updateAttributes({
         completed: t.completed,
-        completed_date: moment().format('YYYY-MM-DD')
+        //completed_date: moment().format('YYYY-MM-DD')
       }).on('success', function() {
         if (t.completed === false) {
           DB.Ot.find({ where: { id: t.ot_id } }).on('success', function(ot) {

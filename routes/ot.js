@@ -103,20 +103,36 @@ Ot.get = function(req, res, next) {
   }
   var q = " \
     SELECT ot.*, c.name AS client, e.name AS equipment, i.name AS intervention, \
-           p.name AS plan, s.name AS state \
+           p.name AS plan, s.name AS state, GROUP_CONCAT(od.observation SEPARATOR ';') AS delaytext, GROUP_CONCAT(d.reason SEPARATOR ';') AS delay \
     FROM ot \
+    LEFT JOIN otdelay od ON od.ot_id = ot.id \
+    LEFT JOIN delay d ON od.delay_id = d.id \
     LEFT JOIN client c ON ot.client_id = c.id \
     LEFT JOIN equipment e ON ot.equipment_id = e.id \
     LEFT JOIN intervention i ON ot.intervention_id = i.id \
     LEFT JOIN plan p ON ot.plan_id = p.id \
     LEFT JOIN otstate s ON ot.otstate_id = s.id \
     WHERE "+where+" AND ot.deleted_at IS NULL \
+    GROUP BY ot.number \
     ORDER BY ot.delivery ASC";						
-  
+  console.log(q)
   DB._.query(q, function(err, data) {
     var msg = [];
 
     data.forEach(function(ot) {
+      var otdelay = []
+      var delayfield = '';
+      index = 0;
+      if (ot.delay){
+        ot.delay.split(';').forEach(function(delay){
+          otdelay.push({
+            reason: delay,
+            observation: ot.delaytext.split(';')[index],
+          })
+          delayfield+= '<p><span>'+delay+'</span><br/>'+ot.delaytext.split(';')[index]+'</p>'
+          index++;
+        })
+      }
       msg.push({
         id: ot.id,
         ot_number: "Ot_"+ot.number,
@@ -140,7 +156,8 @@ Ot.get = function(req, res, next) {
         reworked_number: ot.reworked_number,
         notify_client: ot.notify_client,
         otstate_id: ot.otstate_id,
-        state: ot.state
+        state: ot.state,
+        delay: delayfield
       });
     });
     res.send({data:msg});

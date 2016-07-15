@@ -288,9 +288,6 @@ Ot.update = function(req, res, next) {
    console.log(delivery)
    if(ot){
     DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
-      console.log('Heraldo')
-      console.log(plan)
-
       if(ot.plan_id == req.body.plan_id || (plan.length == 0 && req.body.plan_id == '')){
       //Actualizo Todo menos plan de tareas
         var equipment;

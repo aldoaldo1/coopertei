@@ -2041,7 +2041,8 @@
                 return this.options.client_table.selected_row;
             },
             authorizeOt: function() {
-                var e = $(".client_table").dataTable(), t = F.getDataTableSelection($(".client_table"))[0], n = e.fnGetData(t)[1];
+                var e = $(".client_table").dataTable(), t = F.getDataTableSelection($(".client_table"))[0], n = e.fnGetData(t).id;
+                console.log(e.fnGetData(t))
                 F.msgConfirm("¿Está seguro que desea AUTORIZAR esta O/T?", function() {
                     $.ajax({
                         url: "/authorization/confirm/" + n,

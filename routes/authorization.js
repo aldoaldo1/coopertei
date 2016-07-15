@@ -42,6 +42,7 @@ Authorization.get = function(req, res, next) {
 };
 
 Authorization.post = function(req, res, next) {
+
   DB.Authorization.build(req.body).save().on('success', function(authorization) {
     // Send the news
     DB.News.build({
@@ -567,11 +568,29 @@ Authorization.notifyClient = function(req, res, next) {
 Authorization.confirm = function(req, res, next) {
   DB.Authorization.find({ where: { ot_id: req.params.ot_id } }).on('success', function(a) {
     if (a) {
-      a.updateAttributes({ otstate_id: 4 }).on('success', function() {
-        res.send(true);
-      }).on('error', function(err) {
-        res.send(false);
-      });
+      q = 'SELECT * FROM materialorderelement moe \
+          INNER JOIN materialorder mo ON moe.materialorder_id = mo.id \
+          INNER JOIN ot ON mo.ot_id = ot.id \
+          WHERE ot.id = '+req.params.ot_id+' AND moe.arrived IS NOT NULL';
+
+      DB._.query(q, function(err, data){
+        var state;
+        if (data.length > 0){
+          state = 4;  
+        }
+        else{
+          state = 5;
+        }
+        DB.Ot.find({where: {id: req.params.ot_id}}).on('success', function(ot){
+          ot.updateAttributes({otstate_id: state})
+        })
+        a.updateAttributes({ otstate_id: state }).on('success', function() {
+          res.send(true);
+        }).on('error', function(err) {
+          res.send(false);
+        });
+      })
+      console.log(a)
     }
   });
 };

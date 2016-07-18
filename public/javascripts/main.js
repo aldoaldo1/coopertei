@@ -825,6 +825,12 @@
                 $("#head #tabs").empty().append('<a href="/#/queries/general">Consultas</a>'), $("#left .inner").empty().append('<div id="query_left"></div>'), $("#right .inner").empty().append('<div id="query_right"></div>');
             }
         };
+    }), e.define("/widgets/Report.js", function(e, t, n, r, i, s) {
+        C.Widget.Report = {
+            initialize: function() {
+                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+            }
+        };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
         C.Model.Alert = Backbone.Model.extend({
             urlRoot: "/alert",
@@ -4209,7 +4215,7 @@
                 }), t;
             },
             performToggleState: function() {
-                this.options.performToggleTaskState(this.cleanModals());
+                this.options.performToggleTaskState(this.cleanModals);
             },
             performToggleStateJob: function() {
                 this.options.performToggleTaskState(this.cleanModals, !0), $(this.options.checkbox).attr("checked", !1), this.cleanModals();
@@ -4556,7 +4562,7 @@
                 this.selected_row = $(e.currentTarget), $("#ot_left .ot_add_task").attr("disabled", !1);
             }, 
             generateRowDetails: function(e, t) {
-                var n = -1, r = -1, i = this, s = e.fnGetData(t), o = s.id, u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
+                var n = -1, bool = false, r = -1, i = this, s = e.fnGetData(t), o = s.id, u = '<div class="row_detail ot_id_' + o + '" style="display:none;">', a, f = 0;
                 return this.getOtTasks(o, function(e) {
                     var r, s, u;
                     if (e.length) {
@@ -4573,21 +4579,31 @@
                                 var t = this, n = null, r = F.doNothing, s = null;
                                 C.Session.getUser().role_id != 7 && C.Session.getUser().role_id != 5 && e.area_id != C.Session.getUser().area_id ? (r = "No Pertenece al AREA correspondiente para realizar esta TAREA", i = function() {
                                     $(t).attr("checked", !1)
-                                }, s = !0, i(), F.msgError(r)) : ($(t).is(":checked") ? (n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
+                                }, s = !0, i(), F.msgError(r)) : ($(t).is(":checked") ? (bool = true, n = "Esta operación COMPLETARÁ la Tarea.", r = function() {
                                     $(t).attr("checked", !1);
-                                }, s = !1) : (n = "Esta operación convertirá en INCOMPLETA la Tarea.", r = function() {
+                                }, s = !1) : (bool = false, n = "Esta operación convertirá en INCOMPLETA la Tarea.", r = function() {
                                     $(t).attr("checked", !0);
-                                }, s = !0), F.msgConfirm(n, function() {
-                                    i.toggleTaskState(t, e.id, s, function(e) {
-                                        e === !0 && $(t).is(":checked") ? ($(t).parent().addClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !1), $(t).parent().next().css({
-                                            opacity: 1
-                                        })) : $(t).is(":checked") || ($(t).parent().removeClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !0), $(t).parent().next().css({
-                                            opacity: .5
-                                        }));
-                                    });
-                                }, function() {
-                                    r();
-                                }));
+                                }, s = !0), a = function() {
+                                    if (!bool){
+                                        F.msgConfirm(n, function(){
+                                            i.toggleTaskState(t, e.id, s, function(e) {
+                                                e === !0 && $(t).is(":checked") ? ($(t).parent().addClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !1), $(t).parent().next().css({
+                                                    opacity: 1
+                                                })) : $(t).is(":checked") || ($(t).parent().removeClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !0), $(t).parent().next().css({
+                                                    opacity: .5
+                                                }));
+                                            });
+                                        }, r())
+                                    }else{
+                                        i.toggleTaskState(t, e.id, s, function(e) {
+                                            e === !0 && $(t).is(":checked") ? ($(t).parent().addClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !1), $(t).parent().next().css({
+                                                opacity: 1
+                                            })) : $(t).is(":checked") || ($(t).parent().removeClass("crossed"), $($(t).parent().next().children()[0]).attr("disabled", !0), $(t).parent().next().css({
+                                                opacity: .5
+                                            }));
+                                        });
+                                    }
+                                }), a();
                             }), l = !1, (!e.completed && n == -1 || e.priority == n) && e.reworked == 0 ? n = e.priority : e.completed || ($(s).attr("disabled", !0), $(r).css({
                                 opacity: .5
                             }));
@@ -4673,7 +4689,6 @@
                     checkbox: e,
                     currentTaskState: n,
                     performToggleTaskState: function(e, n) {
-                        console.log('heraldo', n);
                         var s;
                         n ? (s = "error", console.log("existe")) : s = "good", $.ajax({
                             type: "POST",
@@ -4735,6 +4750,10 @@
                     if (e.delay){
                         $('.ot_infocard').append('<div class="delays"><p><label>Demoras:</label></p>'+e.delay+'</div>')
                     }
+                    $(".task_form").fadeOut("slow", function() {
+                        $(this).remove();
+                    })
+                        
                     F.assignValuesToInfoCard($(".ot_infocard"), e);
                 }, function() {
                     var t = $(".ot_table").dataTable();
@@ -6637,6 +6656,145 @@
                 });
             }
         });
+    }) , e.define("/views/report/OtState.js", function(e, t, n, r, i, s) {
+        C.View.OtState = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                this.persons = new C.Collection.Persons(null, {
+                    view: this
+                }), this.persons.fetch({
+                    success: function(t, n) {
+                        e.person_table = new C.View.PersonTable({
+                            el: $("#person_left"),
+                            collection: t
+                        }), e.person_form = new C.View.PersonForm({
+                            el: $("#person_right"),
+                            model: e.model,
+                            collection: t,
+                            person_table: e.person_table
+                        });
+                    }
+                });
+            }
+        });
+    }), e.define("/views/report/OtStateTable.js", function(e, t, n, r, i, s) {
+        C.View.OtStateTable = Backbone.View.extend({
+            name: "person",
+            source: "/person",
+            headers: [ "ID", "Nombre", "Apellido", "Teléfono", "E-mail" ],
+            attrs: [ "id", "firstname", "lastname", "phone", "email" ],
+            data: null,
+            hidden_columns: [ "name" ],
+            initialize: function() {
+                t = this;
+                this.data = this.options.collection, F.createDataTable(this, function(e) {
+                    F.assignValuesToForm($(".person_form"), e);
+                });
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/OtStateInfocard.js", function(e, t, n, r, i, s) {
+        C.View.PersonForm = Backbone.View.extend({
+            name: "person_form",
+            title: "Datos de la Persona",
+            fields: {
+                firstname: {
+                    label: "Nombre",
+                    required: !0,
+                    check: "alpha"
+                },
+                lastname: {
+                    label: "Apellido",
+                    required: !0,
+                    check: "alpha"
+                },
+                phone: {
+                    label: "Teléfono"
+                },
+                email: {
+                    label: "E-mail",
+                    placeholder: "E-mail (ej.: coop@coopertei.com.ar)",
+                    required: !0,
+                    check: "email"
+                }
+            },
+            isCRUD: !0,
+            initialize: function() {
+                F.createForm(this);
+            },
+            events: {
+                "click .person_form .BUTTON_create": "addPerson",
+                "click .person_form .BUTTON_save": "editPerson",
+                "click .person_form .BUTTON_delete": "delPerson"
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+            addTableRow: function(e) {
+                var t = F.JSONValuesToArray($(".person_form").serializeObject());
+                t.unshift(e), this.getDataTable().fnAddData(t);
+            },
+            editTableRow: function(e) {},
+            addPerson: function() {
+                var e = this;
+                $.ajax({
+                    type: 'POST',
+                    data: $(".person_form").serializeObject(),
+                    url: '/person',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK('La persona ha sido creada');
+                        F.reloadDataTable('.person_table');
+                    }
+                })
+            },
+            editPerson: function() {
+                var e = this;
+                $.ajax({
+                    url: '/person/'+this.getSelectionID(),
+                    data: $(".person_form").serializeObject(),
+                    type: 'PUT',
+                    success: function(){
+                        F.cleanForm('.person_form');
+                        F.msgOK("La persona ha sido actualizada");
+                        F.reloadDataTable('.person_table'); 
+                    }
+                })
+            },
+            delPerson: function() {
+                var e = this;
+                F.msgConfirm("¿Desea eliminar a esta Persona?", function() {
+                    $.ajax({
+                        url: '/person/'+e.getSelectionID(),
+                        type: 'DELETE',
+                        success: function(){
+                            F.cleanForm('.person_form');
+                            F.msgOK("La persona ha sido eliminada");
+                            F.reloadDataTable('.person_table')
+                        }
+                    })
+                });
+            }
+        });
     }), e.define("/Router.js", function(e, t, n, r, i, s) {
         $(function() {
             var e = Backbone.Router.extend({
@@ -6669,6 +6827,8 @@
                     "/client/events": "getClientEvents",
                     "/client/events/:ot_id": "getClientEvents",
                     "/client/notifications": "getClientNotifications",
+                    "/reports" : "getOtStateReport",
+                    "/reports/otstate" : "getOtStateReport",
                     "/options/profile": "getProfile",
                     "/options/controlpanel": "getControlpanel",
                     "/crud/person": "getPerson",
@@ -6679,6 +6839,7 @@
                     "/crud/materialcategory": "getMaterialCategory",
                     "/crud/equipment": "getEquipment",
                     "/crud/errorreport": "getErrorReport",
+
                     "*undefined": "notFound"
                 },
                 getIni: function() {
@@ -6991,6 +7152,14 @@
                         }), F.R.highlightCurrentModule("materials/purchases");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);
+                },
+                getOtStateReport: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "OTs por estados", this.otreport_widget = C.Widget.Report.initialize(), this.otstatereport_view = new C.View.OtState({
+                            //model: new C.Model.OtState
+                        }), F.R.highlightCurrentModule("reports/otstate");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
                 }
             });
             C.Router = new e, Backbone.history.start();
@@ -7128,6 +7297,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateInfocard"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

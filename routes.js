@@ -70,9 +70,9 @@ module.exports = function(app, routes) {
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',
-                'authorization', 'authorizationhistory', 'otstate', 'schedule', 'module',
+                'authorization', 'authorizationhistory', 'schedule', 'module',
                 'city', 'material', 'materialcategory', 'materialorder', 'materialhistory',
-                'unit', 'otstate', 'inout', 'inouthistory', 'equipment', 'news', 'iva',
+                'unit', 'otstate', 'otstatereport', 'inout', 'inouthistory', 'equipment', 'news', 'iva',
                 'clientnotification', 'materialreception', 'purchase'];/*AGREGUE materialreception*/
 
   models.forEach(function(m) {

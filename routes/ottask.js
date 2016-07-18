@@ -251,6 +251,7 @@ Ottask.rework = function(req, res, next) {
 };
 
 Ottask.complete = function(req, res, next) {
+  console.log(req.body)
   id=req.params.task_id.split( "**");
   DB.Ottask.find({ where: { id: id[0] } }).on('success', function(t) {
     if(id[1]!="error"){
@@ -261,11 +262,20 @@ Ottask.complete = function(req, res, next) {
       }).on('success', function() {
         if (!t.completed === false) {
           DB.Ot.find({ where: { id: t.ot_id }}).on('success', function(ot) {
+            console.log('heraldo')
             for (var i = 1; i <= 5; i += 1) {
               // Only for entries where employee was selected
               if (parseInt(req.body['toggle_task_employee_' + i]) > 0) {
-              var impr;
-      	        req.body['seleccion_' + i]? impr=req.body['seleccion_' + i].toString():impr=" ";
+                console.log(req.body['toggle_task_employee_'+i])
+                var impr;
+                console.log({
+                  ottask_id: t.id,
+                  employee_id: req.body['toggle_task_employee_' + i],
+                  employee_hours: req.body['toggle_task_schedule_' + i + '_h'],
+                  employee_minutes: req.body['toggle_task_schedule_' + i + '_m'],
+                  materials_tools: impr
+                  })
+                req.body['seleccion_' + i]? impr=req.body['seleccion_' + i].toString():impr=" ";
                 DB.Ottaskresource.build({
                   ottask_id: t.id,
                   employee_id: req.body['toggle_task_employee_' + i],

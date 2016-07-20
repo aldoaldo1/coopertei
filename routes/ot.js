@@ -638,13 +638,6 @@ Ot.put = function(req, res, next) {
   }
 };
 
-Ot.materialrecieved = function(req, res, next){
-  DB.Ot.find({where: {id:req.params.id}}).on('success', function(ot) {
-    ot.updateAttributes({otstate_id: 5})
-    res.send(true)
-  })
-}
-
 Ot.delete = function(req, res, next) {
   DB.Ot.find({ where: { id: req.params.id } }).on('success', function(ot) {
     ot.destroy().on('success', function(ot) {

@@ -24,7 +24,18 @@ Purchase.get = function(req, res, next) {
   DB._.query(q, function(err, data) {
     var elements = [];
     data.forEach(function(el){
-      var date = (el.arrivaldate) ? moment(el.arrivaldate).format('DD/MM/YYYY') : ''; 
+      var date = (el.arrivaldate) ? moment(el.arrivaldate).format('DD/MM/YYYY') : '';
+      if (el.arrivaldate){
+        if (!isNaN(el.arrivaldate.getTime())){
+          date = moment(el.arrivaldate).format('DD/MM/YYYY')
+        }
+        else{
+          date = ''
+        }
+      }
+      else{
+        date = ''
+      }
       elements.push({
         id: el.id,
         ot: el.ot_number,

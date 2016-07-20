@@ -262,7 +262,6 @@ Ottask.complete = function(req, res, next) {
       }).on('success', function() {
         if (!t.completed === false) {
           DB.Ot.find({ where: { id: t.ot_id }}).on('success', function(ot) {
-            console.log('heraldo')
             for (var i = 1; i <= 5; i += 1) {
               // Only for entries where employee was selected
               if (parseInt(req.body['toggle_task_employee_' + i]) > 0) {

@@ -822,16 +822,10 @@
                 $("#head #tabs").empty().append('<a href="/#/options/profile">Perfil</a>'), $("#left .inner").empty().append('<div id="profile_left"></div>'), $("#right .inner").empty().append('<div id="profile_right"></div>');
             }
         };
-    }), e.define("/widgets/Query.js", function(e, t, n, r, i, s) {
-        C.Widget.Query = {
-            initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/queries/general">Consultas</a>'), $("#left .inner").empty().append('<div id="query_left"></div>'), $("#right .inner").empty().append('<div id="query_right"></div>');
-            }
-        };
     }), e.define("/widgets/Report.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimientos</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -1549,14 +1543,15 @@
             attrs: [ "id", "number", "client_id", "client", "equipment", "delivery" ],
             data: null,
             hidden_columns: ['client_id'],
-            date_columns: ['delivery'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
                     sType: "es_date"
                 } ],
                 aaSorting: [ [ 1, "desc" ] ]
             },
+            date_columns: ['delivery'],
             rowHandler: function(e, t) {
+                console.log(e, t)
                 $(e).children().css({
                     fontWeight: t.fontWeight,
                     color: t.color
@@ -3925,7 +3920,7 @@
                 });
                 return $(t).append($("<option>", {
                     value: 0
-                }).text("Seleccione razón de demora...")), _.each(e.delays, function(e) {
+                }).text("Seleccione razón de reprogramacion de entrega...")), _.each(e.delays, function(e) {
                     $(t).append($("<option>", {
                         value: e.id
                     }).text(e.reason));
@@ -4081,7 +4076,7 @@
                 });
                 return $(t).append($("<option>", {
                     value: 0
-                }).text("Seleccione razón de demora...")), _.each(e.delays, function(e) {
+                }).text("Seleccione razón de reprogramacion de entrega...")), _.each(e.delays, function(e) {
                     $(t).append($("<option>", {
                         value: e.id
                     }).text(e.reason));
@@ -4660,7 +4655,7 @@
                 });
             },
             renderOtTaskResources: function(e, t) {
-                C.Session.roleID() >= 2 /*&& t.completed*/ && new C.View.OtTaskResources({
+                C.Session.roleID() >= 2 && new C.View.OtTaskResources({
                     task_row: e,
                     task: t
                 });
@@ -5407,7 +5402,7 @@
             editDate: function() {
                 console.log('estoy aca')
                 var e = this;
-                if (C.Session.getUser().area_id == 8){
+                if (C.Session.getUser().area_id == 8 || C.Session.getUser().role_id == 5){
                     console.log('llegue hasta aca')
                     var date = $('input[name="arrivaldate"]').val()
                     date = date.split('/')[1]+'-'+date.split('/')[0]+'-'+date.split('/')[2];
@@ -5628,6 +5623,7 @@
             headers: [ "ID", "ID Empleado", "Empleado", "Fecha y Hora Autorizadas", "Egreso", "Reingreso" ],
             attrs: [ "id", "employee_id", "employee", "authorized", "out", "comeback" ],
             hidden_columns: ['employee_id'],
+            //date_columns: ['authorized', 'out', 'comeback'],
             data: null,
             rowHandler: function(e, t) {
                 function n(n, r, i) {
@@ -6152,17 +6148,18 @@
                 });
             }
         });
-    }), e.define("/views/query/Query.js", function(e, t, n, r, i, s) {
+    }), e.define("/views/report/Query.js", function(e, t, n, r, i, s) {
         C.View.Query = Backbone.View.extend({
             el: $("body"),
             initialize: function() {
+                console.log('heraldo')
                 this.query_predefined_list = new C.View.QueryPredefinedList({
-                    el: $("#query_right"),
+                    el: $("#report_right"),
                     model: this.model
                 });
             }
         });
-    }), e.define("/views/query/QueryTable.js", function(e, t, n, r, i, s) {
+    }), e.define("/views/report/QueryTable.js", function(e, t, n, r, i, s) {
         C.View.QueryTable = Backbone.View.extend({
             name: "query",
             source: "/query",
@@ -6179,7 +6176,7 @@
                 this.selected_row = $(e.currentTarget);
             }
         });
-    }), e.define("/views/query/QueryForm.js", function(e, t, n, r, i, s) {
+    }), e.define("/views/report/QueryForm.js", function(e, t, n, r, i, s) {
         C.View.QueryForm = Backbone.View.extend({
             name: "query_form",
             title: "Criterios de búsqueda",
@@ -6217,7 +6214,7 @@
                     data: $(".query_form").serialize(),
                     success: function(e) {
                         new C.View.QueryTable({
-                            el: $("#query_left"),
+                            el: $("#report_left"),
                             collection: e,
                             headers: [],
                             attrs: []
@@ -6226,7 +6223,7 @@
                 });
             }
         });
-    }), e.define("/views/query/QueryPredefinedList.js", function(e, t, n, r, i, s) {
+    }), e.define("/views/report/QueryPredefinedList.js", function(e, t, n, r, i, s) {
         C.View.QueryPredefinedList = Backbone.View.extend({
             initialize: function() {
                 this.template();
@@ -6240,14 +6237,14 @@
                 });
             },
             events: {
-                "click #query_right .graphEmployeeProducivity": "getEmployeeTasksAndGraphThem"
+                "click #report_right .graphEmployeeProducivity": "getEmployeeTasksAndGraphThem"
             },
             getEmployeeTasksAndGraphThem: function() {
                 var e = this;
-                $("#query_chart").remove(), $("#query_left").append('<div id="query_chart"><svg></svg></div>'), $("#query_left").css({
+                $("#query_chart").remove(), $("#report_left").append('<div id="query_chart"><svg></svg></div>'), $("#report_left").css({
                     height: "500px"
                 }), $("#query_chart").css({
-                    height: parseInt($("#query_left").css("height")) + "px",
+                    height: parseInt($("#report_left").css("height")) + "px",
                     minWidth: "100px",
                     minHeight: "100px"
                 }), $.ajax({
@@ -6277,7 +6274,7 @@
                         var e = nv.models.lineWithFocusChart();
                         return d3.select("#query_chart svg").datum(t).transition().duration(500).call(e), nv.utils.windowResize(e.update), e;
                     });
-                } else $("#query_left").css({
+                } else $("#report_left").css({
                     textAlign: "center",
                     paddingTop: "2em"
                 }).html("<h3>No hay datos a reportar.</h3>");
@@ -6681,6 +6678,7 @@
             source: "/otstatereport",
             headers: [ "ID", "Numero", "Equipo(TAG)", "Cliente", "Intervención", "Plan", "Retrabajo de", "Estado", "Recepción", "Entrega" ],
             attrs: [ "id", "number", "equipment", "client", "intervention", "plan", "reworked", "otstate", "reception", "delivery"],
+            date_columns: ["reception", "delivery"],
             data: null,
             initialize: function() {
                 t = this;
@@ -6819,13 +6817,239 @@
                 "click .BUTTON_proceed" : 'filter',
             },
             filter: function(){
-                var start = $('.otdelivery_form').serializeObject().start.split('/');
-                var end = $('.otdelivery_form').serializeObject().end.split('/');
-                start = start[2]+'-'+start[1]+'-'+start[0];
-                end = end[2]+'-'+end[1]+'-'+end[0];
-                
-                console.log('/otdeliveryreport/'+start+'/'+end);
-                F.redirectDataTable('.otdelivery_table', '/otdeliveryreport/'+start+'/'+end)
+                if ($('.otdelivery_form').serializeObject().start != '' && $('.otdelivery_form').serializeObject().end != ''){
+                    var start = $('.otdelivery_form').serializeObject().start.split('/');
+                    var end = $('.otdelivery_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    
+                    console.log('/otdeliveryreport/'+start+'/'+end);
+                    F.redirectDataTable('.otdelivery_table', '/otdeliveryreport/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/OtDeadline.js", function(e, t, n, r, i, s) {
+        C.View.OtDeadline = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.otdeadline_table = new C.View.OtDeadlineTable({
+                    el: $("#otdeadline_left"),
+                }), e.otdeadline_form = new C.View.OtDeadlineForm({
+                    el: $("#report_right"),
+                    model: {},
+                    otdeadline_table: e.otdeadline_table
+                });
+            }
+        });
+    }), e.define("/views/report/OtDeadlineTable.js", function(e, t, n, r, i, s) {
+        C.View.OtDeadlineTable = Backbone.View.extend({
+            name: "otdeadline",
+            source: "",
+            headers: [ "ID", "Numero", "Equipo(TAG)", "Cliente", "Intervención", "Plan", "Retrabajo de", "Estado", "Recepción", "Entrega" ],
+            attrs: [ "id", "number", "equipment", "client", "intervention", "plan", "reworked", "otstate", "reception", "delivery"],
+            date_columns: ["reception", "delivery"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/OtDeadlineForm.js", function(e, t, n, r, i, s) {
+        C.View.OtDeadlineForm = Backbone.View.extend({
+            name: "otdeadline_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                $('.otdeadline_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.otdeadline_form').serializeObject().start != '' && $('.otdeadline_form').serializeObject().end != ''){
+                    var start = $('.otdeadline_form').serializeObject().start.split('/');
+                    var end = $('.otdeadline_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    
+                    console.log('/otdeadlinereport/'+start+'/'+end);
+                    F.redirectDataTable('.otdeadline_table', '/otdeadlinereport/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/OtConclude.js", function(e, t, n, r, i, s) {
+        C.View.OtConclude = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.otconclude_table = new C.View.OtConcludeTable({
+                    el: $("#otconclude_left"),
+                }), e.otconclude_form = new C.View.OtConcludeForm({
+                    el: $("#report_right"),
+                    model: {},
+                    otconclude_table: e.otconclude_table
+                });
+            }
+        });
+    }), e.define("/views/report/OtConcludeTable.js", function(e, t, n, r, i, s) {
+        C.View.OtConcludeTable = Backbone.View.extend({
+            name: "otconclude",
+            source: "",
+            headers: [ "ID", "Numero", "Equipo(TAG)", "Cliente", "Intervención", "Plan", "Retrabajo de", "Estado", "Recepción", "Entrega" ],
+            attrs: [ "id", "number", "equipment", "client", "intervention", "plan", "reworked", "otstate", "reception", "delivery"],
+            date_columns: ["reception", "delivery"],
+            data: null,
+            datatableOptions: {
+                aaSorting: [ [ 1, "desc" ], [3, "desc"], [2, "desc"] ]
+            },initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/OtConcludeForm.js", function(e, t, n, r, i, s) {
+        C.View.OtConcludeForm = Backbone.View.extend({
+            name: "otconclude_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                },
+                client_id: {
+                    label: "Cliente",
+                    type: "select"
+                },
+                equipment_id: {
+                    label: "Equipo TAG",
+                    type: "select"
+                },
+                rework: {
+                    label: "Retrabajo de",
+                    type: "text"
+                }
+
+            },
+            relations:{
+                clients: null,
+                equipments: null,
+            },
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                F.getAllFromModel('client', function(t){
+                    e.relations.clients = t.data, F.getAllFromModel("equipment", function(t){
+                        e.relations.equipments = t.data, F.createForm(e);
+                        $('.otconclude_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+                    })
+                })
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.otconclude_form').serializeObject().start != '' && $('.otconclude_form').serializeObject().end != ''){
+                    var start = $('.otconclude_form').serializeObject().start.split('/');
+                    var end = $('.otconclude_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    var client = $('.otconclude_form').serializeObject().client_id;
+                    var tag = $('.otconclude_form').serializeObject().equipment_id;
+                    var rework = $('.otconclude_form').serializeObject().rework;
+                    if (rework == ''){
+                        rework = 0;
+                    }if (client == ''){
+                        client = 0;
+                    }if (tag == ''){
+                        tag = 0;
+                    }
+                    console.log('/otconcludereport/'+start+'/'+end);
+                    F.redirectDataTable('.otconclude_table', '/otconcludereport/'+start+'/'+end+'/'+client+'/'+tag+'/'+rework)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
 
             },
             getTable: function() {
@@ -6868,7 +7092,6 @@
                     "/personnel/inouts": "getPersonnelInouts",
                     "/personnel/history": "getPersonnelHistory",
                     "/personnel/payroll": "getPersonnelPayroll",
-                    "/queries": "getQuery",
                     "/client/ots": "getClientOts",
                     "/client/events": "getClientEvents",
                     "/client/events/:ot_id": "getClientEvents",
@@ -6876,6 +7099,9 @@
                     "/reports" : "getOtStateReport",
                     "/reports/otstate" : "getOtStateReport",
                     "/reports/otdelivery": "getOtDeliveryReport",
+                    "/reports/otdeadline": "getOtDeadlineReport",
+                    "/reports/otconclude": "getOtConcludeReport",
+                    "/reports/queries": "getQuery",
                     "/options/profile": "getProfile",
                     "/options/controlpanel": "getControlpanel",
                     "/crud/person": "getPerson",
@@ -7080,9 +7306,9 @@
                 },
                 getQuery: function() {
                     var e = function() {
-                        document.title = C.TITLE + "Consultas", this.query_widget = C.Widget.Query.initialize(), this.query_view = new C.View.Query({
+                        document.title = C.TITLE + "Consultas", this.report_widget = C.Widget.Report.initialize(), this.query_view = new C.View.Query({
                             model: new C.Model.Query
-                        }), F.R.highlightCurrentModule("queries/general");
+                        }), F.R.highlightCurrentModule("report/queries");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 4, 5 ], e);
                 },
@@ -7207,10 +7433,24 @@
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
                 },
-                getOtStateReport: function(){
+                getOtDeliveryReport: function(){
                     var e = function() {
                         document.title = C.TITLE + "Vencimientos", this.otreport_widget = C.Widget.Report.initialize(), this.otdeliveryreport_view = new C.View.OtDelivery({
                         }), F.R.highlightCurrentModule("reports/otdelivery");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getOtDeadlineReport: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Vencimientos", this.otreport_widget = C.Widget.Report.initialize(), this.otdeadlinereport_view = new C.View.OtDeadline({
+                        }), F.R.highlightCurrentModule("reports/otdeadline");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getOtConcludeReport: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Vencimientos", this.otreport_widget = C.Widget.Report.initialize(), this.otconcludereport_view = new C.View.OtConclude({
+                        }), F.R.highlightCurrentModule("reports/otconclude");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
                 },
@@ -7350,6 +7590,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Query"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/query/Query"), e("./views/query/QueryTable"), e("./views/query/QueryForm"), e("./views/query/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

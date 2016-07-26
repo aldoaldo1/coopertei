@@ -1,14 +1,14 @@
 var moment = require('moment');
 var DB, Everyone;
 
-var Otdeliveryreport = function(db, everyone) {
+var Otdeadlinereport = function(db, everyone) {
   DB = db;
   Everyone = everyone;
   
-  return Otdeliveryreport;
+  return Otdeadlinereport;
 };
 
-Otdeliveryreport.get = function(req, res, next) {
+Otdeadlinereport.get = function(req, res, next) {
 	var q = 'SELECT ot.id, ot.number, ot.reworked_number AS reworked, ot.created_at AS reception, ot.delivery, e.name AS equipment, i.name AS intervention, c.name AS client, os.name AS state, p.name AS plan, os.name AS otstate FROM ot \
  		INNER JOIN intervention i ON i.id = ot.intervention_id \
 		INNER JOIN equipment e ON e.id = ot.equipment_id \
@@ -35,7 +35,7 @@ Otdeliveryreport.get = function(req, res, next) {
 	});
 };
 
-Otdeliveryreport.betweenDates = function(req, res, next){
+Otdeadlinereport.betweenDates = function(req, res, next){
 	var start = req.params.start,
 		end = req.params.end;
 	console.log(start, end)
@@ -66,8 +66,8 @@ Otdeliveryreport.betweenDates = function(req, res, next){
 			}
 		})
 		res.send({data:ots});
-	});	
+	});		
 }
 
-module.exports = Otdeliveryreport;
+module.exports = Otdeadlinereport;
 

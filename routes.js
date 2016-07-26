@@ -68,6 +68,8 @@ module.exports = function(app, routes) {
 
   app.get('/otstatereport/:otstate_id', Auth.restrict, routes.otstatereport.byState)
   app.get('/otdeliveryreport/:start/:end', Auth.restrict, routes.otdeliveryreport.betweenDates);
+  app.get('/otdeadlinereport/:start/:end', Auth.restrict, routes.otdeadlinereport.betweenDates);
+  app.get('/otconcludereport/:start/:end/:client/:tag/:rework', Auth.restrict, routes.otconcludereport.betweenDates);
 
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',

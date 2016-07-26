@@ -256,10 +256,17 @@ Ot.conclude = function(req, res, next) {
 Ot.reprogram = function(req, res, next){
   DB.Ot.find({where: {id: req.params.id}}).on('success', function(ot){
     prev = ot.delivery;
+    var a = moment(prev);
+    var b = moment(req.body.newDate);
+    var diffDays = b.diff(a, 'days');
+    console.log(diffDays);
+    
     ot.updateAttributes({
       delivery: moment(req.body.newDate).format('YYYY-MM-DD')
     })
+    
     DB.Otdelay.create({
+      delay: diffDays,
       ot_id: req.params.id,
       delay_id: req.body.delay_id,
       observation: req.body.observation

@@ -67,7 +67,7 @@ Ottask.resources = function(req, res, next) {
 Ottask.add = function(req, res, next) {
   var q, new_task_position = 1;
   var params = req.body
-
+  var diference;
   DB._.query("SELECT MAX(position) AS position FROM ottask WHERE ot_id = "+params.ot_id+" AND (priority <= "+params.priority+")", function(err, position){
     var pos = 1
     if (position.length > 0){
@@ -77,8 +77,7 @@ Ottask.add = function(req, res, next) {
     if(params.reprogramTask == 'true'){
       if (params.type == 'par'){
         DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, max){
-          var diference = Number(params.eta) - Number(max[0].max);
-          console.log(diference)
+          diference = Number(params.eta) - Number(max[0].max);
           if (diference > 0){
             DB._.query('UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL '+diference+' DAY) WHERE ot_id = '+params.ot_id+' AND priority > '+params.priority);
           }
@@ -126,8 +125,17 @@ Ottask.add = function(req, res, next) {
             };
           })
         }
+        var delay;
+        if (params.type == 'par'){
+          delay = diference
+        }
+        else{
+          delay = params.eta;
+        }
+        console.log(delay)
         if(params.reprogram == 'true'){
           DB.Otdelay.create({
+            delay: delay,
             delay_id: req.body.delay_id,
             ot_id: req.body.ot_id,
             observation: req.body.observation
@@ -152,7 +160,7 @@ Ottask.add = function(req, res, next) {
 Ottask.rework = function(req, res, next) {
   var params = req.body;
   var type;
-  console.log('healdo', req.body)
+  var diference;
   DB._.query('SELECT * FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+params.priority, function(err, data){
     if (data.length > 1){
       type = 'par';
@@ -165,7 +173,7 @@ Ottask.rework = function(req, res, next) {
         if(params.reprogramTask == 'true'){
           if (type == 'par'){
             DB._.query('SELECT MAX(eta) AS max FROM ottask WHERE ot_id = '+params.ot_id+' AND priority = '+t.priority, function(err, max){
-              var diference = Number(params.eta) - Number(max[0].max);
+              diference = Number(params.eta) - Number(max[0].max);
               if (diference > 1){
                 console.log('actualizo todo')
                 console.log(diference)
@@ -174,7 +182,6 @@ Ottask.rework = function(req, res, next) {
             })
           }
           else{
-            var diference = 0
             diference = Number(params.eta) - Number(t.eta);
             if (diference > 0){
               console.log(diference)
@@ -183,13 +190,22 @@ Ottask.rework = function(req, res, next) {
           }
         }
         console.log(params.reprogram)
+        var delay;
+        if (type == 'par'){
+          delay = diference
+        }
+        else{
+          delay = Number(params.eta);
+        }
+        console.log('Heraldo', delay);
         if(params.reprogram == 'true'){
           console.log({
+            delay: delay,
             delay_id: params.delay_id,
             ot_id: params.ot_id,
             observation: params.explaination
           })
-          DB._.query('INSERT INTO otdelay (delay_id, ot_id, observation, created_at, updated_at) VALUES ("'+params.delay_id+'", "'+params.ot_id+'", "'+params.explaination+'", NOW(), NOW())')
+          DB._.query('INSERT INTO otdelay (delay, delay_id, ot_id, observation, created_at, updated_at) VALUES ("'+delay+'", "'+params.delay_id+'", "'+params.ot_id+'", "'+params.explaination+'", NOW(), NOW())')
           DB.Ot.find({where:{id: params.ot_id}}).on('success', function(ot){
           var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+params.ot_id+' ORDER BY priority DESC, eta DESC LIMIT 1';
             DB._.query(query, function(err, deadline){

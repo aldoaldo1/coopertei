@@ -57,10 +57,11 @@ Purchase.put = function(req, res, next){
       delete req.body.created_at;
       delete req.body.updated_at;
       
-      var date = req.body.arrivaldate; 
+      var date = req.body.arrivaldate;
+      console.log(date)
       date = date.split('/')[2]+'-'+date.split('/')[1]+'-'+date.split('/')[0];
                     
-      e.updateAttributes({arrivaldate: new Date(date)}).on('success', function() {
+      e.updateAttributes({arrivaldate: date}).on('success', function() {
         console.log('heraldo')
         res.send(true);
       }).on('error', function(err) {

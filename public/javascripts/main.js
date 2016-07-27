@@ -6152,7 +6152,6 @@
         C.View.Query = Backbone.View.extend({
             el: $("body"),
             initialize: function() {
-                console.log('heraldo')
                 this.query_predefined_list = new C.View.QueryPredefinedList({
                     el: $("#report_right"),
                     model: this.model

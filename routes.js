@@ -70,7 +70,8 @@ module.exports = function(app, routes) {
   app.get('/otdeliveryreport/:start/:end', Auth.restrict, routes.otdeliveryreport.betweenDates);
   app.get('/otdeadlinereport/:start/:end', Auth.restrict, routes.otdeadlinereport.betweenDates);
   app.get('/otconcludereport/:start/:end/:client/:tag/:rework', Auth.restrict, routes.otconcludereport.betweenDates);
-
+  app.get('/otresourcereport/:start/:end/', Auth.restrict, routes.otresourcereport.byClient);
+  app.get('/otresourcereport/:start/:end/:client_id', Auth.restrict, routes.otresourcereport.byClientAndOT);
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',

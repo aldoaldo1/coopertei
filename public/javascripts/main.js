@@ -825,7 +825,7 @@
     }), e.define("/widgets/Report.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a><a href="/#/reports/hoursperclient">Hs por cliente</a><a href="/#/reports/hoursperot">Hs por OT</a><a href="/#/reports/hoursperemployee">Hs por Empleado</a><a href="/#/reports/hoursperarea">Hs por Area</a><a href="/#/reports/ottaskreport">Informe de tareas</a><a href="/#/reports/materialreport">Informe de materiales</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -7064,6 +7064,605 @@
                 return this.getTable().selected_row;
             },
         });
+    }), e.define("/views/report/HoursPerClient.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerClient = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.hoursperclient_table = new C.View.HoursPerClientTable({
+                    el: $("#hoursperclient_left"),
+                }), e.hoursperclient_form = new C.View.HoursPerClientForm({
+                    el: $("#report_right"),
+                    model: {},
+                    hoursperclient_table: e.hoursperclient_table
+                });
+            }
+        });
+    }), e.define("/views/report/HoursPerClientTable.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerClientTable = Backbone.View.extend({
+            name: "hoursperclient",
+            source: "",
+            headers: ["ID", "Cliente", "OTs", "Tareas", "Horas" ],
+            attrs: ["id", "client", "ot_count", "ottask_count", "hours"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/HoursPerClientForm.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerClientForm = Backbone.View.extend({
+            name: "hoursperclient_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                $('.hoursperclient_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.hoursperclient_form').serializeObject().start != '' && $('.hoursperclient_form').serializeObject().end != ''){
+                    var start = $('.hoursperclient_form').serializeObject().start.split('/');
+                    var end = $('.hoursperclient_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    
+                    console.log('/otresourcereport/'+start+'/'+end);
+                    F.redirectDataTable('.hoursperclient_table', '/otresourcereport/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/HoursPerOt.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerOt = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.hoursperot_table = new C.View.HoursPerOtTable({
+                    el: $("#hoursperot_left"),
+                }), e.hoursperot_form = new C.View.HoursPerOtForm({
+                    el: $("#report_right"),
+                    model: {},
+                    hoursperot_table: e.hoursperot_table
+                });
+            }
+        });
+    }), e.define("/views/report/HoursPerOtTable.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerOtTable = Backbone.View.extend({
+            name: "hoursperot",
+            source: "",
+            headers: ["ID", "Numero", "Cliente", "Tareas", "Horas" ],
+            attrs: ["id", "number", "client", "ottask_count", "hours"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/HoursPerOtForm.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerOtForm = Backbone.View.extend({
+            name: "hoursperot_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                },
+                client_id: {
+                    label: "Cliente",
+                    type: "select"
+                },
+            },
+            relations:{
+                clients: null
+            },
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                F.getAllFromModel('client', function(t){
+                    e.relations.clients = t.data, F.createForm(e)
+                    $('.hoursperot_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+                })
+                console.log(e)
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.hoursperot_form').serializeObject().start != '' && $('.hoursperot_form').serializeObject().end != '' && $('.hoursperot_form').serializeObject().client != ''){
+                    var start = $('.hoursperot_form').serializeObject().start.split('/');
+                    var end = $('.hoursperot_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    var client = $('.hoursperot_form').serializeObject().client_id;
+                    
+                    console.log('/otresourcereport/'+start+'/'+end+'/'+client);
+                    F.redirectDataTable('.hoursperot_table', '/otresourcereport/'+start+'/'+end+'/'+client)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/HoursPerEmployee.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerEmployee = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.hoursperemployee_table = new C.View.HoursPerEmployeeTable({
+                    el: $("#hoursperemployee_left"),
+                }), e.hoursperemployee_form = new C.View.HoursPerEmployeeForm({
+                    el: $("#report_right"),
+                    model: {},
+                    hoursperemployee_table: e.hoursperemployee_table
+                });
+            }
+        });
+    }), e.define("/views/report/HoursPerEmployeeTable.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerEmployeeTable = Backbone.View.extend({
+            name: "hoursperemployee",
+            source: "",
+            headers: ["ID", "Empleado", "Nombre", "Apellido", "Horas" ],
+            attrs: ["id", "employee", "firstname", "lastname", "hours"],
+            hidden_columns:["firstname", "lastname"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/HoursPerEmployeeForm.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerEmployeeForm = Backbone.View.extend({
+            name: "hoursperemployee_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                $('.hoursperemployee_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.hoursperemployee_form').serializeObject().start != '' && $('.hoursperemployee_form').serializeObject().end != ''){
+                    var start = $('.hoursperemployee_form').serializeObject().start.split('/');
+                    var end = $('.hoursperemployee_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    
+                    console.log('/otemployeereport/'+start+'/'+end);
+                    F.redirectDataTable('.hoursperemployee_table', '/otemployeereport/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/HoursPerArea.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerArea = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.hoursperarea_table = new C.View.HoursPerAreaTable({
+                    el: $("#hoursperarea_left"),
+                }), e.hoursperarea_form = new C.View.HoursPerAreaForm({
+                    el: $("#report_right"),
+                    model: {},
+                    hoursperarea_table: e.hoursperarea_table
+                });
+            }
+        });
+    }), e.define("/views/report/HoursPerAreaTable.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerAreaTable = Backbone.View.extend({
+            name: "hoursperarea",
+            source: "",
+            headers: ["ID", "Area", "Horas" ],
+            attrs: ["id", "area", "hours"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/HoursPerAreaForm.js", function(e, t, n, r, i, s) {
+        C.View.HoursPerAreaForm = Backbone.View.extend({
+            name: "hoursperarea_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                $('.hoursperarea_form').append('<input type="button" class="BUTTON_proceed" value="Filtrar">')
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.hoursperarea_form').serializeObject().start != '' && $('.hoursperarea_form').serializeObject().end != ''){
+                    var start = $('.hoursperarea_form').serializeObject().start.split('/');
+                    var end = $('.hoursperarea_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    
+                    F.redirectDataTable('.hoursperarea_table', '/hoursperarea/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/OtTaskReport.js", function(e, t, n, r, i, s) {
+        C.View.OtTaskReport = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.ottaskreport_table = new C.View.OtTaskReportTable({
+                    el: $("#ottaskreport_left"),
+                }), e.ottaskreport_form = new C.View.OtTaskReportForm({
+                    el: $("#report_right"),
+                    model: {},
+                    ottaskreport_table: e.ottaskreport_table
+                });
+            }
+        });
+    }), e.define("/views/report/OtTaskReportTable.js", function(e, t, n, r, i, s) {
+        C.View.OtTaskReportTable = Backbone.View.extend({
+            name: "ottaskreport",
+            source: "",
+            headers: ["ID", "Número", "Cliente", "Recibida", "Inicio pactado", "Entrega pactada", "Conclusión", "Equipo", "Intervención", "Plan", "Remito entrada", "Remito salida", "Estado", "Tarea", "Prioridad", "Vencimiento", "Completada", "Completada el", "Retrabajo", "Area", "Tiempo estimado", "Empleado", "Horas Hombre", "Herramientas"],
+            attrs: ["id", "number", "client", "created_at", "agreedstart", "agreedend", 'conclusion_date', "equipment", "intervention", "plan", "remitoentrada", "remitosalida", "otstate", "ottask", "priority", "due_date", "completed", "completed_date", "reworked", "area", "eta", "employee", "hours", "materials_tools" ],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/OtTaskReportForm.js", function(e, t, n, r, i, s) {
+        C.View.OtTaskReportForm = Backbone.View.extend({
+            name: "ottaskreport_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                var select = '<select name="filterBy">\
+                                    <option value="otr.created_at">Fecha en la que se trabajó</option>\
+                                    <option value="ot.created_at">Fecha de recepción</option>\
+                                    <option value="ot.delivery">Fecha de entrega</option>\
+                                    <option value="ot.conclusion_date">Fecha de conclusión</option>\
+                                    <option value="ot.agreedstart">Fecha de inicio pactada</option>\
+                                    <option value="ot.agreedend">Fecha de entrega pactada</option>\
+                                    <option value="ott.due_date">Fecha de vencimiento de tarea</option>\
+                                    <option value="ott.completed_date">Fecha de terminacion de tarea</option>\
+                                </select>';
+                $('.ottaskreport_form').append(select+'<input type="button" class="BUTTON_proceed" value="Filtrar">');
+
+            
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.ottaskreport_form').serializeObject().start != '' && $('.ottaskreport_form').serializeObject().end != ''){
+                    var start = $('.ottaskreport_form').serializeObject().start.split('/');
+                    var end = $('.ottaskreport_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    var filterBy = $('.ottaskreport_form').serializeObject().filterBy;
+                    
+                    F.redirectDataTable('.ottaskreport_table', '/ottaskreport/'+filterBy+'/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
+    }), e.define("/views/report/MaterialReport.js", function(e, t, n, r, i, s) {
+        C.View.MaterialReport = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.materialreport_table = new C.View.MaterialReportTable({
+                    el: $("#materialreport_left"),
+                }), e.materialreport_form = new C.View.MaterialReportForm({
+                    el: $("#report_right"),
+                    model: {},
+                    materialreport_table: e.materialreport_table
+                });
+            }
+        });
+    }), e.define("/views/report/MaterialReportTable.js", function(e, t, n, r, i, s) {
+        C.View.MaterialReportTable = Backbone.View.extend({
+            name: "materialreport",
+            source: "",
+            headers: ["ID", "Numero", "Cliente", "Recibida", "Entrega", "Inicio pactado", "Entrega pactada", "Concluída", "Provedor", "Fecha", "Material", "Cantidad", "Recibido", "Categoría", "Unidad", "Fecha de recepción", "Empleado", "Remito"],
+            attrs: ["id", "number", "client", "created_at", "delivery", "agreedstart", "agreedend", "conclusion_date", "provider", "date", "name", "quantity", "arrived", "category", "unit", "arrivaldate", "employee", "remito"],
+            data: null,
+            initialize: function() {
+                t = this;
+                F.createDataTable(this)
+                /*$(document).on('click', '.person_table tbody tr', function(evento){
+                    t.selectRow(evento)
+                })*/
+
+            },
+            events: {
+                "click .person_table tr": "selectRow"
+            },
+            selectRow: function(e) {
+                this.selected_row = $(e.currentTarget);
+            }
+        });
+    }), e.define("/views/report/MaterialReportForm.js", function(e, t, n, r, i, s) {
+        C.View.MaterialReportForm = Backbone.View.extend({
+            name: "materialreport_form",
+            title: "Rango de fechas",
+            fields: {
+                start: {
+                    label: 'Desde',
+                    type: 'datepicker'
+                },
+                end: {
+                    label: 'Hasta',
+                    type: 'datepicker'
+                }
+            },
+            relations:{},
+            isCRUD: !0,
+            buttons: {
+                create: !1,
+                save: !1,
+                cancel: !1,
+                "delete": !1
+            },
+            initialize: function() {
+                e = this;
+                e.model.attributes = {start:null, end: null}
+                console.log(e)
+                F.createForm(e);
+                var select = '<select name="filterBy">\
+                                    <option value="ot.created_at">Fecha de recepción</option>\
+                                    <option value="ot.delivery">Fecha de entrega</option>\
+                                    <option value="ot.conclusion_date">Fecha de conclusión</option>\
+                                    <option value="ot.agreedstart">Fecha de inicio pactada</option>\
+                                    <option value="ot.agreedend">Fecha de entrega pactada</option>\
+                                    <option value="moe.created_at">Fecha de pedido del material</option>\
+                                    <option value="moe.arrivaldate">Fecha de recepcion del material</option>\
+                                </select>';
+                $('.materialreport_form').append(select+'<input type="button" class="BUTTON_proceed" value="Filtrar">')
+            },
+            events: {
+                "click .BUTTON_proceed" : 'filter',
+            },
+            filter: function(){
+                if ($('.materialreport_form').serializeObject().start != '' && $('.materialreport_form').serializeObject().end != ''){
+                    var start = $('.materialreport_form').serializeObject().start.split('/');
+                    var end = $('.materialreport_form').serializeObject().end.split('/');
+                    start = start[2]+'-'+start[1]+'-'+start[0];
+                    end = end[2]+'-'+end[1]+'-'+end[0];
+                    var filterBy = $('.materialreport_form').serializeObject().filterBy;
+                    F.redirectDataTable('.materialreport_table', '/materialreport/'+filterBy+'/'+start+'/'+end)
+                }else{
+                    F.msgError('Complete los campos faltantes');
+                }
+
+            },
+            getTable: function() {
+                return this.options.person_table;
+            },
+            getDataTable: function() {
+                return this.getTable().datatable;
+            },
+            getSelectionID: function() {
+                return parseInt($(".selection_id").val());
+            },
+            getSelectionRow: function() {
+                return this.getTable().selected_row;
+            },
+        });
     }), e.define("/Router.js", function(e, t, n, r, i, s) {
         $(function() {
             var e = Backbone.Router.extend({
@@ -7100,6 +7699,12 @@
                     "/reports/otdelivery": "getOtDeliveryReport",
                     "/reports/otdeadline": "getOtDeadlineReport",
                     "/reports/otconclude": "getOtConcludeReport",
+                    "/reports/hoursperclient": "getHoursPerClient",
+                    "/reports/hoursperot": "getHoursPerOt",
+                    "/reports/hoursperemployee": "getHoursPerEmployee",
+                    "/reports/hoursperarea": "getHoursPerArea",
+                    "/reports/ottaskreport": "getOtTaskReport",
+                    "/reports/materialreport": "getMaterialReport",
                     "/reports/queries": "getQuery",
                     "/options/profile": "getProfile",
                     "/options/controlpanel": "getControlpanel",
@@ -7453,6 +8058,49 @@
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
                 },
+                getHoursPerClient: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Horas por cliente", this.otreport_widget = C.Widget.Report.initialize(), this.hoursperclient_view = new C.View.HoursPerClient({
+                        }), F.R.highlightCurrentModule("reports/hoursperclient");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getHoursPerOt: function(){
+                    console.log('aldo')
+                    var e = function() {
+                        document.title = C.TITLE + "Horas por OT", this.otreport_widget = C.Widget.Report.initialize(), this.hoursperot_view = new C.View.HoursPerOt({
+                        }), F.R.highlightCurrentModule("reports/hoursperot");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getHoursPerEmployee: function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Horas por Empleado", this.otreport_widget = C.Widget.Report.initialize(), this.hoursperemployee_view = new C.View.HoursPerEmployee({
+                        }), F.R.highlightCurrentModule("reports/hoursperemployee");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getHoursPerArea:function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Horas por Area", this.otreport_widget = C.Widget.Report.initialize(), this.hoursperarea_view = new C.View.HoursPerArea({
+                        }), F.R.highlightCurrentModule("reports/hoursperarea");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getOtTaskReport:function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Informe de tareas", this.otreport_widget = C.Widget.Report.initialize(), this.ottaskreport_view = new C.View.OtTaskReport({
+                        }), F.R.highlightCurrentModule("reports/ottaskreport");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                },
+                getMaterialReport:function(){
+                    var e = function() {
+                        document.title = C.TITLE + "Informe de materiales", this.otreport_widget = C.Widget.Report.initialize(), this.materialreport_view = new C.View.MaterialReport({
+                        }), F.R.highlightCurrentModule("reports/materialreport");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
+                }
             });
             C.Router = new e, Backbone.history.start();
         });
@@ -7589,6 +8237,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/HoursPerClient"), e("./views/report/HoursPerClientTable"), e("./views/report/HoursPerClientForm"), e("./views/report/HoursPerEmployee"), e("./views/report/HoursPerEmployeeTable"), e("./views/report/HoursPerEmployeeForm"), e("./views/report/HoursPerArea"), e("./views/report/HoursPerAreaTable"), e("./views/report/HoursPerAreaForm"), e("./views/report/OtTaskReport"), e("./views/report/OtTaskReportTable"), e("./views/report/OtTaskReportForm"), e("./views/report/MaterialReport"), e("./views/report/MaterialReportTable"), e("./views/report/MaterialReportForm"), e("./views/report/HoursPerOt"), e("./views/report/HoursPerOtTable"), e("./views/report/HoursPerOtForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

@@ -60,26 +60,30 @@ module.exports = function(app, routes) {
   app.get('/inout/comeback/:id', Auth.restrict, routes.inout.registerComeback);
 
   app.get('/user/currentAreaId', Auth.restrict, routes.user.currentAreaId);
-  
+
   //Reports
   app.get('/report/ot', Auth.restrict, routes.otreport.get);
 
   app.get('/plan/task/:id', Auth.restrict, routes.plan.getTasks);
-
+  
   app.get('/otstatereport/:otstate_id', Auth.restrict, routes.otstatereport.byState)
   app.get('/otdeliveryreport/:start/:end', Auth.restrict, routes.otdeliveryreport.betweenDates);
   app.get('/otdeadlinereport/:start/:end', Auth.restrict, routes.otdeadlinereport.betweenDates);
   app.get('/otconcludereport/:start/:end/:client/:tag/:rework', Auth.restrict, routes.otconcludereport.betweenDates);
-  app.get('/otresourcereport/:start/:end/', Auth.restrict, routes.otresourcereport.byClient);
+  app.get('/otresourcereport/:start/:end', Auth.restrict, routes.otresourcereport.byClient);
   app.get('/otresourcereport/:start/:end/:client_id', Auth.restrict, routes.otresourcereport.byClientAndOT);
+  app.get('/otemployeereport/:start/:end', Auth.restrict, routes.otresourcereport.byEmployee);
+  app.get('/hoursperarea/:start/:end', Auth.restrict, routes.otresourcereport.byArea);
+  app.get('/ottaskreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.otTaskReport);  
+  app.get('/materialreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.materialReport);  
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',
                 'authorization', 'authorizationhistory', 'schedule', 'module',
                 'city', 'material', 'materialcategory', 'materialorder', 'materialhistory',
                 'unit', 'otstate', 'otstatereport', 'inout', 'inouthistory', 'equipment', 'news', 'iva',
-                'clientnotification', 'materialreception', 'purchase'];/*AGREGUE materialreception*/
-
+                'clientnotification', 'materialreception', 'purchase'];
+                
   models.forEach(function(m) {
     app.get('/' + m, Auth.restrict, routes[m].get);
     app.get('/' + m + '/:id', Auth.restrict, routes[m].getOne);

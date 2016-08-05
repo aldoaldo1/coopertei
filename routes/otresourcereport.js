@@ -20,6 +20,7 @@ Otresourcereport.get = function(req, res, next) {
 		otstate.forEach(function(os){
 			os.reception ? os.reception = moment(os.reception).format('DD/MM/YYYY') : '';
 			if (os.delivery){
+				os.delivery = new Date(os.delivery)
 				if (!isNaN(os.delivery.getTime())){
 					os.delivery = moment(os.delivery).format('DD/MM/YYYY')
 				}
@@ -159,6 +160,7 @@ Otresourcereport.otTaskReport = function(req, res, next){
 	DB._.query(q, function(err, data){
 		data.forEach(function(t){
 			if (t.delivery){
+				t.delivery = new Date(t.delivery)
 				if (!isNaN(t.delivery.getTime())){
 					t.delivery = moment(t.delivery).format('DD/MM/YYYY')
 				}
@@ -170,6 +172,7 @@ Otresourcereport.otTaskReport = function(req, res, next){
 				t.delivery = ''
 			}	
 			if (t.conclusion_date){
+				t.conclusion_date = new Date(t.conclusion_date)
 				if (!isNaN(t.conclusion_date.getTime())){
 					t.conclusion_date = moment(t.conclusion_date).format('DD/MM/YYYY')
 				}
@@ -181,6 +184,7 @@ Otresourcereport.otTaskReport = function(req, res, next){
 				t.conclusion_date = ''
 			}
 			if (t.agreedstart){
+				t.agreedstart = new Date(t.agreedstart)
 				if (!isNaN(t.agreedstart.getTime())){
 					t.agreedstart = moment(t.agreedstart).format('DD/MM/YYYY')
 				}
@@ -192,6 +196,7 @@ Otresourcereport.otTaskReport = function(req, res, next){
 				t.agreedstart = ''
 			}
 			if (t.agreedend){
+				t.agreedend = new Date(t.agreedend)
 				if (!isNaN(t.agreedend.getTime())){
 					t.agreedend = moment(t.agreedend).format('DD/MM/YYYY')
 				}
@@ -235,6 +240,7 @@ Otresourcereport.materialReport = function(req, res, next){
 	DB._.query(q, function(err, data){
 		data.forEach(function(t){
 			if (t.delivery){
+				t.delivery = new Date(t.delivery)
 				if (!isNaN(t.delivery.getTime())){
 					t.delivery = moment(t.delivery).format('DD/MM/YYYY')
 				}
@@ -246,6 +252,7 @@ Otresourcereport.materialReport = function(req, res, next){
 				t.delivery = ''
 			}	
 			if (t.conclusion_date){
+				t.conclusion_date = new Date(t.conclusion_date)
 				if (!isNaN(t.conclusion_date.getTime())){
 					t.conclusion_date = moment(t.conclusion_date).format('DD/MM/YYYY')
 				}
@@ -257,6 +264,7 @@ Otresourcereport.materialReport = function(req, res, next){
 				t.conclusion_date = ''
 			}
 			if (t.agreedstart){
+				t.agreedstart = new Date(t.agreedstart)
 				if (!isNaN(t.agreedstart.getTime())){
 					t.agreedstart = moment(t.agreedstart).format('DD/MM/YYYY')
 				}
@@ -268,6 +276,7 @@ Otresourcereport.materialReport = function(req, res, next){
 				t.agreedstart = ''
 			}
 			if (t.agreedend){
+				t.agreedend = new Date(t.agreedend)
 				if (!isNaN(t.agreedend.getTime())){
 					t.agreedend = moment(t.agreedend).format('DD/MM/YYYY')
 				}

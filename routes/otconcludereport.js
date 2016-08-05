@@ -20,6 +20,7 @@ Otconcludereport.get = function(req, res, next) {
 		ots.forEach(function(os){
 			os.reception ? os.reception = moment(os.reception).format('DD/MM/YYYY') : '';
 			if (os.delivery){
+				os.delivery = new Date(os.delivery)
 				if (!isNaN(os.delivery.getTime())){
 					os.delivery = moment(os.delivery).format('DD/MM/YYYY')
 				}
@@ -66,6 +67,7 @@ Otconcludereport.betweenDates = function(req, res, next){
 	DB._.query(q, function(err, ots) {
 		ots.forEach(function(os){
 			if (os.reception){
+				os.reception = new Date(os.reception)
 				if (!isNaN(os.reception.getTime())){
 					os.reception = moment(os.reception).format('DD/MM/YYYY')
 				}
@@ -77,6 +79,7 @@ Otconcludereport.betweenDates = function(req, res, next){
 				os.reception = ''
 			}
 			if (os.delivery){
+				os.delivery = new Date(os.delivery)
 				if (!isNaN(os.delivery.getTime())){
 					os.delivery = moment(os.delivery).format('DD/MM/YYYY')
 				}
@@ -88,6 +91,7 @@ Otconcludereport.betweenDates = function(req, res, next){
 				os.delivery = ''
 			}
 			if (os.conclusion_date){
+				os.conclusion_date = new Date(os.conclusion_date)
 				if (!isNaN(os.conclusion_date.getTime())){
 					os.conclusion_date = moment(os.conclusion_date).format('DD/MM/YYYY')
 				}

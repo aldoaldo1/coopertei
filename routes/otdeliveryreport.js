@@ -20,6 +20,7 @@ Otdeliveryreport.get = function(req, res, next) {
 		ots.forEach(function(os){
 			os.reception ? os.reception = moment(os.reception).format('DD/MM/YYYY') : '';
 			if (os.delivery){
+				os.delivery = new Date(os.delivery)
 				if (!isNaN(os.delivery.getTime())){
 					os.delivery = moment(os.delivery).format('DD/MM/YYYY')
 				}
@@ -46,14 +47,13 @@ Otdeliveryreport.betweenDates = function(req, res, next){
 		WHERE due_date >= '"+start+"' AND due_date <= '"+end+"' \
 		ORDER BY ott.created_at";
 
-	console.log(q)
+		console.log(q)
 
 	DB._.query(q, function(err, ots) {
 		ots.forEach(function(os){
-			console.log(os.delivery, start)
-			console.log(start < os.delivery)
 			os.delivery = moment(os.delivery).format('DD/MM/YYYY');
 			if (os.completed){
+				os.completed = new Date(os.completed);
 				if (!isNaN(os.completed.getTime())){
 					os.completed = moment(os.completed).format('DD/MM/YYYY')
 				}

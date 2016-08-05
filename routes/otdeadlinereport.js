@@ -20,6 +20,7 @@ Otdeadlinereport.get = function(req, res, next) {
 		ots.forEach(function(os){
 			os.reception ? os.reception = moment(os.reception).format('DD/MM/YYYY') : '';
 			if (os.delivery){
+				os.delivery = new Date(os.delivery);
 				if (!isNaN(os.delivery.getTime())){
 					os.delivery = moment(os.delivery).format('DD/MM/YYYY')
 				}
@@ -39,12 +40,15 @@ Otdeadlinereport.betweenDates = function(req, res, next){
 	var start = req.params.start,
 		end = req.params.end;
 	console.log(start, end)
-	var q = "SELECT ot.id, ot.number, ot.created_at AS reception, e.name AS equipment, c.name AS client, ott.name AS ottask, ott.completed_date AS completed, ott.due_date AS delivery FROM ottask ott \
+	var q = "SELECT ot.id, ot.number, ot.created_at AS reception, i.name as intervention, p.name as plan, ots.name as otstate, ot.reworked_number as reworked, e.name AS equipment, c.name AS client, ott.name AS ottask, ott.completed_date AS completed, ott.due_date AS delivery FROM ottask ott \
 		INNER JOIN ot ON ott.ot_id = ot.id  \
 		INNER JOIN equipment e ON e.id = ot.equipment_id \
 		INNER JOIN client c ON c.id = ot.client_id \
+		INNER JOIN otstate ots ON ot.otstate_id = ots.id\
+		LEFT JOIN intervention i ON ot.intervention_id = i.id\
+		LEFT JOIN plan p ON ot.plan_id = p.id\
 		WHERE due_date >= '"+start+"' AND due_date <= '"+end+"' \
-		ORDER BY ott.created_at";
+		ORDER BY ott.created_at"; 
 
 	console.log(q)
 
@@ -54,6 +58,7 @@ Otdeadlinereport.betweenDates = function(req, res, next){
 			console.log(start < os.delivery)
 			os.delivery = moment(os.delivery).format('DD/MM/YYYY');
 			if (os.completed){
+				os.completed = new Date(os.completed)
 				if (!isNaN(os.completed.getTime())){
 					os.completed = moment(os.completed).format('DD/MM/YYYY')
 				}

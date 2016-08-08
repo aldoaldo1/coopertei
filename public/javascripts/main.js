@@ -2707,8 +2707,12 @@
                     }
                 });
             },
+            reload: function(){
+                $('.selected_row').click()
+            },
             renderDetails: function(e, ot_id) {
                 var t, n, r;
+                var _this = this
                 var details = [];
                 console.log(ot_id)
                 $(".material_order_infocard").append("<h3>Datos del Pedido de Material</h3><h4>Llegadas</h4>")
@@ -2719,19 +2723,15 @@
                     }), $(n).on("click", function() {
                         var element =$(this);
                         (!((C.Session.getUser().area_id == 3) || (C.Session.getUser().role_id == 7 || C.Session.getUser().role_id == 5))) ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
-                            $.unblockUI(), window.setTimeout(function() {
-                                $("#material_order_received").remove();
-                            }, 1e3);
+                            _this.reload()
                         }), $("#material_order_received .BUTTON_proceed").on("click", function() {
                             if (!isNaN($("#material_order_received input:text[name=quantity_received]").val())){
-                                console.log($("#material_order_received input:text[name=quantity_received]").val())
-                                console.log("/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones")), F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
+                                setTimeout(function(){
+                                    _this.reload()
+                                },100)
+                                F.msgOK("Materiales Recibidos Correctamente"), $.ajax({
                                     url: "/materialorder/arrival/" + e.id + "/" + ($("#material_order_received input:text[name=quantity_received]").val() || 0) + "/" + ($("#material_order_received input:text[name=remito]").val() || "sin remito") + "::" + ($("#material_order_received textarea[name=observation_received]").val() || "sin observaciones"),
                                     success: function(t) {
-                                        console.log(element)
-                                        if (!t.arrived){
-                                            $(element).attr("checked", false);
-                                        }
                                         $.ajax({
                                             url: "/materialreception/byElements/" + e.id,
                                             success: function(e) {
@@ -2867,9 +2867,10 @@
                             },
                             success: function(e) {
                                 e.result === !0 ? t(function() {
+                                    $('.selected_row').click();
                                     $('.blockUI').remove();
                                     //F.reloadDataTable('.material_table')
-                                    location.reload()
+                                    F.msgOK('Materiales cargados correctamente');
                                 }) : t(function() {
                                     F.msgError("Ocurrió un error al guardar el pedido");
                                 });
@@ -2897,6 +2898,9 @@
                     $(this).parent().find('.property').remove()
                     e.appendProperties(id, index)
                 })
+                if ($('.modal').length > 1){
+                    $('.modal:first').remove()
+                }
             },
             getMaterialCategories: function() {
                 var e = this;
@@ -2963,7 +2967,7 @@
             template: function() {
                 var i = $('.material_order_infocard .selection_id').val()
                 if (i == 0){ i = ''}
-                $("body").append('<div id="material_order_window" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" value="'+i+'" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
+                $("body").append('<div id="material_order_window" class="modal" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">Complete la nueva Orden:</h1><br /><br /><label for="ot_number">O/T Nº </label><input type="text" value="'+i+'" name="ot_number" style="width:100px; " /><input type="button" value="Listar Tareas >" class="BUTTON_get_tasks" /><br /><br /><label for="provider">Proveedor </label><select name="provider"><option value="Cliente">Cliente</option><option value="Coopertei">Coopertei</option></select><br /><br /><form id="order_elements"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_create righty button" value="Crear Orden" /></div>'), $(".button").button(), this.appendOrderMaterialsWidget(), this.bindButtons();
             },
             appendOrderMaterialsWidget: function() {
                 var e = this, t = 1, n = $("<input>", {
@@ -3054,7 +3058,7 @@
                 }
             },
             cancelCreateOrder: function() {
-                 window.setTimeout(function() {location.reload()}, 1e3);
+                $('.blockUI').remove();
             }
         });
     }), e.define("/views/materialcategory/MaterialCategory.js", function(e, t, n, r, i, s) {
@@ -3456,6 +3460,7 @@
                             el: $("#ot_left"),
                             collection: t
                         }), $("#right").bind("ot_form_loaded", function(t, n) {
+                            $(document).unbind('delays_loaded')
                             $(".right_options").remove(), e.ot_options = new C.View.OtAdminOptions({
                                 el: $("#ot_left .toolbar")[0],
                                 ot_table: e.ot_table,
@@ -3900,7 +3905,10 @@
                     }else{
                       F.msgError("Todos los campos son obligatorios") // OT->SEGUIMIENTO REPGROGRAMAR VTO
                     }
-                }))
+                }));
+                if ($('.modal').length > 1){
+                    $('.modal:first').remove()
+                }
             },
             getDelays: function() {
                 var e = this;
@@ -3916,7 +3924,8 @@
                 var e = this;
                 console.log(e.delays)
                 var t = $("<select>", {
-                    name: 'delay_id'
+                    name: 'delay_id',
+                    class: 'delay_id'
                 });
                 return $(t).append($("<option>", {
                     value: 0
@@ -3930,7 +3939,10 @@
               var e = this, t = $(".ot_table"), n = F.getDataTableSelection(t)[0], r = $(t).dataTable().fnGetData(n)[0], i = $(".ot_table").dataTable().fnGetData(n).number;
               console.log(e.buildDelaysList('demoras'))
               /* FORM REPROGRAMAR VTO */
-              $("body").append('<div id="ot_reprogramar_window" style="display:none;"><h1 class="bold">¿Está seguro de querer Reprogramar la O/T Nº '+i+"?</h1>" + '<form id="reprogramar_ot_form" >' + "<br /><br />" +'<input id="tess" name="newDate" type="date" placeholder="Fecha Vto nueva"><br /><br />'+'Observaciones: <br /><textarea id="tesss" name="observation" style="width:100%; height:50px;"></textarea>'+ "</form>" + '<input type="button" class="BUTTON_cancel lefty button" value="Cancelar" />'+ '<input type="button" class="BUTTON_proceed righty button" value="Proceder" />' + "</div>"), $('#reprogramar_ot_form').append(e.buildDelaysList('demoras'))
+              $("body").append('<div id="ot_reprogramar_window" class="modal" style="display:none;"><h1 class="bold">¿Está seguro de querer Reprogramar la O/T Nº '+i+"?</h1>" + '<form id="reprogramar_ot_form" >' + "<br /><br />" +'<input id="tess" name="newDate" type="date" placeholder="Fecha Vto nueva"><br /><br />'+'Observaciones: <br /><textarea id="tesss" name="observation" style="width:100%; height:50px;"></textarea>'+ "</form>" + '<input type="button" class="BUTTON_cancel lefty button" value="Cancelar" />'+ '<input type="button" class="BUTTON_proceed righty button" value="Proceder" />' + "</div>"), $('#reprogramar_ot_form').append(e.buildDelaysList('demoras'))
+              if ($('.delay_id').length > 1){
+                $('.delay_id:first').remove()
+              }
               /* FIN FORM REPGROGRAMAR VTO */
               $.blockUI({
                 message: $("#ot_reprogramar_window"),
@@ -4002,7 +4014,7 @@
                         $('.explaination').remove()
                     }
                 })
-                $(document).on('click', 'input[name="reprogram"]', function(){
+                $(document).on('click', '#add_task_ot_form input[name="reprogram"]', function(){
                     var c = this;
                         if ($(c).is(':checked')){
                             $('#add_task_ot_form').append('<div class="explaination"><textarea placeholder="Observación" name="observation"></textarea></div>')
@@ -4010,6 +4022,9 @@
                                 $('.explaination:first').remove()
                             }
                             $('.explaination').append(e.buildDelaysList('delays'))
+                            if ($('.delay_id').length > 1){
+                                $('.delay_id:first').remove()
+                            }
                         }
                         else{
                             $('.explaination').remove()
@@ -4018,8 +4033,8 @@
                 $(document).bind("tasks_loaded", function() {
                     $(document).bind("delays_loaded", function() {
                         e.render();
-                        if ($('.addForm').length > 1){
-                            $('.addForm:first').remove();
+                        if ($('.modal').length > 1){
+                            $('.modal:first').remove();
                         }
                     }), e.getDelays();
                 }),e.getTasks();
@@ -4079,7 +4094,8 @@
             buildDelaysList: function(e) {
                 var e = this;
                 var t = $("<select>", {
-                    name: 'delay_id'
+                    name: 'delay_id',
+                    class: 'delay_id'
                 });
                 return $(t).append($("<option>", {
                     value: 0
@@ -4092,12 +4108,11 @@
             template: function() {
                 var e = this
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
-                $(e.el).append('<div id="ot_add_task_window" class="addForm" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><input placeholder="Prioridad" type="text" style="width:75%;display:inline" name="new_task_priority" /><select style="width:19%;margin-left:2%;display:inline" name="type"><option value="seq">Secuencial</option><option value="par">Paralela</option></select><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><textarea name="new_task_description" placeholder="Descripción" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
+                $("body").append('<div id="ot_add_task_window" class="addForm modal" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><input placeholder="Prioridad" type="text" style="width:75%;display:inline" name="new_task_priority" /><select style="width:19%;margin-left:2%;display:inline" name="type"><option value="seq">Secuencial</option><option value="par">Paralela</option></select><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><textarea name="new_task_description" placeholder="Descripción" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
                 $('#add_task_ot_form').prepend('<input type="text" name="name" placeholder="Nombre de la tarea">')
                 $('#add_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" name="eta" style="width:200px;display:inline"><input type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" disabled="disabled" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label>')
             },
             cleanModals: function(e) {
-                console.log('se va')
                 $(' .ot_add_task').unbind()
                 $('#ot_add_task_window').remove()
                 $('.blockUI').remove();
@@ -4154,10 +4169,16 @@
             initialize: function() {
                 if (!this.options.currentTaskState) {
                     var e = this;
-                    $(document).unbind('employees_loaded');
                     $(document).bind("employees_loaded", function() {
                         e.render();
+                        if ($('.modal').length > 1) {
+                            $('.modal:first').remove()
+                        };
+                        setTimeout(function(){
+                            $('.BUTTON_cancel').css('display', 'block')
+                        }, 100)
                     }), this.getEmployees();
+                    $('.BUTTON_cancel').css('display', 'block')
                 }else this.performToggleState();
             },
             getEmployees: function() {
@@ -4181,20 +4202,22 @@
                 }), $.blockUI({
                     message: $("#ot_toggle_task_state_window"),
                     css: {
-                        top: "0",
+                        top: "100px",
                         left: "30%",
                         width: "38%",
                         height: "100%",
                         border: "none",
                         padding: "1%",
-                        cursor: "default"
+                        cursor: "default",
+                        height: '600px'
                     }
                 });
             },
             template: function() {
-                $("body").append('<div id="ot_toggle_task_state_window" style="display:none; max-height:700px; overflow: auto"><h1 class="bold">Liste los empleados que trabajaron y horarios invertidos en esta tarea:</h1><br /><br /><form id="toggle_task_state_ot_form"><div></div></form><br /><br /><input type="button" class="BUTTON_cancel lefty button" value="Cancelar" /><input type="button" class="BUTTON_proceed righty button" value="Completar Tarea" /><input type="button" class="BUTTON_proceed_job righty button" value="Continuar Trabajando" /></div>');
+                $("body").append('<div id="ot_toggle_task_state_window" class="modal" style="display:none; overflow: auto; height:600px;"><h1 class="bold">Liste los empleados que trabajaron y horarios invertidos en esta tarea:</h1><br /><br /><form id="toggle_task_state_ot_form"><div></div></form><br /><br /><input type="button" class="BUTTON_cancel lefty button" value="Cancelar" /><input type="button" class="BUTTON_proceed righty button" value="Completar Tarea" /><input type="button" class="BUTTON_proceed_job righty button" value="Continuar Trabajando" /></div>');
                 for (var e = 1; e <= 5; e += 1) $("#toggle_task_state_ot_form div").append(this.buildEmployeesList("toggle_task_employee_" + e)[0]).append('<input type="text" name="toggle_task_schedule_' + e + '_h" maxlength="2" /> : ' + '<input type="text" name="toggle_task_schedule_' + e + '_m" maxlength="2" /> hs.').append("<br />Instrumentos/Herramientas <br /><select name='seleccion_" + e + "'" + this.buildToolsList() + "<br />");
                 $(".button").button();
+                $('.button').css('display', 'block')
             },
             cleanModals: function(e) {
                 $("#toggle_task_state_window").remove()
@@ -4216,14 +4239,15 @@
                 }), t;
             },
             performToggleState: function() {
-                this.options.performToggleTaskState(this.cleanModals);
+                this.options.performToggleTaskState(this.cleanModals), this.cleanModals()
             },
             performToggleStateJob: function() {
                 this.options.performToggleTaskState(this.cleanModals, !0), $(this.options.checkbox).attr("checked", !1), this.cleanModals();
                 //location.reload();
             },
             cancelToggleState: function() {
-                $(this.options.checkbox).attr("checked", !1), location.reload();
+                $(this.options.checkbox).attr("checked", !1);
+                this.cleanModals();
             }
         });
     }), e.define("/views/ot/OtAuditForm.js", function(e, t, n, r, i, s) {
@@ -4359,7 +4383,6 @@
                     $(document).unbind('tasks_loaded');
                     $(document).unbind('delays_loaded');
                     new C.View.OtAuditAddTask({
-                        el: $('#foot'),
                         addNewTask: function(t, n) {
                             console.log(t)
                             var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
@@ -4389,11 +4412,16 @@
                 }
             },
             reworkTask: function() {
+                $(document).unbind('delays_loaded')
+                $(document).unbind('tasks_loaded')
                 if (C.Session.getUser().area_id != 8){
                     var e = this, t = $(".selection_ottask_id").val();
                     F.getOneFromModel("ottask/get", $(".selection_ottask_id").val(), function(x){
                       if(x[0].completed==1){
                         e.renderForm()
+                        if ($('.modal').length > 1) {
+                            $('.modal:first').remove()
+                        };
                       }else{
                         F.msgError("La tarea debe estar completa para poder ser retrabajada")
                       }
@@ -4423,7 +4451,7 @@
             templateForm: function() {    
                 var e = this;
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
-                $("body").append('<div id="ot_rework_task_window" style="display:none;"><h1 class="bold">Ingrese los datos de la tarea a retrabajar:</h1><br /><br /><form id="rework_task_ot_form"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Retrabajar Tarea" /></div>'), $(".button").button();
+                $("body").append('<div id="ot_rework_task_window" class="reworkTask modal" style="display:none;"><h1 class="bold">Ingrese los datos de la tarea a retrabajar:</h1><br /><br /><form id="rework_task_ot_form"></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Retrabajar Tarea" /></div>'), $(".button").button();
                 $('#rework_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" value="'+task.eta+'" name="eta" style="width:200px;display:inline"><input type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" disabled="disabled" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label>');
                 task.reprogram = 'false';
                 task.reprogramTask = 'false';
@@ -4440,19 +4468,26 @@
                         $('.explaination').remove()
                     }
                 })
-                $(document).on('click', 'input[name="reprogram"]', function(){
+                $(document).on('click', '#rework_task_ot_form input[name="reprogram"]', function(){
                     var c = this;
                         if ($(c).is(':checked')){
                             task.reprogram = 'true';
                             $('#rework_task_ot_form').append('<div class="explaination"><textarea placeholder="Observación" name="observation"></textarea></div>')
+                            if ($('.explaination').length > 1){
+                                $('.explaination:last').remove()
+                            }else{
                                 e.getDelays('delays');
+                                if ($('.delay_id').length > 1){
+                                    $('.delay_id:first').remove()
+                                }
+                            }
                         }
                         else{
                             task.reprogram = 'false';
                             $('.explaination').remove()
                         }
                 });
-                $(document).on('click', '.BUTTON_proceed', function(){
+                $(document).one('click', '.BUTTON_proceed', function(){
                     i = this;
                     task.eta = $('#rework_task_ot_form input[name="eta"]').val()
                     task.explaination = $('#rework_task_ot_form textarea[name="observation"]').val();
@@ -4465,11 +4500,12 @@
                                 type: 'POST',
                                 data: task,
                                 success: function(t) {
-                                    location.reload()
+                                    $('.blockUI').remove()
+                                    e.reloadRowDetails()
                                 }
                             });
                         }else{
-                            F.msgError('Elija una razón de demora');
+                            F.msgError('Elija una razón de reprogramacion de entrega');
                         }
                     }else{
                         $.ajax({
@@ -4477,7 +4513,8 @@
                             type: 'POST',
                             data: task,
                             success: function(t) {
-                                location.reload()
+                                    $('.blockUI').remove()
+                                    e.reloadRowDetails()
                             }
                         });
                     }
@@ -4497,11 +4534,12 @@
             },
             buildDelaysList: function(e) {
                 var t = $("<select>", {
-                    name: 'delay_id'
+                    name: 'delay_id',
+                    class: 'delay_id'
                 });
                 $('.explaination').append(t), $(t).append($("<option>", {
                     value: 0
-                }).text("Seleccione razón de demora...")), _.each(e, function(e) {
+                }).text("Seleccione razón de reprogramacion de entrega...")), _.each(e, function(e) {
                     $(t).append($("<option>", {
                         value: e.id
                     }).text(e.reason));
@@ -4531,7 +4569,6 @@
                     var r = $(e).dataTable();
                     $(document).on("click", ".ot_table tbody tr", function(evento) {
                         console.log('remover')
-                        $('.delays').remove();
                         var i = r.fnGetData(this)
                         console.log(i)
                         
@@ -4692,6 +4729,7 @@
             },
             toggleTaskState: function(e, t, n, r) {
                 var i = this;
+                $(document).unbind('employees_loaded')
                 new C.View.OtAuditToggleTaskState({
                     el: $("body"),
                     checkbox: e,
@@ -4704,8 +4742,7 @@
                             data: $("#toggle_task_state_ot_form").serialize(),
                             success: function(t) {
                                 F.onSuccess(t, function(t) {
-                                    //i.reloadRowDetails();
-                                    location.reload();
+                                    i.reloadRowDetails();
                                 }, function(e) {
                                     F.msgError("Ocurrió un error al completar la Tarea");
                                 }), r(t);

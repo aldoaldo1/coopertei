@@ -9,6 +9,7 @@ module.exports = function(sequelize, DataTypes) {
     client_suggestion: DataTypes.TEXT,
     reworked_number: DataTypes.INTEGER,
     notify_client: DataTypes.BOOLEAN,
+    showtimeline: DataTypes.BOOLEAN,
     conclusion_motive: DataTypes.INTEGER,
     conclusion_observation: DataTypes.TEXT
   });

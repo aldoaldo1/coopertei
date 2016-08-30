@@ -145,6 +145,8 @@ Ot.get = function(req, res, next) {
         equipment: ot.equipment,
         delivery: ot.delivery ? moment(ot.delivery).format('DD/MM/YYYY') : "Sin DEFINIR",
         created_at: moment(ot.created_at).format('DD/MM/YYYY'),
+        agreedstart: ot.agreedstart ? moment(ot.agreedstart).format('DD/MM/YYYY') : '',
+        agreedend: ot.agreedend ? moment(ot.agreedend).format('DD/MM/YYYY') : '',
         workshop_suggestion: ot.workshop_suggestion,
         client_suggestion: ot.client_suggestion,
         client_id: ot.client_id,
@@ -155,6 +157,7 @@ Ot.get = function(req, res, next) {
         plan: ot.plan,
         reworked_number: ot.reworked_number,
         notify_client: ot.notify_client,
+        showtimeline: ot.showtimeline,
         otstate_id: ot.otstate_id,
         state: ot.state,
         delay: delayfield
@@ -276,23 +279,24 @@ Ot.reprogram = function(req, res, next){
 }
 
 Ot.update = function(req, res, next) {
-  console.log(req.body)
   DB.Authorization.find({where: {ot_id: req.params.ot_id}}).on('success',function(auth){
-    console.log("BUSCO AUTH")
     if(auth){
       auth.updateAttributes({client_id: req.body.client_id})
-      console.log("updateAttributesOK")
     }
   })  
   DB.Ot.find({ where: { id: req.params.ot_id } }).on('success', function(ot) { 
-   var delivery;
-   console.log(req.body.delivery)
-   if(req.body.delivery != "NaN/NaN/NaN"){
-    delivery=moment(DB.flipDateMonth(req.body.delivery)).format('YYYY-MM-DD 00:00:00')
+   var agreedstart = null;
+   var agreedend = null;
+   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
+    agreedstart=moment(DB.flipDateMonth(req.body.agreedstart)).format('YYYY-MM-DD 00:00:00')
    }else{
-    delivery=req.body.delivery
+    agreedstart=req.body.agreedstart
    }
-   console.log(delivery)
+   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
+    agreedend=moment(DB.flipDateMonth(req.body.agreedend)).format('YYYY-MM-DD 00:00:00')
+   }else{
+    agreedend=req.body.agreedend
+   }
    if(ot){
     DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
       if(ot.plan_id == req.body.plan_id || (plan.length == 0 && req.body.plan_id == '')){
@@ -304,22 +308,22 @@ Ot.update = function(req, res, next) {
             intervention_id: req.body.intervention_id,
             client_id: req.body.client_id
           }).save().on('success', function(e) {
-            console.log(e)
             qe="\
             	UPDATE ot\
               SET remitoentrada = '"+req.body.remitoentrada+"',\
               client_number = '"+req.body.client_number+"',\
               client_id = '"+req.body.client_id+"',\
               equipment_id = '"+e.id+"',\
-              delivery = '"+delivery+"',\
+              agreedstart = '"+agreedstart+"',\
+              agreedend = '"+agreedend+"',\
               intervention_id = '"+req.body.intervention_id+"',\
               workshop_suggestion = '"+req.body.workshop_suggestion+"',\
               client_suggestion = '"+req.body.client_suggestion+"',\
               reworked_number = '"+req.body.reworked_number+"',\
+              showtimeline = '"+req.body.showtimeline+"',\
               notify_client = '"+req.body.notify_client+"'\
               WHERE id = " + req.params.ot_id + "\
               ";
-              console.log(qe)
             DB._.query(qe, function(errq, data) {
               res.send({ result: true });
             }).on('error', function(err) {
@@ -333,15 +337,16 @@ Ot.update = function(req, res, next) {
             client_number = '"+req.body.client_number+"',\
             client_id = '"+req.body.client_id+"',\
             equipment_id = '"+req.body.equipment_id+"',\
-            delivery = '"+delivery+"',\
+            agreedstart = '"+agreedstart+"',\
+            agreedend = '"+agreedend+"',\
             intervention_id = '"+req.body.intervention_id+"',\
             workshop_suggestion = '"+req.body.workshop_suggestion+"',\
             client_suggestion = '"+req.body.client_suggestion+"',\
             reworked_number = '"+req.body.reworked_number+"',\
+            showtimeline = '"+req.body.showtimeline+"',\
             notify_client = '"+req.body.notify_client+"'\
             WHERE id = " + req.params.ot_id + "\
             ";
-            console.log(qe)
           DB._.query(qe, function(errq, data) {
     	      res.send({ result: true });
           }).on('error', function(err) {
@@ -354,11 +359,13 @@ Ot.update = function(req, res, next) {
           remitoentrada: req.body.remitoentrada,
   	      client_number: req.body.client_number,
   	      client_id: req.body.client_id,
-  	      delivery: delivery,
+  	      agreedstart: agreedstart,
+          agreedend: agreedend,
   	      intervention_id: req.body.intervention_id,
   	      workshop_suggestion: req.body.workshop_suggestion,
   	      client_suggestion: req.body.client_suggestion,
   	      reworked_number: req.body.reworked_number,
+          showtimeline: req.body.showtimeline,
   	      notify_client: req.body.notify_client,
   	      plan_id: req.body.plan_id,
         }).on('success', function() {
@@ -380,13 +387,13 @@ Ot.update = function(req, res, next) {
                     var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
                       DB._.query(q3, function(err, max){
                         var startDay = moment(ot.created_at);
-                        
+                        if (req.body.agreedstart){
+                          startDay = moment(agreedstart);
+                        }
                         if (max[0].eta){
-                          startDay = moment(ot.created_at);
                           startDay.add('days', Number(max[0].eta) + Number(t.eta));
                         }
                         else{
-                          startDay = moment(ot.created_at)
                           startDay.add('days', Number(t.eta));
                         }
                         DB.Ottask.build({
@@ -426,7 +433,6 @@ Ot.update = function(req, res, next) {
 };
 
 Ot.updateDate = function(req, res, next){
-  console.log('Actualizar fecha')
   DB.Ot.find({where:{id: req.params.id}}).on('success', function(ot){
   var query = 'SELECT due_date AS deadline FROM ottask WHERE ot_id = '+ot.id+' ORDER BY priority DESC, eta DESC LIMIT 1';
     DB._.query(query, function(err, deadline){
@@ -441,8 +447,19 @@ Ot.updateDate = function(req, res, next){
 
 Ot.post = function(req, res, next) {
 if(req.body.client_id > 0){
-  var ot_delivery = moment(DB.flipDateMonth(req.body.delivery)).format('YYYY-MM-DD');
-  function createOt(equipment_new) {
+   var agreedstart = null;
+   var agreedend = null;
+   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
+    agreedstart=moment(DB.flipDateMonth(req.body.agreedstart)).format('YYYY-MM-DD 00:00:00')
+   }else{
+    agreedstart=req.body.agreedstart
+   }
+   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
+    agreedend=moment(DB.flipDateMonth(req.body.agreedend)).format('YYYY-MM-DD 00:00:00')
+   }else{
+    agreedend=req.body.agreedend
+   }
+   function createOt(equipment_new) {
     var equipment_id = req.body.equipment_id;
     if (equipment_new !== null) {
       equipment_id = equipment_new.id;
@@ -453,13 +470,15 @@ if(req.body.client_id > 0){
         client_number: req.body.client_number || 0,
         client_id: req.body.client_id,
         equipment_id: equipment_id,
-        delivery: ot_delivery,
+        agreedstart: agreedstart,
+        agreedend: agreedend,
         intervention_id: req.body.intervention_id,
         workshop_suggestion: req.body.workshop_suggestion,
         client_suggestion: req.body.client_suggestion,
         plan_id: req.body.plan_id,
         reworked_number: req.body.reworked_number || 0,
         notify_client: req.body.notify_client,
+        showtimeline: req.body.showtimeline,
         remitoentrada: req.body.remitoentrada,
         otstate_id: 1
       }).save().on('success', function(ot) {
@@ -587,6 +606,12 @@ Ot.put = function(req, res, next) {
       var current_plan_id = ot.plan_id;
       req.body.delivery = ot_delivery;
       delete req.body.created_at;
+      if (req.body.agreedstart == 'NaN-NaN-NaN'){
+        req.body.agreedstart = null
+      }
+      if (req.body.agreedend == 'NaN-NaN-NaN'){
+        req.body.agreedend = null
+      }
       ot.updateAttributes(req.body).on('success', function() {
         async.parallel(
         {

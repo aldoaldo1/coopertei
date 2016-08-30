@@ -12,7 +12,9 @@
         path: !0,
         vm: !0
     }, e.resolve = function() {
+    
         return function(t, n) {
+            google.load("visualization", "1");
             function r(t) {
                 t = u.normalize(t);
                 if (e.modules[t]) return t;
@@ -825,7 +827,7 @@
     }), e.define("/widgets/Report.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a><a href="/#/reports/hoursperclient">Hs por cliente</a><a href="/#/reports/hoursperot">Hs por OT</a><a href="/#/reports/hoursperemployee">Hs por Empleado</a><a href="/#/reports/hoursperarea">Hs por Area</a><a href="/#/reports/ottaskreport">Informe de tareas</a><a href="/#/reports/materialreport">Informe de materiales</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a><a href="/#/reports/hoursperclient">Hs por cliente</a><a href="/#/reports/hoursperot">Hs por OT</a><a href="/#/reports/hoursperemployee">Hs por Empleado</a><a href="/#/reports/hoursperarea">Hs por Area</a><a href="/#/reports/ottaskreport">Informe de tareas</a><a href="/#/reports/materialreport">Informe de materiales</a><a href="/#/reports/timeline">Linea de tiempo</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -1853,6 +1855,7 @@
                     url: "/ottask/byOt/" + e,
                     success: function(e) {
                         t(e);
+                        console.log(t(e))
                     }
                 });
             },
@@ -2354,28 +2357,108 @@
             },
             renderTimeline: function() {
                 var e = this;
-                $.ajax({
-                    type: "GET",
-                    url: "/clientevents/" + this.options.ot_id,
-                    success: function(t) {
-                        e.outputMarkupAndInititateTimeline(t.ot[0], t.tasks);
-                    }
-                });
-            },
-            outputMarkupAndInititateTimeline: function(e, t) {
-                if (t.length) {
-                    var n = new Date(e.created_at), r = n.getFullYear() + "," + (n.getMonth() + 1) + "," + n.getDate(), i = new Date(e.delivery), s = i.getFullYear() + "," + (i.getMonth() + 1) + "," + i.getDate();
-                    $("#timeline").remove(), $("#left, #left .inner").css({
-                        width: "100%",
-                        padding: 0
-                    }), $("#left .inner").empty().append('<div id="timeline"><section><time>' + r + "</time>" + "<h2>Inicio de la O/T Nº " + e.number + "</h2>" + "<article>" + "<p>" + e.client_suggestion + "</p>" + "</article>" + "</section>" + "</div>"), _.each(t, function(e) {
-                        var t = new Date(e.created_at), n = t.getFullYear() + "," + (t.getMonth() + 1) + "," + t.getDate(), r = new Date(e.due_date), i = r.getFullYear() + "," + (r.getMonth() + 1) + "," + r.getDate(), s = "";
-                        e.completed == 1 && (s += '<h3 class="completed_task_markup">COMPLETADA el día ' + moment(e.completed_date).format("DD/MM/YYYY") + "</h3>"), $("#left .inner #timeline").append("<ul><li><time>" + n + " </time>" + "<time>" + i + "</time>" + "<h3>" + e.name + "</h3>" + "<article>" + "<p>" + e.description + "</p>" + s + "</article>" + "<figure>" + '<img src="">' + "<cite>" + e.name + "</cite>" + "<figcaption>" + e.description + "</figcaption>" + "</figure>" + "</li>" + "</ul>");
-                    }), (new VMM.Timeline({
-                        lang: "es"
-                    })).init();
-                } else $("#left .inner").append('<h1 style="font-size:20px;">La O/T Nº ' + e.number + " todavía no posee tareas asociadas.</h1>" + "<br />" + '<a style="font-size:20px;" href="/#/client/ots">Seleccionar otra Órden de Trabajo</a>');
+                this.el.append('<div id="timeline"></div>')
+                $(document).ready(function(){
+                    $('#left').css({width: '100%', padding: 0});
+                    $('#right').css({display: 'none'});
+                })
+                
+                var timeline;
+                console.log(this.options.ot_id)
+
+                // Called when the Visualization API is loaded.
+                function drawVisualization() {
+                    // Create and populate a data table.
+                    $.ajax({
+                        url: '/timelinechart/'+e.options.ot_id,
+                        type: 'GET',
+                        success: function(result){
+                            var json = [];
+                            var array = [];
+                            result.forEach(function(r){
+                                json.push({
+                                    start: new Date(r[0]),
+                                    end: new Date(r[1]),
+                                    content: r[2],
+                                    className: r[3],
+                                })
+                                if(r[1] != null){
+                                    if(r[1] == 'now'){
+                                        array.push([
+                                            new Date(r[0]),
+                                            new Date(),
+                                            r[2],
+                                            r[3]
+                                        ])
+                                    }else{
+                                        array.push([
+                                            new Date(r[0]),
+                                            new Date(r[1]),
+                                            r[2],
+                                            r[3]
+                                        ])
+                                    }
+                                }
+                                else{
+                                    array.push([
+                                        new Date(r[0]),
+                                        ,
+                                        r[2],
+                                        r[3]
+                                    ])   
+                                }
+                            })
+                            
+                            // specify options
+                            var options = {
+                                "width":  "100%",
+                                "height": "300px",
+                                "style": "box"
+                            };
+
+                            // Instantiate our timeline object.
+                            timeline = new links.Timeline(document.getElementById('timeline'), options);
+                            console.log(array)
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('datetime', 'start');
+                            data.addColumn('datetime', 'end');
+                            data.addColumn('string', 'content');
+                            data.addColumn('string', 'className');
+                            
+                            data.addRows(array)
+                            // Draw our timeline with the created data and options
+                            timeline.draw(data);
+
+                            $('.exceeded').removeClass('ui-state-default');
+                            $('.exceeded').css({
+                                'background-color':'#f2dede',
+                                'border-color': 'darkred'
+                            })
+                            $('.completed').removeClass('ui-state-default');
+                            $('.completed').css({
+                                'color': '#000',
+                                'background-color': '#dff0d8',
+                                'border-color': 'green',
+                            })
+                            $('.materials_missing').removeClass('ui-state-default');
+                            $('.materials_missing').css({
+                                'color': '#000',
+                                'background-color': '#d9edf7',
+                            })
+                            $('.in_progress').removeClass('ui-state-default');
+                            $('.in_progress').css({
+                                'color': '#000',
+                                'background-color': '#fcf8e3',
+                                'border-color': 'grey',
+                            })
+
+                        }
+                    })
+                }
+                google.load("visualization", "1");
+                google.setOnLoadCallback(drawVisualization);
             }
+            
         });
     }), e.define("/views/clients/ClientsNotifications.js", function(e, t, n, r, i, s) {
         C.View.ClientsNotifications = Backbone.View.extend({
@@ -2431,9 +2514,10 @@
         });
     }), e.define("/views/clients/ClientsOtsTable.js", function(e, t, n, r, i, s) {
         C.View.ClientsOtsTable = Backbone.View.extend({
+            source: "/clientots",
             name: "clients",
-            headers: [ "ID", "O/T", "ID Equipo", "Equipo (TAG)", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Acciones" ],
-            attrs: [ "id", "number", "equipment_id", "equipment", "intervention_id", "intervention", "created_at", "delivery", "actions" ],
+            headers: [ "ID", "O/T", "O/T cliente", "Equipo (TAG)", "Motivo de intervención", "Inicio", "Entrega", "Estado", 'accion' ],
+            attrs: [ "id", "number", "ot_client", "equipment", "intervention", "agreedstart", "agreedend", "otstate", "accion"],
             data: null,
             date_columns: ['created_at', 'delivery'],
             datatableOptions: {
@@ -2457,30 +2541,53 @@
                     }), $(r).css({
                         color: "#30858c"
                     });
-                }), $($(e).children().get(8)).css({
+                }), $($(e).children().get(7)).css({
                     textAlign: "right"
                 });
-                if (t.otstate_id == 2 || t.otstate_id == 3) $($(e).children().get(8)).append(n), $(n).on("click", function() {
-                    F.msgConfirm("Esta acción dara comienzo a la Órden de trabajo seleccionada", function() {
-                        $.ajax({
-                            type: "GET",
-                            url: "/clientauthorize/" + t.id,
-                            success: function(e) {
-                                F.onSuccess(e, function(e) {
-                                    F.msgOK("La Órden de Trabajo ha sido autorizada."), $(n).remove();
-                                }, function(e) {
-                                    F.msgError("Ocurrió un error al autorizar la O/T. Intente nuevamente.");
-                                });
-                            }
+                if (t.showtimeline){
+                    $($(e).children().get(7)).html(r), $(r).on("click", function() {
+                        window.location = "/#/client/events/" + t.id;
+                        location.reload()
+                    });
+                    if (t.otstate_id == 2 || t.otstate_id == 3) $($(e).children().get(7)).append(' ').append(n), $(n).on("click", function() {
+                        F.msgConfirm("Esta acción dara comienzo a la Órden de trabajo seleccionada", function() {
+                            $.ajax({
+                                type: "GET",
+                                url: "/clientauthorize/" + t.id,
+                                success: function(e) {
+                                    F.onSuccess(e, function(e) {
+                                        F.msgOK("La Órden de Trabajo ha sido autorizada."), $(n).remove();
+                                        F.reloadDataTable('.clients_table')
+                                    }, function(e) {
+                                        F.msgError("Ocurrió un error al autorizar la O/T. Intente nuevamente.");
+                                    });
+                                }
+                            });
                         });
                     });
-                });
-                $($(e).children().get(8)).append(r), $(r).on("click", function() {
-                    window.location = "/#/client/events/" + t.id;
-                });
+                }
+                else{
+                    console.log('alan')
+                    if (t.otstate_id == 2 || t.otstate_id == 3) $($(e).children().get(7)).html(n), $(n).on("click", function() {
+                        F.msgConfirm("Esta acción dara comienzo a la Órden de trabajo seleccionada", function() {
+                            $.ajax({
+                                type: "GET",
+                                url: "/clientauthorize/" + t.id,
+                                success: function(e) {
+                                    F.onSuccess(e, function(e) {
+                                        F.msgOK("La Órden de Trabajo ha sido autorizada."), $(n).remove();
+                                        F.reloadDataTable('.clients_table')
+                                    }, function(e) {
+                                        F.msgError("Ocurrió un error al autorizar la O/T. Intente nuevamente.");
+                                    });
+                                }
+                            });
+                        });
+                    });
+                }
             },
             initialize: function() {
-                this.data = this.options.collection, F.createDataTable(this, function(e) {
+                F.createDataTable(this, function(e) {
                     F.doNothing();
                 });
             }
@@ -2708,7 +2815,9 @@
                 });
             },
             reload: function(){
-                $('.selected_row').click()
+                setTimeout(function(){
+                    $('.selected_row').click()
+                },100)
             },
             renderDetails: function(e, ot_id) {
                 var t, n, r;
@@ -2720,11 +2829,11 @@
                     n = $("<input>", {
                         type: "checkbox",
                         checked: e.arrived == 1
-                    }), $(n).on("click", function() {
+                    }), $(n).one("click", function() {
                         var element =$(this);
-                        (!((C.Session.getUser().area_id == 3) || (C.Session.getUser().role_id == 7 || C.Session.getUser().role_id == 5))) ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
+                        (!((C.Session.getUser().area_id == 3) || (C.Session.getUser().role_id == 7 || C.Session.getUser().role_id == 5))) ? F.msgError("No tiene los permisos necesarios") : ($("body").append('<div id="material_order_received" class = "modal" style="display:none; max-height:500px; overflow: auto"><h1 class="bold" style="font-size:20px;">' + e.category + ": " + e.name + " Cant: " + e.quantity + e.unit.split(" ")[0] + '<br /><br /></h1><br /><form id="add_task_ot_form"><h2>Cantidad Recibida:<p>(sólo Números)</p><input type="text" name="quantity_received" /><br /><h2>Remito Nº:<input type="text" name="remito" /><br /><h2>Observaciones</h2> <textarea name="observation_received" style="height:100px" /></h2><br /></form><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Aceptar" /></div>'), $("#material_order_received .BUTTON_cancel").on("click", function() {
                             _this.reload()
-                        }), $("#material_order_received .BUTTON_proceed").on("click", function() {
+                        }), $("#material_order_received .BUTTON_proceed").one("click", function() {
                             if (!isNaN($("#material_order_received input:text[name=quantity_received]").val())){
                                 setTimeout(function(){
                                     _this.reload()
@@ -3573,8 +3682,8 @@
         C.View.OtAdminTable = Backbone.View.extend({
             name: "ot",
             source: "/ot",
-            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo Nuevo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inauguración", "Fecha de entrega", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
-            attrs: [ "id", "number", "client_number", "equipment_id", "equipment_new", "equipment", "client_id", "client", "intervention_id", "intervention", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
+            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo Nuevo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inicio pactado", "Entrega pactada", "Inauguración", "Entrega estimada", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
+            attrs: [ "id", "number", "client_number", "equipment_id", "equipment_new", "equipment", "client_id", "client", "intervention_id", "intervention", "agreedstart", "agreedend", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
             hidden_columns: [ "workshop_suggestion", "client_suggestion", "equipment_new", "remitoentrada", "reworked_number", "notify_client", 'equipment_id', 'client_id', 'intervention_id', 'plan_id'],
             date_columns: ['delivery', 'created_at'],
             data: null,
@@ -3609,6 +3718,11 @@
                         {
                             $('#select').removeAttr('disabled').trigger('liszt:updated')
                         }
+                    if($('.ot_form').serializeObject().agreedstart == 'NaN/NaN/NaN'){
+                        $('input[name=agreedstart]').val('');
+                    }if($('.ot_form').serializeObject().agreedend == 'NaN/NaN/NaN'){
+                        $('input[name=agreedend]').val('');
+                    }
                 });
                 $(document).on('click', '.ot_table tr', function(evento){
                     t.selectRow(evento);
@@ -3623,7 +3737,7 @@
                     $('#ot_left .ot_reprogram').attr('disabled', !1);
                 }
             }
-        });
+        });//
     }), e.define("/views/ot/OtAdminForm.js", function(e, t, n, r, i, s) {
         C.View.OtAdminForm = Backbone.View.extend({
             name: "ot_form",
@@ -3658,9 +3772,13 @@
                     label: "O ingrese un Equipo (TAG) nuevo...",
                     type: "text"
                 },
-                delivery: {
-                    label: "Fecha de entrega",
+                agreedstart: {
+                    label: "Fecha de inicio pactada",
                     type: "datepicker"
+                },
+                agreedend: {
+                    label: "Fecha de finalización pactada",
+                    type: 'datepicker',
                 },
                 intervention_id: {
                     label: "Motivo de intervención",
@@ -3685,6 +3803,11 @@
                 },
                 notify_client: {
                     label: "Notificar eventos al cliente",
+                    type: "select_yn",
+                    default_value: "n"
+                },
+                showtimeline: {
+                    label: "Mostrar linea de tiempo al cliente",
                     type: "select_yn",
                     default_value: "n"
                 }
@@ -3777,7 +3900,7 @@
                                 
                             })
                         })
-                    }//this.collection.create($(".ot_form").serializeObject(), {
+                    }
                 }) : F.msgError("Cargue al menos Cliente y TAG del equipo");
             },
             editOt: function() {
@@ -4551,8 +4674,8 @@
         C.View.OtAuditTable = Backbone.View.extend({
             name: "ot",
             source: "/ot",
-            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de" ],
-            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "delivery", "reworked_number" ],
+            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Inicio pactado", "Entrega pactada", "Equipontrega estimada", "Retrabajo de" ],
+            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "agreedstart", "agreedend", "delivery", "reworked_number" ],
             hidden_columns: [ "ot_number", "reworked_number", 'equipment_id', 'client_id' ],
             date_columns: ['delivery'],
             data: null,
@@ -5095,6 +5218,10 @@
                     label: "Descripción",
                     type: "textarea"
                 },
+                completed_date: {
+                    label: "Completada",
+                    type: "datepicker"
+                },
                 due_date: {
                     label: "Vencimiento",
                     type: "datepicker"
@@ -5106,6 +5233,10 @@
                 observation: {
                     label: "Observación",
                     type: "textarea"
+                },
+                materials_missing: {
+                    label: 'Faltan Materiales',
+                    type: "checkbox"
                 }
             },
             isCRUD: !1,
@@ -5121,6 +5252,7 @@
                 var e = this;
                 F.getAllFromModel("area", function(t) {
                     e.relations.areas = t, F.createForm(e), $(".task_form input:hidden.selection_id").remove();
+                    $('input[name=materials_missing]').after('<span> Faltan Materiales</span>')
                     var n = e.getTask(), r = $(".task_form"), i = $(r).getFields(), s;
                     $(r).append($("<input>", {
                         type: "hidden",
@@ -5128,6 +5260,17 @@
                         "class": "selection_ottask_id"
                     })), $(i).each(function() {
                         s = $(this).attr("name"), $(this).val(n[s]), s === "due_date" ? $(this).val(moment(n[s]).format("DD/MM/YYYY")) : s === "area_id" && $(this).trigger("liszt:updated");
+                        if (s == 'completed_date'){
+                            if ($(this).val() != ''){
+                                $(this).val(moment(n[s]).format('DD/MM/YYYY'))
+                            }
+                            else{
+                                $(this).attr('disabled', !0)
+                            }
+                        }
+                        else if(s == 'materials_missing' && $(this).val() == 1){
+                            $('input[name=materials_missing]').prop('checked', !0)
+                        }
                     });
                 });
             },
@@ -5159,10 +5302,16 @@
             },
             editTask: function() {
                 var e = this;
+                var data = $(".task_form").serializeObject()
+                data.materials_missing = 0;
+                if ($('input[name=materials_missing]').prop('checked')){
+                    data.materials_missing = 1;
+                }
+                console.log(data)
                 C.Session.getUser().role_id >= 3 || C.Session.getUser().area_id == 2 ? $.ajax({
                     type: "PUT",
                     url: "/ottask/" + e.getSelectionID(),
-                    data: $(".task_form").serializeObject(),
+                    data: data,
                     success: function(t) {
                         F.msgOK("La Tarea Fué editada con Éxito")
                         e.reloadOtRowDetails()       
@@ -7708,6 +7857,124 @@
                 return this.getTable().selected_row;
             },
         });
+    }), e.define("/views/report/Timeline.js", function(e, t, n, r, i, s) {
+        C.View.Timeline = Backbone.View.extend({
+            el: $("body"),
+            initialize: function() {
+                var e = this;
+                e.timeline_chart = new C.View.TimelineChart({
+                    el: $('#report_left'),
+                    ot_id: this.options.ot_id
+                })
+            }
+        });
+    }), e.define("/views/report/TimelineChart.js", function(e, t, n, r, i, s) {
+        C.View.TimelineChart = Backbone.View.extend({
+            
+            initialize: function() {
+                var e = this;
+                this.el.append('<div id="timeline"></div>')
+                $(document).ready(function(){
+                    $('#left').css({width: '100%'});
+                    $('#right').css({display: 'none'});
+                })
+                
+                var timeline;
+                console.log(this.options.ot_id)
+
+                // Called when the Visualization API is loaded.
+                function drawVisualization() {
+                    // Create and populate a data table.
+                    $.ajax({
+                        url: '/timelinechart/'+e.options.ot_id,
+                        type: 'GET',
+                        success: function(result){
+                            var json = [];
+                            var array = [];
+                            result.forEach(function(r){
+                                json.push({
+                                    start: new Date(r[0]),
+                                    end: new Date(r[1]),
+                                    content: r[2],
+                                    className: r[3],
+                                })
+                                if(r[1] != null){
+                                    if(r[1] == 'now'){
+                                        array.push([
+                                            new Date(r[0]),
+                                            new Date(),
+                                            r[2],
+                                            r[3]
+                                        ])
+                                    }else{
+                                        array.push([
+                                            new Date(r[0]),
+                                            new Date(r[1]),
+                                            r[2],
+                                            r[3]
+                                        ])
+                                    }
+                                }
+                                else{
+                                    array.push([
+                                        new Date(r[0]),
+                                        ,
+                                        r[2],
+                                        r[3]
+                                    ])   
+                                }
+                            })
+                            
+                            // specify options
+                            var options = {
+                                "width":  "100%",
+                                "height": "300px",
+                                "style": "box"
+                            };
+
+                            // Instantiate our timeline object.
+                            timeline = new links.Timeline(document.getElementById('timeline'), options);
+                            console.log(array)
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('datetime', 'start');
+                            data.addColumn('datetime', 'end');
+                            data.addColumn('string', 'content');
+                            data.addColumn('string', 'className');
+                            
+                            data.addRows(array)
+                            // Draw our timeline with the created data and options
+                            timeline.draw(data);
+
+                            $('.exceeded').removeClass('ui-state-default');
+                            $('.exceeded').css({
+                                'background-color':'#f2dede',
+                                'border-color': 'darkred'
+                            })
+                            $('.completed').removeClass('ui-state-default');
+                            $('.completed').css({
+                                'color': '#000',
+                                'background-color': '#dff0d8',
+                                'border-color': 'green',
+                            })
+                            $('.materials_missing').removeClass('ui-state-default');
+                            $('.materials_missing').css({
+                                'color': '#000',
+                                'background-color': '#d9edf7',
+                            })
+                            $('.in_progress').removeClass('ui-state-default');
+                            $('.in_progress').css({
+                                'color': '#000',
+                                'background-color': '#fcf8e3',
+                                'border-color': 'grey',
+                            })
+
+                        }
+                    })
+                }
+                google.load("visualization", "1");
+                google.setOnLoadCallback(drawVisualization);
+            }
+        });
     }), e.define("/Router.js", function(e, t, n, r, i, s) {
         $(function() {
             var e = Backbone.Router.extend({
@@ -7750,6 +8017,7 @@
                     "/reports/hoursperarea": "getHoursPerArea",
                     "/reports/ottaskreport": "getOtTaskReport",
                     "/reports/materialreport": "getMaterialReport",
+                    "/reports/timeline/:ot_id": "getTimeline",
                     "/reports/queries": "getQuery",
                     "/options/profile": "getProfile",
                     "/options/controlpanel": "getControlpanel",
@@ -7976,6 +8244,7 @@
                     var t = function() {
                         document.title = C.TITLE + "Línea de Tiempo de Eventos", this.iniClientsWidget(), this.clients_view = new C.View.ClientsEvents({
                             model: new C.Model.ClientsOt,
+                            el: $('#clients_left'),
                             ot_id: e
                         });
                     }.bind(this);
@@ -8145,7 +8414,16 @@
                         }), F.R.highlightCurrentModule("reports/materialreport");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 7, 8 ], e);   
-                }
+                },
+                getTimeline: function(e) {
+                    var t = function() {
+                        document.title = C.TITLE + "Línea de Tiempo de Eventos", this.otreport_widget = C.Widget.Report.initialize(), this.timeline_view = new C.View.Timeline({
+                            ot_id: e
+                        }), F.R.highlightCurrentModule("reports/timeline");
+                    }.bind(this);
+                    C.Session.doIfInRolesList([ 2, 4, 5, 6, 7, 8 ], t);
+                },
+                
             });
             C.Router = new e, Backbone.history.start();
         });
@@ -8267,7 +8545,6 @@
                     C.Session.isVigilance() && e(C.Session.getUser());
                 },
                 doIfInRolesList: function(e, t, n) {
-                    console.log(e, t, n)
                     if (_.indexOf(e, 0) != -1) t(); else {
                         var r = !1, i = [ null, "isVigilance", "isOperator", "isSupervisor", "isAdmin", "isSysadmin", "isClient", "isBoss", "isPurchases" ];
                         _.each(e, function(e) {
@@ -8282,6 +8559,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/HoursPerClient"), e("./views/report/HoursPerClientTable"), e("./views/report/HoursPerClientForm"), e("./views/report/HoursPerEmployee"), e("./views/report/HoursPerEmployeeTable"), e("./views/report/HoursPerEmployeeForm"), e("./views/report/HoursPerArea"), e("./views/report/HoursPerAreaTable"), e("./views/report/HoursPerAreaForm"), e("./views/report/OtTaskReport"), e("./views/report/OtTaskReportTable"), e("./views/report/OtTaskReportForm"), e("./views/report/MaterialReport"), e("./views/report/MaterialReportTable"), e("./views/report/MaterialReportForm"), e("./views/report/HoursPerOt"), e("./views/report/HoursPerOtTable"), e("./views/report/HoursPerOtForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/HoursPerClient"), e("./views/report/HoursPerClientTable"), e("./views/report/HoursPerClientForm"), e("./views/report/HoursPerEmployee"), e("./views/report/HoursPerEmployeeTable"), e("./views/report/HoursPerEmployeeForm"), e("./views/report/HoursPerArea"), e("./views/report/HoursPerAreaTable"), e("./views/report/HoursPerAreaForm"), e("./views/report/OtTaskReport"), e("./views/report/OtTaskReportTable"), e("./views/report/OtTaskReportForm"), e("./views/report/MaterialReport"), e("./views/report/MaterialReportTable"), e("./views/report/MaterialReportForm"), e("./views/report/Timeline"), e("./views/report/TimelineChart"), e("./views/report/HoursPerOt"), e("./views/report/HoursPerOtTable"), e("./views/report/HoursPerOtForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

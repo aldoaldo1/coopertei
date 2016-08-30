@@ -11,6 +11,7 @@ module.exports = function(sequelize, DataTypes) {
     materials_tools: DataTypes.STRING,
     reworked: DataTypes.BOOLEAN,
     derived_to: DataTypes.INTEGER, // area_id, not ORM associated
-    observation: DataTypes.STRING
+    observation: DataTypes.STRING,
+    materials_missing: DataTypes.BOOLEAN
   });
 };

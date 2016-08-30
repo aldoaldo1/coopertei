@@ -94,10 +94,13 @@ Ottask.add = function(req, res, next) {
       console.log(q_start)
     }
     else{
-      q_start = 'SELECT created_at AS start FROM ot where id = '+params.ot_id;
+      q_start = 'SELECT created_at AS start, agreedstart FROM ot where id = '+params.ot_id;
     }
     DB._.query(q_start, function(err, start){
       var startDay = start[0].start
+      if (start[0].agreedstart != null){
+        startDay = start[0].agreedstart
+      }
       var dp= req.body.description.split(":::")
       console.log(moment(startDay).format('YYYY-MM-DD'))
       console.log(moment(startDay).add('days', params.eta).format('YYYY-MM-DD'))
@@ -197,7 +200,6 @@ Ottask.rework = function(req, res, next) {
         else{
           delay = Number(params.eta);
         }
-        console.log('Heraldo', delay);
         if(params.reprogram == 'true'){
           console.log({
             delay: delay,
@@ -272,9 +274,15 @@ Ottask.complete = function(req, res, next) {
   DB.Ottask.find({ where: { id: id[0] } }).on('success', function(t) {
     if(id[1]!="error"){
     if (t) {
+      var date
+      if (t.completed){
+        date = null
+      }else{
+        date = moment().format('YYYY-MM-DD')
+      }
       t.updateAttributes({
         completed: !t.completed,
-        completed_date: moment().format('YYYY-MM-DD'),
+        completed_date: date
       }).on('success', function() {
         if (!t.completed === false) {
           DB.Ot.find({ where: { id: t.ot_id }}).on('success', function(ot) {
@@ -411,9 +419,13 @@ Ottask.complete = function(req, res, next) {
 };
 
 Ottask.put = function(req, res, next) {
+  console.log(req.body)
   DB.Ottask.find({ where: { id: req.params.id } }).on('success', function(t) {
     if (t) {
       req.body.due_date = moment(DB.flipDateMonth(req.body.due_date)).format('YYYY-MM-DD');
+      if (req.body.completed_date){
+        req.body.completed_date = moment(DB.flipDateMonth(req.body.completed_date)).format('YYYY-MM-DD');
+      }
       t.updateAttributes(req.body).on('success', function(x) {
         res.send(x);
       }).on('error', function(err) {

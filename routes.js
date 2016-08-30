@@ -75,7 +75,8 @@ module.exports = function(app, routes) {
   app.get('/otemployeereport/:start/:end', Auth.restrict, routes.otresourcereport.byEmployee);
   app.get('/hoursperarea/:start/:end', Auth.restrict, routes.otresourcereport.byArea);
   app.get('/ottaskreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.otTaskReport);  
-  app.get('/materialreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.materialReport);  
+  app.get('/materialreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.materialReport);
+  app.get('/timelinechart/:ot_id', Auth.restrict, routes.timelinechart.get)
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',

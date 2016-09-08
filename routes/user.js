@@ -38,14 +38,21 @@ User.post = function(req, res, next) {
     if (u) {
       res.send({ result: false, error: 'Usuario existente' });
     } else {
+      var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+      var string_length = 8;
+      var randomstring = '';
+      for (var i=0; i<string_length; i++) {
+          var rnum = Math.floor(Math.random() * chars.length);
+          randomstring += chars.substring(rnum,rnum+1);
+      }
       DB.User.build({
         username: req.body.username,
-        password: req.body.username,
+        password: randomstring,
         employee_id: req.body.employee_id,
         role_id: req.body.role_id,
         area_id: req.body.area_id
       }).save().on('success', function(user) {
-        res.send({ result: true, "user": user });
+        res.send({ result: true, "pass": randomstring });
       }).on('error', function(err) {
         res.send(false);
       });
@@ -92,6 +99,20 @@ User.getClients = function(req, res, next) {
   DB._.query(q, function(err, data) {
     res.send(data);
   });
+}
+User.generatePass = function(req, res, next){
+  var user_id = req.params.user_id;
+  var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+  var string_length = 8;
+  var randomstring = '';
+  for (var i=0; i<string_length; i++) {
+      var rnum = Math.floor(Math.random() * chars.length);
+      randomstring += chars.substring(rnum,rnum+1);
+  }
+  DB.User.find({where: {id: user_id}}).on('success', function(u){
+    u.updateAttributes({password: randomstring})
+    res.send(randomstring);
+  })
 }
 
 module.exports = User;

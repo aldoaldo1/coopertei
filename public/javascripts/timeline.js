@@ -3762,9 +3762,9 @@ links.Timeline.ItemBox.prototype.reflow = function () {
  */
 links.Timeline.ItemBox.prototype.select = function () {
     var dom = this.dom;
-    links.Timeline.addClassName(dom, 'timeline-event-selected ui-state-active');
-    links.Timeline.addClassName(dom.line, 'timeline-event-selected ui-state-active');
-    links.Timeline.addClassName(dom.dot, 'timeline-event-selected ui-state-active');
+    links.Timeline.addClassName(dom, 'timeline-event-selected');
+    links.Timeline.addClassName(dom.line, 'timeline-event-selected');
+    links.Timeline.addClassName(dom.dot, 'timeline-event-selected');
 };
 
 /**
@@ -3773,9 +3773,9 @@ links.Timeline.ItemBox.prototype.select = function () {
  */
 links.Timeline.ItemBox.prototype.unselect = function () {
     var dom = this.dom;
-    links.Timeline.removeClassName(dom, 'timeline-event-selected ui-state-active');
-    links.Timeline.removeClassName(dom.line, 'timeline-event-selected ui-state-active');
-    links.Timeline.removeClassName(dom.dot, 'timeline-event-selected ui-state-active');
+    links.Timeline.removeClassName(dom, 'timeline-event-selected');
+    links.Timeline.removeClassName(dom.line, 'timeline-event-selected');
+    links.Timeline.removeClassName(dom.dot, 'timeline-event-selected');
 };
 
 /**
@@ -4049,7 +4049,7 @@ links.Timeline.ItemRange.prototype = new links.Timeline.Item();
  */
 links.Timeline.ItemRange.prototype.select = function () {
     var dom = this.dom;
-    links.Timeline.addClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.addClassName(dom, 'timeline-event-selected');
 };
 
 /**
@@ -4058,7 +4058,7 @@ links.Timeline.ItemRange.prototype.select = function () {
  */
 links.Timeline.ItemRange.prototype.unselect = function () {
     var dom = this.dom;
-    links.Timeline.removeClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.removeClassName(dom, 'timeline-event-selected');
 };
 
 /**
@@ -4263,7 +4263,7 @@ links.Timeline.ItemFloatingRange.prototype = new links.Timeline.Item();
  */
 links.Timeline.ItemFloatingRange.prototype.select = function () {
     var dom = this.dom;
-    links.Timeline.addClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.addClassName(dom, 'timeline-event-selected');
 };
 
 /**
@@ -4272,7 +4272,7 @@ links.Timeline.ItemFloatingRange.prototype.select = function () {
  */
 links.Timeline.ItemFloatingRange.prototype.unselect = function () {
     var dom = this.dom;
-    links.Timeline.removeClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.removeClassName(dom, 'timeline-event-selected');
 };
 
 /**
@@ -4517,7 +4517,7 @@ links.Timeline.ItemDot.prototype.reflow = function () {
  */
 links.Timeline.ItemDot.prototype.select = function () {
     var dom = this.dom;
-    links.Timeline.addClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.addClassName(dom, 'timeline-event-selected');
 };
 
 /**
@@ -4526,7 +4526,7 @@ links.Timeline.ItemDot.prototype.select = function () {
  */
 links.Timeline.ItemDot.prototype.unselect = function () {
     var dom = this.dom;
-    links.Timeline.removeClassName(dom, 'timeline-event-selected ui-state-active');
+    links.Timeline.removeClassName(dom, 'timeline-event-selected');
 };
 
 /**

@@ -60,6 +60,8 @@ Othistory.get = function(req, res, next) {
         "delivery": a,
         "created_at": moment(ot.created_at).format('DD/MM/YYYY'),
         "salida": moment(ot.updated_at).format('DD/MM/YYYY'),
+        "agreedstart": ot.agreedstart ? moment(ot.agreedstart).format('DD/MM/YYYY') : '',
+        "agreedend": ot.agreedend ? moment(ot.agreedend).format('DD/MM/YYYY') : '',
         "workshop_suggestion": ot.workshop_suggestion,
         "client_suggestion": ot.client_suggestion,
         "client_id": ot.client_id,

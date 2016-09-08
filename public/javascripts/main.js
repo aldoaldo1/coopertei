@@ -338,7 +338,8 @@
         }, F.msg = function(e) {
             noty({
                 text: e,
-                layout: "topRight"
+                layout: "topRight",
+                timeout: 0
             });
         }, F.msgSticky = function(e) {
             noty({
@@ -478,7 +479,12 @@
                 },
                 dom: 'lBfr<"toolbar">tip',
                 buttons: [
-                        'copy', 'csv', 'excel', 'pdf'
+                        'copy', 'csv', 'excel', 'pdf',
+                        {
+                           extend: 'pdfHtml5',
+                           orientation: 'landscape',
+                           pageSize: 'LEGAL'
+                        }
                     ],
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
@@ -486,6 +492,8 @@
                         $('.dataTables_filter input').val(e.options.open_ot_number_on_start);
                         $('.dataTables_filter input').keyup()
                     }
+                    $($('.dt-buttons span')[3]).html('PDF (Vertical)')
+                    $($('.dt-buttons span')[4]).html('PDF (Horizontal)')
                 },
                 rowCallback: function(row, data, index){
                     e.rowHandler && e.rowHandler(row, data);
@@ -579,6 +587,7 @@
             $(e).find("select").val(-1).trigger('liszt:updated');
             $(e).find('.selection_id').val('');
             $(e).find('.dispensable').remove();
+            $(e).find('.toHide').hide();
             $(e).find('option:first').prop('selected', function() {
                 return this.defaultSelected;
             });
@@ -1775,7 +1784,7 @@
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     F.assignValuesToInfoCard($(".client_authorization_infocard"), t, function(t, n) {
-                        $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="BUTTON_report" value="Informe de Requerimientos" /><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").on("click", function() {
+                        $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="BUTTON_report" value="Informe de Requerimientos" /><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").one("click", function() {
                             e.showRequirementsReport(n), $(".BUTTON_report").attr("disabled", !0);
                         });
                     });
@@ -1800,24 +1809,23 @@
             },
             cleanModals: function(e) {
                 $.unblockUI(), window.setTimeout(function() {
-                    $("#requirements_report_window").remove(), $(".BUTTON_report").attr("disabled", !1), e && e();
+                    $(".requirements_report_window").remove(), $(".BUTTON_report").attr("disabled", !1), e && e();
                 }, 1e3);
             },
             showRequirementsReport: function(e) {
-                if (!C.Session.isPurchases()){
-
+                if (C.Session.getUser().area_id == 2 || C.Session.getUser().role_id == 4 || C.Session.getUser().role_id == 5){
                     var t = this;
-                    $("#requirements_report_window").length || this.requirementsReportTemplate(e, function() {
+                    $(".requirements_report_window").length || this.requirementsReportTemplate(e, function() {
                         $(document).on("keyup", function(e) {
                             e.which == 27 && t.cancelShowRequirementsReport();
-                        }), $("#requirements_report_window .BUTTON_cancel").on("click", function() {
+                        }), $(".requirements_report_window .BUTTON_cancel").on("click", function() {
                             t.cancelShowRequirementsReport();
-                        }), $("#requirements_report_window .BUTTON_save").on("click", function() {
+                        }), $(".requirements_report_window .BUTTON_save").on("click", function() {
                             var e = this;
                             $(e).attr("disabled", !0), t.saveRequirementsReport(function() {
                                 $(e).attr("disabled", !1), F.msgOK("Observaciones añadidas al Informe");  setTimeout(function(){location.reload()}, 1e3);
                             });
-                        }), $(document).on("click", "#requirements_report_window .BUTTON_send", function() {
+                        }), $(document).one("click", ".requirements_report_window .BUTTON_send", function() {
                             var n = this;
                             t.saveRequirementsReport(function() {
                                 $(n).attr("disabled", !0), t.sendRequirementsReport(e.ot_id, function() {
@@ -1827,7 +1835,7 @@
                                 });
                             });
                         }), $.blockUI({
-                            message: $("#requirements_report_window"),
+                            message: $(".requirements_report_window"),
                             css: {
                                 top: "7.5%",
                                 left: "24%",
@@ -1837,6 +1845,9 @@
                                 cursor: "default"
                             }
                         });
+                        if($(".requirements_report_window").length > 1){
+                            $(".requirements_report_window:first").remove()
+                        };
                     });
                 }
                 else{
@@ -1847,7 +1858,7 @@
                 var n = this;
                 this.getOtTasks(e.ot_id, function(r) {
                     var i = moment().format("DD/MM/YYYY"), s = n.getTasksMarkup(r), o = n.getPhotosUploadMarkup(), u = n.getOtMaterialMarkup(e.ot_id), a = n.getCurrentPhotosMarkup(), f = n.getButtonsMarkup(r);
-                    $("body").append('<div id="requirements_report_window" style="display:none; max-height:500px; overflow:auto;"><h3 class="lefty">INFORME DE REQUERIMIENTOS DE TAREAS</h3><h3 class="righty">' + i + "</h3>" + "<br /><br />" + '<h3 class="lefty">O/T Nº: ' + e.ot_number + "</h3>" + "<br /><br />" + '<input type="button" class="button BUTTON_req_info_tasks" value="Tareas" />' + '<input type="button" class="button BUTTON_req_info_material" value="Materiales" />' + '<input type="button" class="button BUTTON_req_info_photos_upload" value="Añadir Fotografías" />' + '<input type="button" class="button BUTTON_req_info_current_photos" value="Fotografías Actuales" />' + "<br /><br /><br />" + '<form name="requirements_report_form" class="req_info_tasks clean_form">' + '<table style="width:100%;">' + s + "</table>" + "</form>" + '<div class="req_info_material" style="display:none;">' + u + "</div>" + '<div class="req_info_photos_upload" style="display:none;">' + o + "</div>" + '<div class="req_info_current_photos" style="display:none;">' + a + "</div>" + "<br /><br />" + f + "</div>"), n.bindInputFiles(), n.bindButtons(), t && t();
+                    $("body").append('<div class="requirements_report_window" style="display:none; max-height:500px; overflow:auto;"><h3 class="lefty">INFORME DE REQUERIMIENTOS DE TAREAS</h3><h3 class="righty">' + i + "</h3>" + "<br /><br />" + '<h3 class="lefty">O/T Nº: ' + e.ot_number + "</h3>" + "<br /><br />" + '<input type="button" class="button BUTTON_req_info_tasks" value="Tareas" />' + '<input type="button" class="button BUTTON_req_info_material" value="Materiales" />' + '<input type="button" class="button BUTTON_req_info_photos_upload" value="Añadir Fotografías" />' + '<input type="button" class="button BUTTON_req_info_current_photos" value="Fotografías Actuales" />' + "<br /><br /><br />" + '<form name="requirements_report_form" class="req_info_tasks clean_form">' + '<table style="width:100%;">' + s + "</table>" + "</form>" + '<div class="req_info_material" style="display:none;">' + u + "</div>" + '<div class="req_info_photos_upload" style="display:none;">' + o + "</div>" + '<div class="req_info_current_photos" style="display:none;">' + a + "</div>" + "<br /><br />" + f + "</div>"), n.bindInputFiles(), n.bindButtons(), t && t();
                 });
             },
             getOtTasks: function(e, t) {
@@ -1855,7 +1866,6 @@
                     url: "/ottask/byOt/" + e,
                     success: function(e) {
                         t(e);
-                        console.log(t(e))
                     }
                 });
             },
@@ -2023,7 +2033,11 @@
     }), e.define("/views/client/ClientAuthorizationOptions.js", function(e, t, n, r, i, s) {
         C.View.ClientAuthorizationOptions = Backbone.View.extend({
             initialize: function() {
-                this.render();
+                var e = this;
+                e.render();
+                $(document).on('click', '#client_left .ot_authorize', function(){
+                    e.authorizeOt();
+                })
             },
             render: function() {
                 return $(this.el).append(this.template()), this;
@@ -2040,7 +2054,7 @@
                 })), e;
             },
             events: {
-                "click #client_left .ot_authorize": "authorizeOt"
+                //"click #client_left .ot_authorize": "authorizeOt"
             },
             getForm: function() {
                 return this.options.client_form;
@@ -2053,19 +2067,68 @@
             },
             authorizeOt: function() {
                 if (C.Session.getUser().area_id != 8){
-                    var e = $(".client_table").dataTable(), t = F.getDataTableSelection($(".client_table"))[0], n = e.fnGetData(t).id;
-                    console.log(e.fnGetData(t))
-                    F.msgConfirm("¿Está seguro que desea AUTORIZAR esta O/T?", function() {
+                    this.templateModal();
+                    $(document).one('click', '#authform .BUTTON_proceed', function(){
                         $.ajax({
-                            url: "/authorization/confirm/" + n,
-                            success: function(e) {
+                            type: 'POST',
+                            url: '/authorization/confirm',
+                            data: $('#authform').serializeObject(),
+                            success: function(){
+                                $('.authorization_window').remove()
+                                $('.blockUI').remove();
+                                F.msgOK('La orden de trabajo ha sido autorizada');
                                 F.reloadDataTable('.client_table');
                             }
-                        });
-                    });
+                        })
+                    }) 
                 }else{
                     F.msgError('No pertenece al area correspondiente para realizar esta tarea');
                 }
+            },
+            renderModal: function(){
+
+                $.blockUI({
+                    message: $(".authorization_window"),
+                    css: {
+                        top: "10%",
+                        left: "30%",
+                        width: "38%",
+                        border: "none",
+                        padding: "1%",
+                        cursor: "default"
+                    }
+                });
+                console.log($('.authorization_window').length);
+                if($('.authorization_window').length > 1){
+                    $('.authorization_window:first').remove();
+                }
+            },
+            templateModal: function(){
+                var e = this
+                var c = $(".client_table").dataTable(), t = F.getDataTableSelection($(".client_table"))[0], n = c.fnGetData(t).id;
+                $.ajax({
+                    type: 'GET',
+                    url: '/authorization/getData',
+                    success: function(data){
+                        $('body').append('<div class="authorization_window"> \
+                                <h1 style="font-size:18px; font-weight:800;">Autorizar O/T</h1><br><br> \
+                                <form id="authform"> \
+                                    <span><strong style="font-weight:800">Fecha y hora: </strong>' + moment().format('DD/MM/YY HH:mm') + '</span><br><br> \
+                                    <span><strong style="font-weight:800">Usuario: </strong>'+C.Session.getUser().username()+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección de IP: </strong>'+data.ip+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección MAC: </strong>'+data.mac+'</span><br><br> \
+                                    <textarea name="observation" placeholder="Observaciones" style="height:100px; clear:both"></textarea><br><br> \
+                                    <input type="hidden" name="ip" value="'+data.ip+'"> \
+                                    <input type="hidden" name="mac" value="'+data.mac+'"> \
+                                    <input type="hidden" name="ot_id" value="'+n+'"> \
+                                    <input type="button" class="lefty BUTTON_cancel" value="Cancelar"> \
+                                    <input type="button" class="righty BUTTON_proceed" value="Aceptar"> \
+                                    <div style="clear:both"></div> \
+                                </form> \
+                            </div>');
+                        e.renderModal()
+                    }
+                })
             }
         });
     }), e.define("/views/client/ClientAuthorizationHistory.js", function(e, t, n, r, i, s) {
@@ -2137,6 +2200,7 @@
             },
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
+                    $($('.client_authorization_history_infocard span')[1]).html('')
                     F.assignValuesToInfoCard($(".client_authorization_history_infocard"), e);
                 });
             },
@@ -2288,7 +2352,7 @@
                 return this.getTable().selected_row;
             },
             addClient: function() {
-                if (C.Session.isPurchases()){
+                if (C.Session.getUser().role_id == 4 || C.Session.getUser().role_id == 5){
                     var e = this;
                     $.ajax({
                         type: 'POST',
@@ -2311,7 +2375,7 @@
                 }
             },
             editClient: function() {
-                if (!C.Session.isPurchases()){
+                if (C.Session.getUser().role_id == 4 || C.Session.getUser().role_id == 5){
                     var e = this;
                     $.ajax({
                         type: 'PUT',
@@ -2329,8 +2393,7 @@
                 }
             },
             delClient: function() {
-                console.log(C.Session.isPurchases())
-                if (!C.Session.isPurchases()){
+                if (C.Session.getUser().role_id == 4 || C.Session.getUser().role_id == 5){
                     var e = this;
                     F.msgConfirm("¿Desea eliminar este Cliente?", function() {
                         $.ajax({
@@ -2354,6 +2417,12 @@
             name: "clients",
             initialize: function() {
                 this.options.ot_id !== undefined ? this.renderTimeline() : $("#left .inner").append('<h1 style="font-size:20px;">Debe seleccionarse una O/T para visualizar sus eventos.</h1><br /><a style="font-size:20px;" href="/#/client/ots">Seleccionar Órden de Trabajo</a>');
+                    $('#timeline').after('<div id="references" style="margin-top:10px"></div><div id="delays" style="clear:left; float:left; margin-top:30px; width:49%"><br><h1 style="font-size:20px; font-weight:800; ">Demoras</h1><br></div><div id="materials" style="float:left; margin-top:30px; margin-left:5px; width:49%"><br><h1 style="font-size:20px; font-weight:800; ">Materiales</h1><br></div>')
+                this.appendDelays();
+                this.appendMaterials(),
+                $(document).on('click', 'timeline-event', function(){
+                    $(this).parent().removeClass('ui-state-active')
+                })
             },
             renderTimeline: function() {
                 var e = this;
@@ -2362,10 +2431,7 @@
                     $('#left').css({width: '100%', padding: 0});
                     $('#right').css({display: 'none'});
                 })
-                
                 var timeline;
-                console.log(this.options.ot_id)
-
                 // Called when the Visualization API is loaded.
                 function drawVisualization() {
                     // Create and populate a data table.
@@ -2384,41 +2450,26 @@
                                 })
                                 if(r[1] != null){
                                     if(r[1] == 'now'){
-                                        array.push([
-                                            new Date(r[0]),
-                                            new Date(),
-                                            r[2],
-                                            r[3]
-                                        ])
+                                        array.push([new Date(r[0]),new Date(),r[2],r[3]]);
                                     }else{
                                         array.push([
-                                            new Date(r[0]),
-                                            new Date(r[1]),
-                                            r[2],
-                                            r[3]
-                                        ])
+                                            new Date(r[0]),new Date(r[1]),r[2],r[3]]);
                                     }
                                 }
                                 else{
                                     array.push([
-                                        new Date(r[0]),
-                                        ,
-                                        r[2],
-                                        r[3]
-                                    ])   
+                                        new Date(r[0]),,r[2],r[3]]);   
                                 }
                             })
-                            
                             // specify options
                             var options = {
                                 "width":  "100%",
-                                "height": "300px",
+                                "height": "400px",
                                 "style": "box"
                             };
 
                             // Instantiate our timeline object.
                             timeline = new links.Timeline(document.getElementById('timeline'), options);
-                            console.log(array)
                             var data = new google.visualization.DataTable();
                             data.addColumn('datetime', 'start');
                             data.addColumn('datetime', 'end');
@@ -2428,11 +2479,32 @@
                             data.addRows(array)
                             // Draw our timeline with the created data and options
                             timeline.draw(data);
+                            $('#references').append('<div class="reference"><div class="square milestone"></div><span>&nbsp;Hitos</span></div>\
+                                                    <div class="reference"><div class="square exceeded"></div><span>&nbsp;Demoras</span></div>\
+                                                    <div class="reference"><div class="square completed"></div><span>&nbsp;Tareas completadas</span></div>\
+                                                    <div class="reference"><div class="square materials_missing"></div><span>&nbsp;Materiales faltantes</span></div>\
+                                                    <div class="reference"><div class="square in_progress"></div><span>&nbsp;Tareas en progreso</span></div>\
+                                                    <div class="reference"><div class="square pending"></div><span>&nbsp;Tareas pendientes</span></div>')
+                            $('.reference').css({
+                                float:'left',
+                                marginLeft: '10px',
+                                //width: '200px'
+                            })
+                            $('.square').css({
+                                width: '15px',
+                                height: '15px',
+                                float: 'left',
+                                border: 'solid 1px'
+                            })
 
                             $('.exceeded').removeClass('ui-state-default');
                             $('.exceeded').css({
                                 'background-color':'#f2dede',
                                 'border-color': 'darkred'
+                            })
+                            $('.pending').css({
+                                'background-color':'#ddd',
+                                'border-color': '#aaa'
                             })
                             $('.completed').removeClass('ui-state-default');
                             $('.completed').css({
@@ -2451,12 +2523,51 @@
                                 'background-color': '#fcf8e3',
                                 'border-color': 'grey',
                             })
+                            $('.milestone').removeClass('ui-state-default');
+                            $('.milestone').css({
+                                'color': '#fff',
+                                'background-color': '#ff6600',
+                                'border-color': '#ff3300',
+                            })
+                            $('#left').css('textAlign', 'left');
 
                         }
                     })
                 }
                 google.load("visualization", "1");
                 google.setOnLoadCallback(drawVisualization);
+            },
+            appendDelays: function(){
+                $.ajax({
+                    url: '/timelinedelays/'+this.options.ot_id,
+                    type: 'GET',
+                    success: function(data){
+                        if(data){
+                            data.forEach(function(d){
+                                $('#delays').append('<span><strong style="font-weight:800">'+d.reason+'</strong> '+d.observation+' - '+d.delay+' (dias)</span></br>')
+                            })
+                        }
+                    }
+                })
+            },
+            appendMaterials: function(){
+                $.ajax({
+                    url: '/materialorder/byOt/'+this.options.ot_id,
+                    type: 'GET',
+                    success: function(data){
+                        console.log($('#materials').length)
+                        if (data){
+                            data.forEach(function(material){
+                                console.log(material.category)
+                                var style = '';
+                                if(!material.arrived){
+                                    style = ' text-decoration: line-through;'
+                                }
+                                $('#materials').append('<span style="'+style+'"><strong style="font-weight:800">' + material.category + '</strong> ' + material.name + ' (' + material.quantity + ') <br>');
+                            })
+                        }
+                    }
+                })
             }
             
         });
@@ -2528,67 +2639,92 @@
                 }, null ]
             },
             rowHandler: function(e, t) {
-                var n = $('<input type="button" value="Autorizar" class="authorize_ot_button">'), r = $('<span class="visualize_ot_events">Visualizar</span>');
-                $(e).on("mouseover", function() {
-                    $(this).find("td").css({
-                        backgroundColor: "#c2dcde"
-                    }), $(r).css({
-                        color: "black"
-                    });
-                }), $(e).on("mouseout", function() {
-                    $(this).find("td").css({
-                        backgroundColor: "white"
-                    }), $(r).css({
-                        color: "#30858c"
-                    });
-                }), $($(e).children().get(7)).css({
+                var _this = this;
+                var value = 'Notificar'
+                if (t.otstate_id == 2 || t.otstate_id == 3) value = 'Autorizar';
+                var n = $('<input type="button" value="'+value+'" class="authorize_ot_button">'), r = $('<span class="visualize_ot_events">Visualizar</span>');
+                $($(e).children().get(7)).css({
                     textAlign: "right"
                 });
+                $($(e).children().get(7)).html(n), $(n).on("click", function() {
+                    _this.authorizeOt(t.id, value);
+                });
                 if (t.showtimeline){
-                    $($(e).children().get(7)).html(r), $(r).on("click", function() {
+                    $($(e).children().get(7)).append(' ').append(r), $(r).on("click", function() {
                         window.location = "/#/client/events/" + t.id;
                         location.reload()
                     });
-                    if (t.otstate_id == 2 || t.otstate_id == 3) $($(e).children().get(7)).append(' ').append(n), $(n).on("click", function() {
-                        F.msgConfirm("Esta acción dara comienzo a la Órden de trabajo seleccionada", function() {
-                            $.ajax({
-                                type: "GET",
-                                url: "/clientauthorize/" + t.id,
-                                success: function(e) {
-                                    F.onSuccess(e, function(e) {
-                                        F.msgOK("La Órden de Trabajo ha sido autorizada."), $(n).remove();
-                                        F.reloadDataTable('.clients_table')
-                                    }, function(e) {
-                                        F.msgError("Ocurrió un error al autorizar la O/T. Intente nuevamente.");
-                                    });
-                                }
-                            });
-                        });
-                    });
                 }
-                else{
-                    console.log('alan')
-                    if (t.otstate_id == 2 || t.otstate_id == 3) $($(e).children().get(7)).html(n), $(n).on("click", function() {
-                        F.msgConfirm("Esta acción dara comienzo a la Órden de trabajo seleccionada", function() {
-                            $.ajax({
-                                type: "GET",
-                                url: "/clientauthorize/" + t.id,
-                                success: function(e) {
-                                    F.onSuccess(e, function(e) {
-                                        F.msgOK("La Órden de Trabajo ha sido autorizada."), $(n).remove();
-                                        F.reloadDataTable('.clients_table')
-                                    }, function(e) {
-                                        F.msgError("Ocurrió un error al autorizar la O/T. Intente nuevamente.");
-                                    });
-                                }
-                            });
-                        });
-                    });
+            },
+            authorizeOt: function(id, action) {
+                if (C.Session.getUser().area_id != 8){
+                    this.templateModal(id, action);
+                    $(document).one('click', '#authform .BUTTON_proceed', function(){
+                        $.ajax({
+                            type: 'POST',
+                            url: '/authorization/confirm',
+                            data: $('#authform').serializeObject(),
+                            success: function(){
+                                $('.authorization_window').remove()
+                                $('.blockUI').remove();
+                                F.msgOK('La orden de trabajo ha sido autorizada');
+                                F.reloadDataTable('.clients_table');
+                            }
+                        })
+                    }) 
+                }else{
+                    F.msgError('No pertenece al area correspondiente para realizar esta tarea');
                 }
+            },
+            renderModal: function(){
+
+                $.blockUI({
+                    message: $(".authorization_window"),
+                    css: {
+                        top: "10%",
+                        left: "30%",
+                        width: "38%",
+                        border: "none",
+                        padding: "1%",
+                        cursor: "default"
+                    }
+                });
+                console.log($('.authorization_window').length);
+                if($('.authorization_window').length > 1){
+                    $('.authorization_window:first').remove();
+                }
+            },
+            templateModal: function(id, action){
+                var e = this
+                $.ajax({
+                    type: 'GET',
+                    url: '/authorization/getData',
+                    success: function(data){
+                        $('body').append('<div class="authorization_window"> \
+                                <h1 style="font-size:18px; font-weight:800;">'+action+' O/T</h1><br><br> \
+                                <form id="authform"> \
+                                    <span><strong style="font-weight:800">Fecha y hora: </strong>' + moment().format('DD/MM/YY HH:mm') + '</span><br><br> \
+                                    <span><strong style="font-weight:800">Usuario: </strong>'+C.Session.getUser().username()+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección de IP: </strong>'+data.ip+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección MAC: </strong>'+data.mac+'</span><br><br> \
+                                    <textarea name="observation" placeholder="Observaciones" style="height:100px; clear:both"></textarea><br><br> \
+                                    <input type="hidden" name="ip" value="'+data.ip+'"> \
+                                    <input type="hidden" name="mac" value="'+data.mac+'"> \
+                                    <input type="hidden" name="ot_id" value="'+id+'"> \
+                                    <input type="button" class="lefty BUTTON_cancel" value="Cancelar"> \
+                                    <input type="button" class="righty BUTTON_proceed" value="Aceptar"> \
+                                    <div style="clear:both"></div> \
+                                </form> \
+                            </div>');
+                        e.renderModal()
+                    }
+                })
             },
             initialize: function() {
                 F.createDataTable(this, function(e) {
                     F.doNothing();
+                    $('.visualize_ot_events').css({color:'#30858c'})
+                    $('.selected_row .visualize_ot_events').css({color:'#fff'})
                 });
             }
         });
@@ -2776,6 +2912,7 @@
                     console.log(t)
                     e.showDetails(t);
                     $('.material_order_infocard .selection_id').val(t.id)
+
 
                 });
             },
@@ -3810,6 +3947,11 @@
                     label: "Mostrar linea de tiempo al cliente",
                     type: "select_yn",
                     default_value: "n"
+                },
+                showdelays: {
+                    label: "Mostrar demoras al cliente",
+                    type: "select_yn",
+                    default_value: "n"
                 }
             },
             buttons: {
@@ -3895,7 +4037,8 @@
                                 success: function(){
                                     var n = e.attributes;
                                     F.msgOK("La O/T ha sido creada"), $(".ot_form select[name=client_id]").val(null), $(".ot_form select[name=equipment_id]").val(null);
-                                    F.reloadDataTable('.ot_table')
+                                    F.reloadDataTable('.ot_table');
+                                    F.cleanForm('.ot_form');
                                 }
                                 
                             })
@@ -3925,7 +4068,7 @@
               });
             },
             cancelOt: function() {
-              //location.reload()
+              F.cleanForm('.ot_form');
             }            
         });
     }), e.define("/views/ot/OtAdminOptions.js", function(e, t, n, r, i, s) {
@@ -4233,7 +4376,7 @@
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                 $("body").append('<div id="ot_add_task_window" class="addForm modal" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><input placeholder="Prioridad" type="text" style="width:75%;display:inline" name="new_task_priority" /><select style="width:19%;margin-left:2%;display:inline" name="type"><option value="seq">Secuencial</option><option value="par">Paralela</option></select><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><textarea name="new_task_description" placeholder="Descripción" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
                 $('#add_task_ot_form').prepend('<input type="text" name="name" placeholder="Nombre de la tarea">')
-                $('#add_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" name="eta" style="width:200px;display:inline"><input type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" disabled="disabled" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label>')
+                $('#add_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" name="eta" style="width:200px;display:inline"><input type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" disabled="disabled" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label> <input type="checkbox"  name="materials_missing"><label style="display:inline" disabled="disabled" for="materials_missing">Requiere materiales</label>')
             },
             cleanModals: function(e) {
                 $(' .ot_add_task').unbind()
@@ -4245,10 +4388,8 @@
                     $('#add_task_ot_window').remove()
                 }
                 var form = $('#add_task_ot_form').serializeObject();
-                console.log(form)
                 if (form.name != '' && form.priority != '' && form.area != '' && form.new_task_description != '' && form.eta != ''){
                     if ($('#add_task_ot_form input[name=reprogram]').is(':checked')){
-                        console.log(form)
                         if (form.delay_id != 0){
                             this.options.addNewTask({
                                 name: $("#add_task_ot_form input[name=name]").val(),
@@ -4260,6 +4401,7 @@
                                 reprogramTask: $('#add_task_ot_form input[name=reprogramTask]').is(':checked'),
                                 observation: $('#add_task_ot_form textarea[name=observation]').val(),
                                 delay_id: $("#add_task_ot_form select[name=delay_id]").val(),
+                                materials_missing: $('#add_task_ot_form input[name=materials_missing]').is(':checked'),
                             }, this.cleanModals());
                         }else{
                             F.msgError('Elija una razon de demora')
@@ -4273,7 +4415,8 @@
                             description: $("#add_task_ot_form textarea[name=new_task_description]").val() +":::"+ $("#add_task_ot_form input:text[name=new_task_priority]").val() +":::"+ $('#add_task_ot_form select[name=area]').val(),
                             eta: $('#add_task_ot_form input[name=eta]').val(),
                             reprogram: $('#add_task_ot_form input[name=reprogram]').is(':checked'),
-                            reprogramTask: $('#add_task_ot_form input[name=reprogramTask]').is(':checked')
+                            reprogramTask: $('#add_task_ot_form input[name=reprogramTask]').is(':checked'),
+                            materials_missing: $('#add_task_ot_form input[name=materials_missing]').is(':checked'),
                         }, this.cleanModals());
                     }
                 }
@@ -4507,7 +4650,6 @@
                     $(document).unbind('delays_loaded');
                     new C.View.OtAuditAddTask({
                         addNewTask: function(t, n) {
-                            console.log(t)
                             var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                             $(".selected_ottask").length && (s = parseInt($(".selected_ottask").attr("data-position"))), $.ajax({
                                 url: "/ottask/add",
@@ -4523,8 +4665,12 @@
                                     type: t.type,
                                     observation: t.observation,
                                     delay_id: t.delay_id,
+                                    materials_missing: t.materials_missing,
                                 },
                                 success: function(t) {
+                                    if (t != true){
+                                        $($('.selected_row td')[7]).html(moment(t).format('DD/MM/YYYY'))
+                                    }
                                     e.reloadRowDetails()
                                 }
                             });
@@ -4674,8 +4820,8 @@
         C.View.OtAuditTable = Backbone.View.extend({
             name: "ot",
             source: "/ot",
-            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Inicio pactado", "Entrega pactada", "Equipontrega estimada", "Retrabajo de" ],
-            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "agreedstart", "agreedend", "delivery", "reworked_number" ],
+            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Inicio pactado", "Entrega pactada", "Entrega estimada", "Retrabajo de", "Graficar" ],
+            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "agreedstart", "agreedend", "delivery", "reworked_number", null ],
             hidden_columns: [ "ot_number", "reworked_number", 'equipment_id', 'client_id' ],
             date_columns: ['delivery'],
             data: null,
@@ -4686,15 +4832,21 @@
                 aaSorting: [ [ 1, "desc" ] ],
                 iDisplayLength: 50000
             },
+            rowHandler: function(e, t){
+                r = $('<span class="visualize_ot_events">Visualizar</span>');
+                $($(e).children().get(8)).html(r), $(r).on("click", function() {
+                    window.open("/#/reports/timeline/" + t.id);
+                    //location.reload()
+                });
+            },
             initialize: function() {
                 var t = this;
                 function e(e, n) {
                     var r = $(e).dataTable();
                     $(document).on("click", ".ot_table tbody tr", function(evento) {
-                        console.log('remover')
+                        $('.visualize_ot_events').css('color', '#30858c')
+                        $('.selected_row .visualize_ot_events').css('color', '#fff')
                         var i = r.fnGetData(this)
-                        console.log(i)
-                        
                         if (i.delay){
                             $('.ot_infocard').append('<div class="delays"><p><label>Demoras:</label></p>'+i.delay+'</div>')
                         }
@@ -4901,15 +5053,22 @@
         C.View.OtHistoryTable = Backbone.View.extend({
             name: "ot",
             source: "/othistory",
-            headers: [ "ID", "O/T", "O/T Cliente", "Ingreso", "Salida", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida" ],
-            attrs: [ "id",  "number", "client_number", "created_at", "salida", "equipment_id", "equipment", "client_id", "client", "delivery", "reworked_number", "remitoentrada", "remitosalida" ],
-            hidden_columns: [/*"created_at", "salida",*/ "delivery", "reworked_number", "remitoentrada", 'client_id', 'equipment_id'],
+            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida", "Ingreso", "Salida", "Inicio pactado", "Entrega pactada", 'Visualizar' ],
+            attrs: [ "id",  "number", "client_number", "equipment_id", "equipment", "client_id", "client", "salida", "reworked_number", "remitoentrada", "remitosalida", "created_at", "delivery", "agreedstart", "agreedend", null ],
+            hidden_columns: [/*"created_at",*/ "salida", "reworked_number", "remitoentrada", 'client_id', 'equipment_id'],
             date_columns: ['created_at', 'salida'],
             data: null,
             datatableOptions: {
                 aaSorting: [ [ 1, "desc" ] ]
             },
             iDisplayLength: 500,
+            rowHandler: function(e, t){
+                r = $('<span class="visualize_ot_events">Visualizar</span>');
+                $($(e).children().get(9)).html(r), $(r).on("click", function() {
+                    window.open("/#/reports/timeline/" + t.id);
+                    //location.reload()
+                });
+            },
             initialize: function() {
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
@@ -4926,6 +5085,11 @@
                 }, function() {
                     var t = $(".ot_table").dataTable();
                     $(document).on("click", ".ot_table tbody tr", function() {
+                        $('.visualize_ot_events').css('color', '#30858c')
+                        if($(this).hasClass('selected_row'))
+                        {
+                            $(this).find('.visualize_ot_events').css('color', '#fff')
+                        }
                         t.fnIsOpen(this) ? t.fnClose(this) : t.fnOpen(this, e.generateRowDetails(t, this), "details");
                     });
                 });
@@ -4937,19 +5101,26 @@
                 this.selected_row = $(e.currentTarget), $("#ot_right .ot_add_task").attr("disabled", !1);
             },
             generateRowDetails: function(e, t) {
+                console.log('matias')
                 var n = this, r = e.fnGetData(t), i = r.id, s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
                 return this.getOtTasks(i, function(e) {
                     var t, r, s;
                     e.length ? (n.appendRowDetailsHeaders(i), _.each(e, function(e) {
-                        var y = " ";
+                        var y = "";
                         if(e.completed_date){
                           var x = e.completed_date
-                          y = x[8]+x[9]+x[7]+x[5]+x[6]+x[4]+x[0]+x[1]+x[2]+x[3]
+                          y = x[8]+x[9]+'/'+x[5]+x[6]+'/'+x[0]+x[1]+x[2]+x[3]
+                        }
+                        console.log(e.due_date, e.completed_date)
+                        var formatedDate = ''
+                        if(e.due_date && e.due_date != 'NaN-NaN-NaN'){
+                          var rawDate = e.due_date
+                          formatedDate = rawDate[8]+rawDate[9]+'/'+rawDate[5]+rawDate[6]+'/'+rawDate[0]+rawDate[1]+rawDate[2]+rawDate[3]
                         }
                         t = $("<p>"), r = $("<input>", {
                             type: "checkbox",
                             "class": "complete_task_" + e.id
-                        }), s = "<span>" + e.name + " - </span> " + e.description+'<span  style="float:right;">'+ y +'</span>', $(t).append(r).append(s), e.completed && ($(r).attr("checked", !0), $(r).parent().addClass("crossed")), $(".ot_id_" + i).append(t).fadeIn(), n.bindRenderOtTaskForm(t, e, !1), $('input:checkbox[class="complete_task_' + e.id + '"]').on("click", function() {
+                        }), s = "<span>" + e.name + " - </span> " + e.description+'<span  style="float:right;">'+  (formatedDate ? formatedDate : 'Sin cargar')  +'</span><span  style="float:right;">'+ (y ? y+' -&nbsp;' : '') +'</span>', $(t).append(r).append(s), e.completed && ($(r).attr("checked", !0), $(r).parent().addClass("crossed")), $(".ot_id_" + i).append(t).fadeIn(), n.bindRenderOtTaskForm(t, e, !1), $('input:checkbox[class="complete_task_' + e.id + '"]').on("click", function() {
                             return !1;
                         });
                     })) : $(".ot_id_" + i).append("<p>Esta O/T no posee un Plan de Tareas asociado</p>").fadeIn();
@@ -4964,7 +5135,7 @@
                 });
             },
             appendRowDetailsHeaders: function(e) {
-                $(".ot_id_" + e).append('<p class="row_details_headers">Nombre - Descripción<span>Completada</span></p>');
+                $(".ot_id_" + e).append('<p class="row_details_headers">Nombre - Descripción<span>Completada - Estimado</span></p>');
             },
             bindRenderOtTaskForm: function(e, t, n) {
                 var r = this;
@@ -6635,6 +6806,7 @@
             initialize: function() {
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                     F.assignValuesToForm($(".user_form"), e);
+                    $('.BUTTON_proceed').show();
                 });
             },
             events: {
@@ -6688,6 +6860,13 @@
                         e.relations.roles = t, F.getAllFromModel("area", function(t) {
                             e.relations.areas = t;
                             F.createForm(e);
+                            $('.user_form').append($("<input>", {
+                                type: "button",
+                                "class": "BUTTON_proceed toHide",
+                                value: "Generar clave",
+                                title: "Agrega una Tarea al final ó debajo de la seleccionada actualmente."
+                            }))
+                            $('.BUTTON_proceed').hide();
                         });
                     });
                 });
@@ -6695,7 +6874,8 @@
             events: {
                 "click .user_form .BUTTON_create": "addUser",
                 "click .user_form .BUTTON_save": "editUser",
-                "click .user_form .BUTTON_delete": "delUser"
+                "click .user_form .BUTTON_delete": "delUser",
+                "click .user_form .BUTTON_proceed": "generatePass",
             },
             getTable: function() {
                 return this.options.user_table;
@@ -6724,6 +6904,7 @@
                         F.cleanForm('.user_form')
                         if (t.result === !0) {
                             F.msgOK("El usuario ha sido creado/a");
+                            F.msg('Password: '+t.pass)
                             F.reloadDataTable('.user_table');
                         } else F.msgError(t.error);
                     }
@@ -6755,6 +6936,16 @@
                         }
                     })
                 });
+            },
+            generatePass: function(){
+                var e = this;
+                $.ajax({
+                    type: 'PUT',
+                    url: '/user/generatePass/'+e.getSelectionID(),
+                    success: function(data){
+                        F.msg('Nueva clave: '+data);
+                    }
+                })
             }
         });
     }), e.define("/views/errorreport/ErrorReport.js", function(e, t, n, r, i, s) {
@@ -7857,124 +8048,6 @@
                 return this.getTable().selected_row;
             },
         });
-    }), e.define("/views/report/Timeline.js", function(e, t, n, r, i, s) {
-        C.View.Timeline = Backbone.View.extend({
-            el: $("body"),
-            initialize: function() {
-                var e = this;
-                e.timeline_chart = new C.View.TimelineChart({
-                    el: $('#report_left'),
-                    ot_id: this.options.ot_id
-                })
-            }
-        });
-    }), e.define("/views/report/TimelineChart.js", function(e, t, n, r, i, s) {
-        C.View.TimelineChart = Backbone.View.extend({
-            
-            initialize: function() {
-                var e = this;
-                this.el.append('<div id="timeline"></div>')
-                $(document).ready(function(){
-                    $('#left').css({width: '100%'});
-                    $('#right').css({display: 'none'});
-                })
-                
-                var timeline;
-                console.log(this.options.ot_id)
-
-                // Called when the Visualization API is loaded.
-                function drawVisualization() {
-                    // Create and populate a data table.
-                    $.ajax({
-                        url: '/timelinechart/'+e.options.ot_id,
-                        type: 'GET',
-                        success: function(result){
-                            var json = [];
-                            var array = [];
-                            result.forEach(function(r){
-                                json.push({
-                                    start: new Date(r[0]),
-                                    end: new Date(r[1]),
-                                    content: r[2],
-                                    className: r[3],
-                                })
-                                if(r[1] != null){
-                                    if(r[1] == 'now'){
-                                        array.push([
-                                            new Date(r[0]),
-                                            new Date(),
-                                            r[2],
-                                            r[3]
-                                        ])
-                                    }else{
-                                        array.push([
-                                            new Date(r[0]),
-                                            new Date(r[1]),
-                                            r[2],
-                                            r[3]
-                                        ])
-                                    }
-                                }
-                                else{
-                                    array.push([
-                                        new Date(r[0]),
-                                        ,
-                                        r[2],
-                                        r[3]
-                                    ])   
-                                }
-                            })
-                            
-                            // specify options
-                            var options = {
-                                "width":  "100%",
-                                "height": "300px",
-                                "style": "box"
-                            };
-
-                            // Instantiate our timeline object.
-                            timeline = new links.Timeline(document.getElementById('timeline'), options);
-                            console.log(array)
-                            var data = new google.visualization.DataTable();
-                            data.addColumn('datetime', 'start');
-                            data.addColumn('datetime', 'end');
-                            data.addColumn('string', 'content');
-                            data.addColumn('string', 'className');
-                            
-                            data.addRows(array)
-                            // Draw our timeline with the created data and options
-                            timeline.draw(data);
-
-                            $('.exceeded').removeClass('ui-state-default');
-                            $('.exceeded').css({
-                                'background-color':'#f2dede',
-                                'border-color': 'darkred'
-                            })
-                            $('.completed').removeClass('ui-state-default');
-                            $('.completed').css({
-                                'color': '#000',
-                                'background-color': '#dff0d8',
-                                'border-color': 'green',
-                            })
-                            $('.materials_missing').removeClass('ui-state-default');
-                            $('.materials_missing').css({
-                                'color': '#000',
-                                'background-color': '#d9edf7',
-                            })
-                            $('.in_progress').removeClass('ui-state-default');
-                            $('.in_progress').css({
-                                'color': '#000',
-                                'background-color': '#fcf8e3',
-                                'border-color': 'grey',
-                            })
-
-                        }
-                    })
-                }
-                google.load("visualization", "1");
-                google.setOnLoadCallback(drawVisualization);
-            }
-        });
     }), e.define("/Router.js", function(e, t, n, r, i, s) {
         $(function() {
             var e = Backbone.Router.extend({
@@ -8417,8 +8490,9 @@
                 },
                 getTimeline: function(e) {
                     var t = function() {
-                        document.title = C.TITLE + "Línea de Tiempo de Eventos", this.otreport_widget = C.Widget.Report.initialize(), this.timeline_view = new C.View.Timeline({
-                            ot_id: e
+                        document.title = C.TITLE + "Línea de Tiempo de Eventos", this.otreport_widget = C.Widget.Report.initialize(), this.timeline_view = new C.View.ClientsEvents({
+                            ot_id: e,
+                            el:$('#report_left')
                         }), F.R.highlightCurrentModule("reports/timeline");
                     }.bind(this);
                     C.Session.doIfInRolesList([ 2, 4, 5, 6, 7, 8 ], t);
@@ -8559,6 +8633,6 @@
             View: {},
             Widget: {},
             Router: null
-        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/HoursPerClient"), e("./views/report/HoursPerClientTable"), e("./views/report/HoursPerClientForm"), e("./views/report/HoursPerEmployee"), e("./views/report/HoursPerEmployeeTable"), e("./views/report/HoursPerEmployeeForm"), e("./views/report/HoursPerArea"), e("./views/report/HoursPerAreaTable"), e("./views/report/HoursPerAreaForm"), e("./views/report/OtTaskReport"), e("./views/report/OtTaskReportTable"), e("./views/report/OtTaskReportForm"), e("./views/report/MaterialReport"), e("./views/report/MaterialReportTable"), e("./views/report/MaterialReportForm"), e("./views/report/Timeline"), e("./views/report/TimelineChart"), e("./views/report/HoursPerOt"), e("./views/report/HoursPerOtTable"), e("./views/report/HoursPerOtForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
+        }, e("./F.backbone"), e("./F.basics"), e("./F.validations"), e("./F.widgets"), e("./widgets/Alert"), e("./widgets/Client"), e("./widgets/Clients"), e("./widgets/CRUD"), e("./widgets/Material"), e("./widgets/News"), e("./widgets/Ot"), e("./widgets/Personnel"), e("./widgets/Profile"), e("./widgets/Report"), e("./models/Alert"), e("./models/AlertTask"), e("./models/Authorization"), e("./models/AuthorizationHistory"), e("./models/Client"), e("./models/ClientsOt"), e("./models/ClientsNotification"), e("./models/Employee"), e("./models/ErrorReport"), e("./models/Inout"), e("./models/InoutHistory"), e("./models/Intervention"), e("./models/Material"), e("./models/MaterialCategory"), e("./models/MaterialOrder"), e("./models/MaterialHistory"), e("./models/Module"), e("./models/Equipment"), e("./models/News"), e("./models/Ot"), e("./models/OtHistory"), e("./models/OtTask"), e("./models/Purchase"), e("./models/Person"), e("./models/Plan"), e("./models/Profile"), e("./models/Query"), e("./models/Task"), e("./models/User"), e("./views/alert/Alert"), e("./views/alert/AlertTable"), e("./views/alert/AlertInfoCard"), e("./views/alert/AlertTasks"), e("./views/alert/AlertTasksTable"), e("./views/alert/AlertTasksInfoCard"), e("./views/client/ClientAuthorization"), e("./views/client/ClientAuthorizationTable"), e("./views/client/ClientAuthorizationInfoCard"), e("./views/client/ClientAuthorizationOptions"), e("./views/client/ClientAuthorizationHistory"), e("./views/client/ClientAuthorizationHistoryTable"), e("./views/client/ClientAuthorizationHistoryInfoCard"), e("./views/client/ClientPayroll"), e("./views/client/ClientPayrollTable"), e("./views/client/ClientPayrollForm"), e("./views/clients/ClientsEvents"), e("./views/clients/ClientsNotifications"), e("./views/clients/ClientsOts"), e("./views/clients/ClientsOtsTable"), e("./views/controlpanel/ControlPanel"), e("./views/material/MaterialStock"), e("./views/material/MaterialStockTable"), e("./views/material/MaterialStockForm"), e("./views/material/MaterialOrder"), e("./views/material/MaterialOrderTable"), e("./views/material/MaterialOrderInfoCard"), e("./views/material/MaterialOrderOptions"), e("./views/material/MaterialCreateOrder"), e("./views/materialcategory/MaterialCategory"), e("./views/materialcategory/MaterialCategoryTable"), e("./views/materialcategory/MaterialCategoryForm"), e("./views/material/MaterialHistory"), e("./views/material/MaterialHistoryTable"), e("./views/equipment/Equipment"), e("./views/equipment/EquipmentTable"), e("./views/equipment/EquipmentForm"), e("./views/news/News"), e("./views/news/NewsFeed"), e("./views/ot/OtAdmin"), e("./views/ot/OtInauguration"), e("./views/ot/OtAdminConcludeForm"), e("./views/ot/OtAdminTable"), e("./views/ot/OtAdminForm"), e("./views/ot/OtAdminOptions"), e("./views/ot/OtAudit"), e("./views/ot/OtAuditAddTask"), e("./views/ot/OtAuditToggleTaskState"), e("./views/ot/OtAuditForm"), e("./views/ot/OtAuditInfoCard"), e("./views/ot/OtAuditOptions"), e("./views/ot/OtAuditTable"), e("./views/ot/OtHistory"), e("./views/ot/OtHistoryTable"), e("./views/ot/OtHistoryInfoCard"), e("./views/ot/OtPlans"), e("./views/ot/OtPlansTable"), e("./views/ot/OtPlansForm"), e("./views/ottask/OtTaskForm"), e("./views/ottask/OtTaskResources"), e("./views/material/Purchase"), e("./views/material/PurchaseTable"), e("./views/material/PurchaseForm"), e("./views/person/Person"), e("./views/person/PersonTable"), e("./views/report/OtState"), e("./views/report/OtStateTable"), e("./views/report/OtStateForm"), e("./views/report/OtDelivery"), e("./views/report/OtDeliveryTable"), e("./views/report/OtDeliveryForm"), e("./views/report/OtDeadline"), e("./views/report/OtDeadlineTable"), e("./views/report/OtDeadlineForm"), e("./views/report/HoursPerClient"), e("./views/report/HoursPerClientTable"), e("./views/report/HoursPerClientForm"), e("./views/report/HoursPerEmployee"), e("./views/report/HoursPerEmployeeTable"), e("./views/report/HoursPerEmployeeForm"), e("./views/report/HoursPerArea"), e("./views/report/HoursPerAreaTable"), e("./views/report/HoursPerAreaForm"), e("./views/report/OtTaskReport"), e("./views/report/OtTaskReportTable"), e("./views/report/OtTaskReportForm"), e("./views/report/MaterialReport"), e("./views/report/MaterialReportTable"), e("./views/report/MaterialReportForm"), e("./views/report/HoursPerOt"), e("./views/report/HoursPerOtTable"), e("./views/report/HoursPerOtForm"), e("./views/report/OtConclude"), e("./views/report/OtConcludeTable"), e("./views/report/OtConcludeForm"), e("./views/person/PersonForm"), e("./views/personnel/Employee"), e("./views/personnel/EmployeeTable"), e("./views/personnel/EmployeeForm"), e("./views/personnel/Inout"), e("./views/personnel/InoutTable"), e("./views/personnel/InoutHistory"), e("./views/personnel/InoutHistoryTable"), e("./views/personnel/InoutForm"), e("./views/intervention/Intervention"), e("./views/delay/Delay"), e("./views/delay/DelayTable"), e("./views/delay/DelayForm"), e("./views/intervention/InterventionTable"), e("./views/intervention/InterventionForm"), e("./views/profile/Profile"), e("./views/profile/ProfileEmployeeInfoCard"), e("./views/profile/ProfileForm"), e("./views/profile/ProfilePasswordForm"), e("./views/report/Query"), e("./views/report/QueryTable"), e("./views/report/QueryForm"), e("./views/report/QueryPredefinedList"), e("./views/task/Task"), e("./views/task/TaskTable"), e("./views/task/TaskForm"), e("./views/user/User"), e("./views/user/UserTable"), e("./views/user/UserForm"), e("./views/errorreport/ErrorReport"), e("./views/errorreport/ErrorReportTable"), e("./views/errorreport/ErrorReportInfoCard"), e("./views/errorreport/ErrorReportForm"), e("./Router"), e("./UI");
     }), e("/main.js");
 })();

@@ -7,6 +7,7 @@
     "browserify": "~1.10.12",
     "dotenv": "^2.0.0",
     "express": "~2.5.2",
+    "getmac": "^1.2.1",
     "jade": "~0.26.0",
     "lazy": "~1.0.8",
     "markdown": "~0.3.1",

@@ -48,7 +48,7 @@ Login.post = function(req, res, next) {
           '/#/ots/audit',
           '/',
           '/#/options/controlpanel',
-          '/#/client/notifications',
+          '/#/client/ots',
           '/',
           '/#/materials/purchases'
         ];

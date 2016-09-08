@@ -12,7 +12,13 @@ Timelinechart.get = function(req, res, next) {
 	var ot_id = req.params.ot_id
 	var startDay;
 	var data = [];
-	DB.Ottask.findAll({where: {ot_id : ot_id}, order:[['priority ASC',]]}).on('success', function(tasks){
+	var query = 'SELECT ott.*, otr.id as worked FROM ottask ott\
+				LEFT JOIN ottaskresource otr ON otr.ottask_id = ott.id\
+				WHERE ott.ot_id = '+ot_id+'\
+				GROUP BY ott.id ORDER BY priority ASC';
+				console.log(query)
+	DB._.query(query, function(err, tasks){
+	//DB.Ottask.findAll({where: {ot_id : ot_id}, order:[['priority ASC',]]}).on('success', function(tasks){
 		DB.Ot.find({where: {id: ot_id}}).on('success', function(ot){
 			if (ot.agreedstart) {
 				startDay = new Date(ot.agreedstart);
@@ -20,6 +26,7 @@ Timelinechart.get = function(req, res, next) {
 					moment(startDay).format('YYYY/MM/DD'),
 					null,
 					'Inicio Pactado',
+					'milestone'
 				]);
 			}else{
 				startDay= new Date(ot.created_at);
@@ -27,7 +34,7 @@ Timelinechart.get = function(req, res, next) {
 					moment(startDay).format('YYYY/MM/DD'),
 					null,
 					'Fecha de inauguración',
-					''
+					'milestone'
 				])
 			};
 			if(ot.agreedend){
@@ -35,7 +42,15 @@ Timelinechart.get = function(req, res, next) {
 					moment(ot.agreedend).format('YYYY/MM/DD'),
 					null,
 					'Entrega pactada',
-					''
+					'milestone'
+				])
+			}
+			if(ot.conclusion_date){
+				data.push([
+					moment(ot.conclusion_date).format('YYYY/MM/DD'),
+					null,
+					'Entrega/Retiro',
+					'milestone'
 				])
 			}
 			var priority = 0;
@@ -47,6 +62,7 @@ Timelinechart.get = function(req, res, next) {
 			var priority_completed = true;
 			var uncompleted_count = 0;
 			tasks.forEach(function(task){
+				console.log(task.priority, task.worked)
 				var taskclass = '';
 				due_date = addDays(task.due_date, totalDelay);
 				completed_date = new Date(task.completed_date);
@@ -56,7 +72,6 @@ Timelinechart.get = function(req, res, next) {
 					if (task.priority != priority){
 						if (priority_completed){
 							last_completed = priority
-							console.log(priority)
 						}else{
 							uncompleted_count++;
 						}
@@ -79,6 +94,7 @@ Timelinechart.get = function(req, res, next) {
 							}
 						}
 						if (max_completed_date > max_due_date && priority_completed){
+							console.log(max_due_date)
 							currentDelay = diffBetweenDates(max_completed_date, max_due_date)
 							totalDelay += currentDelay
 							data.push([
@@ -114,12 +130,12 @@ Timelinechart.get = function(req, res, next) {
 					taskclass = 'completed';
 				}
 				else{
-					if (uncompleted_count == 0){
+					if (uncompleted_count == 0 && task.worked != null){
 						taskclass = 'in_progress'
 					}
-					if(task.materials_missing){
-						taskclass = 'materials_missing'
-					}
+				}
+				if(task.materials_missing){
+					taskclass = 'materials_missing'
 				}
 				var task_delay = totalDelay + 1;
 				if (task.eta > 0) {
@@ -128,10 +144,8 @@ Timelinechart.get = function(req, res, next) {
 					data.push([moment(startDay).format('YYYY/MM/DD'), null, task.name, taskclass]);
 				};
 				//Actualizo valores
+				console.log(max_due_date, currentDelay)
 				max_due_date = addDays(max_due_date, currentDelay)
-				if (task.eta > 0){
-					max_due_date = addDays(max_due_date, 1)
-				}
 				if (addDays(due_date, currentDelay) > max_due_date){
 					max_due_date = addDays(due_date, currentDelay); 
 				}
@@ -146,7 +160,29 @@ Timelinechart.get = function(req, res, next) {
 				}
 				priority = task.priority;
 			})
-			res.send(data)
+			DB.Ottask.findAll({where: {ot_id: ot_id, completed: 0, deleted_at: null}}).on('success', function(completed){
+				if(completed.length == 0){
+					data.push([
+						moment(addDays(max_due_date, 1)).format('YYYY/MM/DD'),
+						null,
+						'Terminado',
+						'milestone'
+					])
+				}
+				if(req.session.role_id == 6){
+					DB.Client.find({where: {user_id: req.session.user_id}}).on('success', function(c){
+						if (ot.client_id == c.id){
+							res.send(data)
+						}
+						else{
+							res.send(false);
+						}
+					})
+				}
+				else{
+					res.send(data);
+				}
+			})
 		})
 	})
 
@@ -163,5 +199,29 @@ addDays = function(date, days){
 	date.setDate(date.getDate() + days);
 	return date;
 }
+Timelinechart.delays = function(req, res, next){
+	ot_id = req.params.ot_id;
+	q = 'SELECT od.observation, od.delay, d.reason FROM otdelay od\
+		INNER JOIN delay d ON od.delay_id = d.id\
+		WHERE od.ot_id = '+ot_id;
+	DB._.query(q, function(err, data){
+		DB.Ot.find({where: {id: ot_id}}).on('success', function(ot){
+			if(ot){
+				if(req.session.role_id == 6){
+					DB.Client.find({where: {user_id: req.session.user_id}}).on('success', function(c){
+						if (ot.client_id == c.id){
+							res.send(data)
+						}
+						else{
+							res.send(false);
+						}
+					})
+				}
+				else{
+					res.send(data);
+				}
+			}
+		})
+	})	
+}
 module.exports = Timelinechart;
-

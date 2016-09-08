@@ -43,6 +43,20 @@ Materialorder.elements = function(req, res, next) {
   });
 };
 
+Materialorder.byOt = function(req, res, next){
+  var q = 'SELECT moe.*, mc.name AS category, u.name AS unit \
+    FROM materialorderelement moe \
+    LEFT JOIN materialcategory mc ON moe.materialcategory_id = mc.id \
+    LEFT JOIN unit u ON moe.unit_id = u.id \
+    INNER JOIN materialorder mo ON moe.materialorder_id = mo.id \
+    WHERE mo.ot_id = ' + req.params.ot_id + ' AND moe.deleted_at IS NULL \
+  ';
+
+  DB._.query(q, function(error, data){
+    res.send(data);
+  })
+}
+
 Materialorder.post = function(req, res, next) {
 console.log(req.body)
 console.log(req.params)
@@ -179,14 +193,14 @@ Materialorder.arrival = function(req, res, next) {
     ,include: [{model: DB.MaterialCategory}]
   }).on('success', function(moe) {
     if (moe) {
-     var hora =moment().format("YYYY-MM-DD HH:mm:ss");
-     var humanDate = moment().format("DD/MM/YYYY");
-     var remiobs = req.params.observation.split("::");
-     if(req.params.quantity != 0){
+      var hora =moment().format("YYYY-MM-DD HH:mm:ss");
+      var humanDate = moment().format("DD/MM/YYYY");
+      var remiobs = req.params.observation.split("::");
+      if(req.params.quantity != 0){
       qe= '\
-     INSERT INTO materialreception (date, created_at, updated_at, deleted_at, user_id, materialorderelement_id,quantity,remito,observation) VALUES ("'+humanDate+'","'+hora+'"," '+hora+'", NULL, "'+req.session.user_id+'" , '+moe.id+', '+req.params.quantity +",'"+remiobs[0]+"','"+remiobs[1]+"')";
-     DB._.query(qe);     console.log("CREO NUEVA RECEPCION CON TODOS SUS DATOS");
-     DB.Materialorder.find({ where: { id: moe.materialorder_id } }).on('success', function(mo) {
+      INSERT INTO materialreception (date, created_at, updated_at, deleted_at, user_id, materialorderelement_id,quantity,remito,observation) VALUES ("'+humanDate+'","'+hora+'"," '+hora+'", NULL, "'+req.session.user_id+'" , '+moe.id+', '+req.params.quantity +",'"+remiobs[0]+"','"+remiobs[1]+"')";
+      DB._.query(qe);     console.log("CREO NUEVA RECEPCION CON TODOS SUS DATOS");
+      DB.Materialorder.find({ where: { id: moe.materialorder_id } }).on('success', function(mo) {
         DB.Ot.find({where: {id: mo.ot_id }}).on('success',function(ot){
           var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
           var q2= "SELECT name FROM materialCategory m WHERE m.id = "+moe.materialcategory_id;
@@ -212,60 +226,59 @@ Materialorder.arrival = function(req, res, next) {
             }) 
           })     
         })
-       DB.Ottask.findAll({where : {ot_id: mo.ot_id}}).on('success', function(ott){ 
+      DB.Ottask.findAll({where : {ot_id: mo.ot_id}}).on('success', function(ott){ 
        		if(ott){
 		        ott.forEach(function(task){
-		          if(task.name == "Recepción parcial de Materiales"){
-		            /*CAMBIAR TAREASELECCIONADA POR LA TAREA QUE ES*/
+  	          if(task.name == "Recepción parcial de Materiales"){
+  	            /*CAMBIAR TAREASELECCIONADA POR LA TAREA QUE ES*/
                 task.updateAttributes({
     		      		completed: 1,
     		      		completed_date: moment().format('YYYY-MM-DD')
   		      		}).on('success', function() {
- 		      		    console.log("ACTUALIZA LA OT! poniendo 'V' en la qe corresponda");
- 		      		});
-		        }
-          }); 
-		    }; 
-      sum =" \
-        SELECT SUM(quantity) AS total\
-        FROM materialreception \
-        WHERE materialorderelement_id = "+ moe.id;
-        DB._.query(sum, function(error, data) {
-        if (data) {
-          console.log("Cantidad Pedida=", moe.quantity,"Recibido = ",data[0].total);
-          if(moe.quantity <= data[0].total){
-            moe.updateAttributes({
-  	          "arrived": 1,//moe.arrived!,
-  	          "updated_at": hora,
-	          }).on('success', function(moU) {   
-	            res.send({ result: true, arrived: moU.arrived });
-              var q = 'SELECT moe.arrived FROM materialorderelement moe \
-                      INNER JOIN  materialorder mo ON mo.id = moe.materialorder_id \
-                      WHERE (moe.arrived = 0 OR moe.arrived IS NULL) AND mo.ot_id = '+mo.ot_id;
-              console.log(q)
-              DB._.query(q, function(err, rows){
-                console.log(rows, rows.length)
-                if (rows.length == 0){
-                  DB._.query('UPDATE ot SET otstate_id = 5 WHERE id = '+mo.ot_id);
-                }
-              })
-          });
-      }else{
-     		moe.updateAttributes({
-		     "arrived": 0,
-		     "updated_at": hora,
-		      }).on('success', function(moU) {   
-		       res.send({ result: true, arrived: moU.arrived });
-	      });
+  	      		    console.log("ACTUALIZA LA OT! poniendo 'V' en la qe corresponda");
+  		      		});
+  		        }
+            }); 
+		      }; 
+          sum =" \
+            SELECT SUM(quantity) AS total\
+            FROM materialreception \
+            WHERE materialorderelement_id = "+ moe.id;
+            DB._.query(sum, function(error, data) {
+              if (data) {
+                console.log("Cantidad Pedida=", moe.quantity,"Recibido = ",data[0].total);
+                if(moe.quantity <= data[0].total){
+                  moe.updateAttributes({
+        	          "arrived": 1,//moe.arrived!,
+        	          "updated_at": hora,
+      	          }).on('success', function(moU) {   
+      	            res.send({ result: true, arrived: moU.arrived });
+                    var q = 'SELECT moe.arrived FROM materialorderelement moe \
+                            INNER JOIN  materialorder mo ON mo.id = moe.materialorder_id \
+                            WHERE (moe.arrived = 0 OR moe.arrived IS NULL) AND mo.ot_id = '+mo.ot_id;
+                    DB._.query(q, function(err, rows){
+                      console.log(rows, rows.length)
+                      if (rows.length == 0){
+                        DB._.query('UPDATE ot SET otstate_id = 5 WHERE id = '+mo.ot_id);
+                      }
+                    })
+                  });
+                }else{
+               		moe.updateAttributes({
+          		     "arrived": 0,
+          		     "updated_at": hora,
+          		      }).on('success', function(moU) {   
+          		       res.send({ result: true, arrived: moU.arrived });
+          	      });
+                };
+              } else {
+                res.send({ result: false, error: error });
+              }
+            });
+		      });
+        });
       };
-      } else {
-        res.send({ result: false, error: error });
-      }
-	      		     });
-		});
-     });
-   };
-   }
+    }
   }).on('error', function(error) {
     res.send({ result: false, error: error });
   });

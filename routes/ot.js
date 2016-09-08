@@ -158,6 +158,7 @@ Ot.get = function(req, res, next) {
         reworked_number: ot.reworked_number,
         notify_client: ot.notify_client,
         showtimeline: ot.showtimeline,
+        showdelays: ot.showdelays,
         otstate_id: ot.otstate_id,
         state: ot.state,
         delay: delayfield
@@ -165,19 +166,6 @@ Ot.get = function(req, res, next) {
     });
     res.send({data:msg});
   });
-  ////ELIMINAR FOTOS HUERFANAS
-  /*var q = 'SELECT * FROM reportphoto WHERE deleted_at IS NOT NULL';
-  DB._.query(q, function(err, data) {
-    data.forEach(function(photo){
-      var child= exec('rm /srv/coopsys/public/uploads/'+photo.path, function(err, stdout, stderr) {
-        var q = 'DELETE FROM reportphoto WHERE id='+photo.id;
-        DB._.query(q, function(err, data) {    		
-          if(!err)
-            console.log("TAMBIEN la elimino de la base de datos");
-        })
-    	})
-    })
-  })*/
 };
 
 Ot.getOne = function(req, res, next) {
@@ -208,6 +196,7 @@ Ot.conclude = function(req, res, next) {
         UPDATE ot \
         SET otstate_id = 6, \
 	          remitosalida= '"+(req.body.remito || '')+"', \
+            conclusion_date = NOW(), \
             conclusion_motive = '" + (req.body.motive || '') + "', \
             conclusion_observation = '" + (req.body.observation || '') + "', \
             updated_at= '"+moment().format("YYYY-MM-DD HH:MM:SS")+"'  \
@@ -287,16 +276,10 @@ Ot.update = function(req, res, next) {
   DB.Ot.find({ where: { id: req.params.ot_id } }).on('success', function(ot) { 
    var agreedstart = null;
    var agreedend = null;
-   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
-    agreedstart=moment(DB.flipDateMonth(req.body.agreedstart)).format('YYYY-MM-DD 00:00:00')
-   }else{
-    agreedstart=req.body.agreedstart
-   }
-   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
-    agreedend=moment(DB.flipDateMonth(req.body.agreedend)).format('YYYY-MM-DD 00:00:00')
-   }else{
-    agreedend=req.body.agreedend
-   }
+   var x = req.body.agreedstart
+  agreedstart = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
+  x = req.body.agreedend;
+  agreedend = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
    if(ot){
     DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
       if(ot.plan_id == req.body.plan_id || (plan.length == 0 && req.body.plan_id == '')){
@@ -321,6 +304,7 @@ Ot.update = function(req, res, next) {
               client_suggestion = '"+req.body.client_suggestion+"',\
               reworked_number = '"+req.body.reworked_number+"',\
               showtimeline = '"+req.body.showtimeline+"',\
+              showdelays = '"+req.body.showdelays+"',\
               notify_client = '"+req.body.notify_client+"'\
               WHERE id = " + req.params.ot_id + "\
               ";
@@ -344,6 +328,7 @@ Ot.update = function(req, res, next) {
             client_suggestion = '"+req.body.client_suggestion+"',\
             reworked_number = '"+req.body.reworked_number+"',\
             showtimeline = '"+req.body.showtimeline+"',\
+            showdelays = '"+req.body.showdelays+"',\
             notify_client = '"+req.body.notify_client+"'\
             WHERE id = " + req.params.ot_id + "\
             ";
@@ -354,7 +339,9 @@ Ot.update = function(req, res, next) {
           });
         };
       }else{
-       //Actualizo Todo
+        delete_query = 'DELETE FROM otdelay WHERE ot_id = '+ot.id;
+        DB._.query(delete_query, function(err, data){})
+        //Actualizo Todo
         ot.updateAttributes({
           remitoentrada: req.body.remitoentrada,
   	      client_number: req.body.client_number,
@@ -365,6 +352,7 @@ Ot.update = function(req, res, next) {
   	      workshop_suggestion: req.body.workshop_suggestion,
   	      client_suggestion: req.body.client_suggestion,
   	      reworked_number: req.body.reworked_number,
+          showdelays: req.body.showdelays,
           showtimeline: req.body.showtimeline,
   	      notify_client: req.body.notify_client,
   	      plan_id: req.body.plan_id,

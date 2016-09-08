@@ -19,7 +19,7 @@ Clients.getOts = function(req, res, next) {
         LEFT JOIN equipment e ON ot.equipment_id = e.id \
         LEFT JOIN intervention i ON ot.intervention_id = i.id \
         LEFT JOIN otstate s ON ot.otstate_id = s.id \
-        WHERE c.id = " + c.id + " AND ot.otstate_id <> 6 AND ot.deleted_at IS NULL \
+        WHERE c.id = " + c.id + " AND (ot.otstate_id <> 6 OR conclusion_date > DATE_SUB(NOW(), INTERVAL 7 DAY)) AND ot.deleted_at IS NULL \
         ORDER BY ot.delivery ASC";
       console.log(q)
       DB._.query(q, function(err, data) {
@@ -68,24 +68,6 @@ Clients.getEvents = function(req, res, next) {
         tasks: tasks
       });
     });
-  });
-};
-
-Clients.authorizeOt = function(req, res, next) {
-  DB.Ot.find({ where: { id: req.params.ot_id } }).on('success', function(ot) {
-    if (ot) {
-      ot.otstate_id = 5;
-
-      ot.updateAttributes(ot).on('success', function() {
-        DB.Authorization.find({ where: { ot_id: ot.id } }).on('success', function(a) {
-          a.updateAttributes({ otstate_id: 5 }).on('success', function() {
-            res.send(true);
-          });
-        });
-      }).on('error', function(err) {
-        res.send(false);
-      });
-    }
   });
 };
 

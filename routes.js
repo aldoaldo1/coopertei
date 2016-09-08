@@ -26,6 +26,7 @@ module.exports = function(app, routes) {
 
   /*EMC*/
   app.get('/materialorder/elementUpdate/:id/:name/:quantity',  Auth.restrict, routes.materialorder.elementUpdate);
+  app.get('/materialorder/byOt/:ot_id', Auth.restrict, routes.materialorder.byOt);
   app.get('/material/byOt/:id', Auth.restrict, routes.material.byOt);
   app.get('/materialorder/elementdelete/:id', Auth.restrict, routes.materialorder.elementdelete);
   app.get('/materialreception/byElements/:order_id', Auth.restrict, routes.materialreception.byElements); 
@@ -44,7 +45,8 @@ module.exports = function(app, routes) {
   app.post('/authorization/addPhotoToReport', Auth.restrict, routes.authorization.addPhotoToReport);
   app.get('/authorization/delPhotofromReport/:photo_id', Auth.restrict, routes.authorization.delPhotofromReport);
   app.get('/authorization/notify/:ot_id', Auth.restrict, routes.authorization.notifyClient);
-  app.get('/authorization/confirm/:ot_id', Auth.restrict, routes.authorization.confirm);
+  app.post('/authorization/confirm', Auth.restrict, routes.authorization.confirm);
+  app.get('/authorization/getData', Auth.restrict, routes.authorization.getData);
 
   app.get('/materialorder/elements/:order_id', Auth.restrict, routes.materialorder.elements);
   // ORIGINAL app.get('/materialorder/arrival/:element_id', Auth.restrict, routes.materialorder.arrival);
@@ -60,13 +62,14 @@ module.exports = function(app, routes) {
   app.get('/inout/comeback/:id', Auth.restrict, routes.inout.registerComeback);
 
   app.get('/user/currentAreaId', Auth.restrict, routes.user.currentAreaId);
+  app.put('/user/generatePass/:user_id', Auth.restrict, routes.user.generatePass);
 
   //Reports
   app.get('/report/ot', Auth.restrict, routes.otreport.get);
 
   app.get('/plan/task/:id', Auth.restrict, routes.plan.getTasks);
   
-  app.get('/otstatereport/:otstate_id', Auth.restrict, routes.otstatereport.byState)
+  app.get('/otstatereport/:otstate_id', Auth.restrict, routes.otstatereport.byState);
   app.get('/otdeliveryreport/:start/:end', Auth.restrict, routes.otdeliveryreport.betweenDates);
   app.get('/otdeadlinereport/:start/:end', Auth.restrict, routes.otdeadlinereport.betweenDates);
   app.get('/otconcludereport/:start/:end/:client/:tag/:rework', Auth.restrict, routes.otconcludereport.betweenDates);
@@ -76,7 +79,8 @@ module.exports = function(app, routes) {
   app.get('/hoursperarea/:start/:end', Auth.restrict, routes.otresourcereport.byArea);
   app.get('/ottaskreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.otTaskReport);  
   app.get('/materialreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.materialReport);
-  app.get('/timelinechart/:ot_id', Auth.restrict, routes.timelinechart.get)
+  app.get('/timelinechart/:ot_id', Auth.restrict, routes.timelinechart.get);
+  app.get('/timelinedelays/:ot_id', Auth.restrict, routes.timelinechart.delays);
 
   var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',

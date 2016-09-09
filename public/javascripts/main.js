@@ -1784,14 +1784,23 @@
                 var e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(t) {
                     F.assignValuesToInfoCard($(".client_authorization_infocard"), t, function(t, n) {
-                        $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="BUTTON_report" value="Informe de Requerimientos" /><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").one("click", function() {
+                        $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="lefty BUTTON_report" value="Informe de Requerimientos" /><input type="button" class="BUTTON_preview righty" value="Previsualizar" /><div style="clear:both"></div><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").one("click", function() {
                             e.showRequirementsReport(n), $(".BUTTON_report").attr("disabled", !0);
                         });
                     });
                 });
+                $(document).on('click', '.client_authorization_infocard .BUTTON_preview', function(){
+                    e.preview();
+                })
                 $(document).on('click', '.client_table tbody tr', function(evento){
                     e.selectRow(evento);
+                    t = $('.client_table').dataTable();
+                    e.ot_id = t.fnGetData(this).ot_id;
                 })
+            },
+            preview: function(){
+                var e = this;
+                window.open("/authorization/preview/" + e.ot_id);                    
             },
             events: {
                 "click .client_table tr": "selectRow"

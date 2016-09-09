@@ -19,7 +19,6 @@ module.exports = function(app, routes) {
   app.get('/ot/findByEquipmentAndClient/:equipment_id/:client_id', Auth.restrict, routes.ot.findByEquipmentAndClient);
   app.post('/ot/update/:ot_id', Auth.restrict, routes.ot.update);
   app.get('/clientots', Auth.restrict, routes.clients.getOts);
-  app.get('/clientauthorize/:ot_id', Auth.restrict, routes.clients.authorizeOt);
   app.get('/clientevents/:ot_id', Auth.restrict, routes.clients.getEvents);
   app.get('/clientnotifications', Auth.restrict, routes.clients.getNotifications);
   app.get('/clientuser', Auth.restrict, routes.user.getClients);
@@ -47,6 +46,7 @@ module.exports = function(app, routes) {
   app.get('/authorization/notify/:ot_id', Auth.restrict, routes.authorization.notifyClient);
   app.post('/authorization/confirm', Auth.restrict, routes.authorization.confirm);
   app.get('/authorization/getData', Auth.restrict, routes.authorization.getData);
+  app.get('/authorization/preview/:ot_id', Auth.restrict, routes.authorization.preview);
 
   app.get('/materialorder/elements/:order_id', Auth.restrict, routes.materialorder.elements);
   // ORIGINAL app.get('/materialorder/arrival/:element_id', Auth.restrict, routes.materialorder.arrival);

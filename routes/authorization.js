@@ -523,7 +523,7 @@ Authorization.notifyClient = function(req, res, next) {
     if (a) {
       a.updateAttributes({
         otstate_id: 2,
-        req_info_sent_date: moment().format('DD/MM/YYYY')
+        //req_info_sent_date: moment().format('DD/MM/YYYY')
       }).on('success', function() {
         DB.Ot.find({ where: { id: ot[0].id } }).on('success', function(ot) {
           if (ot) {
@@ -584,7 +584,7 @@ Authorization.confirm = function(req, res, next) {
           }
         })
         if (a.otstate_id < 4){
-          a.updateAttributes({ otstate_id: state, ip: params.ip, mac: params.mac})
+          a.updateAttributes({ otstate_id: state, ip: params.ip, mac: params.mac, user_id: req.session.user_id})
         };
         if (params.observation != ''){
           DB.Otobservation.create({
@@ -763,14 +763,10 @@ Authorization.preview = function(req, res, next) {
           }).on('error', function(err) {
             res.send(false);
           });
-        } else {
-          //res.send({ result: true, report_id: r.id });
         }
       });
         //res.send({ result: true, report_id: r.id });
       });
-    } else {
-      //res.send({ result: false });
     }
   }); 
 

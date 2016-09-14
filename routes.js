@@ -82,7 +82,10 @@ module.exports = function(app, routes) {
   app.get('/timelinechart/:ot_id', Auth.restrict, routes.timelinechart.get);
   app.get('/timelinedelays/:ot_id', Auth.restrict, routes.timelinechart.delays);
 
-  var models = ['ot', 'ottask', 'othistory', 'person', 'delay', 'employee', 'client', 'task', 'query',
+  app.get('/otobservation/:ot_id', Auth.restrict, routes.otobservation.byOt);
+  app.get('/otobservation/byId/:id', Auth.restrict, routes.otobservation.byId);
+
+  var models = ['ot', 'ottask', 'othistory', 'otobservation', 'person', 'delay', 'employee', 'client', 'task', 'query',
                 'intervention', 'role', 'user', 'area', 'plan', 'client', 'errorreport',
                 'authorization', 'authorizationhistory', 'schedule', 'module',
                 'city', 'material', 'materialcategory', 'materialorder', 'materialhistory',

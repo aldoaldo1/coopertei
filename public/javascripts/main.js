@@ -444,6 +444,10 @@
                         '</div>';
 
             $("#left").html(table);
+            var width = {};
+            if (e.name == 'clients'){
+                width = {targets: [8], width: '220px' }
+            }
             var datatable = $('#'+e.name+'_table').dataTable({
                 ajax: e.source,
                 columns: attrs,
@@ -455,7 +459,8 @@
                     {
                         targets: date_columns,
                         type: 'date-euro',
-                    }
+                    },
+                    width
                 ],
                 order: order,
                 iDisplayLength: 25,
@@ -785,8 +790,7 @@
         C.Widget.Clients = {
             initialize: function() {
                 $("#head #tabs").empty(), $("#left .inner").empty().append('<div id="clients_left"></div><style>table.dataTable tr.selected_row td {background-color: #c2dcde !important;font-weight: normal !important;color: black !important;}</style>'), $("#right .inner").empty().append('<div id="clients_right"></div>'), $("#left").css({
-                    width: "90%",
-                    padding: "25px 5%",
+                    width: "100%",
                     textAlign: "center"
                 }), $("#right").css({
                     width: "0"
@@ -1794,8 +1798,6 @@
                 })
                 $(document).on('click', '.client_table tbody tr', function(evento){
                     e.selectRow(evento);
-                    t = $('.client_table').dataTable();
-                    e.ot_id = t.fnGetData(this).ot_id;
                 })
             },
             preview: function(){
@@ -2166,10 +2168,10 @@
         C.View.ClientAuthorizationHistoryTable = Backbone.View.extend({
             name: "client",
             source: "/authorizationhistory",
-            headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado" ],
-            attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate" ],
+            headers: [ "ID", "O/T ID", "O/T", "ID Cliente", "Cliente", "Envío de Informe de Requerimientos", "ID Estado", "Estado", "Empleado", "IP", "MAC" ],
+            attrs: [ "id", "ot_id", "ot_number", "client_id", "client", "req_info_sent_date", "otstate_id", "otstate", "employee", "ip", "mac" ],
             data: null,
-            hidden_columns: ['ot_id', 'client_id', 'otstate_id'],
+            hidden_columns: ['ot_id', 'client_id', 'otstate_id', 'employee', 'ip', 'mac'],
             date_columns: ['req_info_sent_date'],
             datatableOptions: {
                 aoColumns: [ null, null, null, null, null, {
@@ -2208,16 +2210,179 @@
                 }
             },
             initialize: function() {
+                e = this;
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
-                    $($('.client_authorization_history_infocard span')[1]).html('')
-                    F.assignValuesToInfoCard($(".client_authorization_history_infocard"), e);
+                });
+                var t = $('.client_table').dataTable();
+                $(document).on('click', '.client_table tbody tr', function(){
+                    $('.obs_form').remove()
+                    var s = this
+                    if ($(this).hasClass('details')){
+                        if($(this).find('.observation').length){
+                            e.generateForm($(this).find('.observation').attr('id'));
+                        }
+                    }
+                    else{
+                        if (t.fnIsOpen(this)){
+                            t.fnClose(this);    
+                        }else{
+                            $('.client_table tbody tr').each(function(tr){
+                                t.fnClose(this);
+                            })
+                            t.fnOpen(this, e.generateRowDetails(t, this), "details")
+                        }
+                        //t.fnIsOpen(this) ? t.fnClose(this) : t.fnOpen(this, e.generateRowDetails(t, this), "details");
+                        $($('.client_authorization_history_infocard span')[1]).html('');
+                        F.cleanInfocard($('.client_authorization_history_infocard'))
+                        F.assignValuesToInfoCard($(".client_authorization_history_infocard"), t.fnGetData(s));
+                    }
+                })
+                $(document).on('click', '.BUTTON_save', function(){
+                    e.updateObs();
+                })
+                $(document).on('click', '.BUTTON_delete', function(){
+                    e.deleteObs();
+                })
+                $(document).on('click', '.BUTTON_print', function(){
+                    console.log($('.print p')[3])
+                    e.printObs($('.print').html());
+                })
+            },
+            generateForm: function(id){
+                this.getObservation(id, function(data){
+                    var fields = '<input type="datetime" style="width:100%" name="created_at" value="'+moment(data.created_at).format('DD/MM/YYYY')+'">\
+                        <textarea name="observation">'+data.observation+'</textarea>\
+                        <input type="hidden" id="obs_id" name="id" value="'+id+'">\
+                        <input type="button" value="Guardar" class="BUTTON_save lefty">\
+                        <input type="button" value="Eliminar" class="BUTTON_delete ">\
+                        ';
+                    if(data.isClient){
+                        fields = '<p><strong style="font-weight:800">Fecha: </strong>'+moment(data.created_at).format('DD/MM/YYYY')+'</p><br> \
+                            <p><strong style="font-weight:800">Observación: </strong>'+data.observation+'</p>'
+                    }
+                    console.log(data)
+                    $('#client_right').append('<form class="obs_form"> \
+                            <h3 class="formtitle">Datos de la observacion</h3> \
+                            <p><span><strong style="font-weight:800">IP: </strong>'+data.ip+'</span></p><br> \
+                            <span><strong style="font-weight:800">MAC: </strong>'+data.mac+'</span><br><br> \
+                            '+fields+'\
+                            <input type="button" value="Imprimir" class="BUTTON_print righty">\
+                            <div style="clear:both"></div>\
+                        </form>');
+                    $('body').append('<div class="print hidden"> \
+                            <h3 class="formtitle">Datos de la observacion</h3> \
+                            <p><span><strong style="font-weight:800">IP: </strong>'+data.ip+'</span></p> \
+                            <p><strong style="font-weight:800">MAC: </strong>'+data.mac+'</p> \
+                            <p><strong style="font-weight:800">Fecha: </strong>'+moment(data.created_at).format('DD/MM/YYYY')+'</p> \
+                            <p><strong style="font-weight:800">Observación: </strong>'+data.observation+'</p>\
+                            <div style="clear:both"></div>\
+                        </div>');
+                })
+            },
+            generateRowDetails: function(e, t) {
+                var n = this, r = e.fnGetData(t), i = r.id, s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
+                return this.getObservations(i, function(e) {
+                    var t, r, s;
+                    e.length ? (n.appendRowDetailsHeaders(i), _.each(e, function(e) {
+                        r = '<div class="observation" id="'+e.id+'"><p>'+moment(e.created_at).format('DD/MM/YYYY')+' - '+e.observation+'</p></div>';
+                        $('.ot_id_' + i).append(r).fadeIn();
+                    })) : $(".ot_id_" + i).append("<p>Esta O/T no posee observaciones</p>").fadeIn();
+                }), s += "</div>", s;
+            },
+            getObservations: function(e, t) {
+                $.ajax({
+                    url: "/otobservation/" + e,
+                    success: function(e) {
+                        t(e);
+                    }
                 });
             },
+            getObservation: function(e, t){
+                $.ajax({
+                    url: '/otobservation/byId/' + e,
+                    success: function(data){
+                        t(data);
+                    }
+                })
+            },
+            appendRowDetailsHeaders: function(e) {
+                $(".ot_id_" + e).append('<p class="row_details_headers">Fecha - Observación</p>');
+            },
+            
             events: {
                 "click .client_table tr": "selectRow"
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
+            },
+            reloadRowDetails: function() {
+                $("tr.selected_row").click(), window.setTimeout(function() {
+                    $("tr.selected_row").click();
+                }, 10);
+            },
+            updateObs: function(){
+                var e = this;
+                $.ajax({
+                    type: 'PUT',
+                    url: '/otobservation/'+$('.obs_form').serializeObject().id,
+                    data: $('.obs_form').serializeObject(),
+                    success: function(){
+                        e.reloadRowDetails();
+                        setTimeout(function(){
+                            $('.obs_form').remove();
+                            e.generateForm($('.observation').attr('id'));
+                        }, 20)
+                    }
+                })
+            },
+            deleteObs: function(){
+                console.log($('.obs_form').serializeObject().id)
+                var e = this;
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/otobservation/'+$('.obs_form').serializeObject().id,
+                    success: function(){
+                        e.reloadRowDetails();
+                    }
+                })
+            },
+            printObs: function(e){
+                console.log(e)
+                this.popup(e);
+            },
+            popup: function(data) 
+            {   
+                this.getObservation($('#obs_id').val(), function(data){
+                    var html = '<div class="print hidden"> \
+                                <h3 class="formtitle">Datos de la observacion</h3> \
+                                <p><span><strong style="font-weight:800">IP: </strong>'+data.ip+'</span></p> \
+                                <p><strong style="font-weight:800">MAC: </strong>'+data.mac+'</p> \
+                                <p><strong style="font-weight:800">Fecha: </strong>'+moment(data.created_at).format('DD/MM/YYYY')+'</p> \
+                                <p><strong style="font-weight:800">Observación: </strong>'+data.observation+'</p><br>\
+                                <div style="float:left">\
+                                    <p style="text-align:center; margin:0">_______________________</p><br>\
+                                    <p style="text-align:center; margin:0">'+data.person+'</p>\
+                                </div>\
+                                <div style="float:right">\
+                                    <p style="text-align:center; margin:0">_______________________</p><br>\
+                                    <p style="text-align:center; margin:0">'+data.client+'</p>\
+                                </div>\
+                                <div style="clear:both"></div>\
+                            </div>';
+                    var mywindow = window.open('', 'Observaciones');
+                    mywindow.document.write('<html><head><title>Observaciones</title>');
+                    mywindow.document.write('</head><body >');
+                    mywindow.document.write(html);
+                    mywindow.document.write('</body></html>');
+
+                    mywindow.document.close(); // necessary for IE >= 10
+                    mywindow.focus(); // necessary for IE >= 10
+
+                    mywindow.print();
+                    mywindow.close();
+
+                    return true;
+                })
             }
         });
     }), e.define("/views/client/ClientAuthorizationHistoryInfoCard.js", function(e, t, n, r, i, s) {
@@ -2228,10 +2393,16 @@
                 ot_number: "O/T Nº",
                 req_info_sent_date: "Envío de Informe",
                 client: "Cliente",
-                otstate: "Estado"
+                otstate: "Estado",
+                employee: "Empleado",
+                ip: "IP",
+                mac: "MAC",
             },
             initialize: function() {
                 var e = this;
+                e.model.attributes.employee = null;
+                e.model.attributes.ip = null;
+                e.model.attributes.mac = null;
                 F.createInfoCard(e, $("#client_right"));
             }
         });
@@ -2651,19 +2822,26 @@
                 var _this = this;
                 var value = 'Notificar'
                 if (t.otstate_id == 2 || t.otstate_id == 3) value = 'Autorizar';
-                var n = $('<input type="button" value="'+value+'" class="authorize_ot_button">'), r = $('<span class="visualize_ot_events">Visualizar</span>');
+                var n = $('<input type="button" value="'+value+'" class="authorize_ot_button">'), r = $('<input type="button" class="visualize_ot_events" value="Graficar">'), rr = $('<input type="button" value="Ver informe" class="report_preview">');
                 $($(e).children().get(7)).css({
                     textAlign: "right"
                 });
                 $($(e).children().get(7)).html(n), $(n).on("click", function() {
                     _this.authorizeOt(t.id, value);
                 });
+                $($(e).children().get(7)).append(rr), $(rr).on('click', function(){
+                    _this.preview(t.id);
+                })
                 if (t.showtimeline){
-                    $($(e).children().get(7)).append(' ').append(r), $(r).on("click", function() {
+                    $($(e).children().get(7)).append(r), $(r).on("click", function() {
                         window.location = "/#/client/events/" + t.id;
                         location.reload()
                     });
                 }
+            },
+            preview: function(id){
+                var e = this;
+                window.open("/authorization/preview/" + id);                    
             },
             authorizeOt: function(id, action) {
                 if (C.Session.getUser().area_id != 8){
@@ -2732,8 +2910,6 @@
             initialize: function() {
                 F.createDataTable(this, function(e) {
                     F.doNothing();
-                    $('.visualize_ot_events').css({color:'#30858c'})
-                    $('.selected_row .visualize_ot_events').css({color:'#fff'})
                 });
             }
         });
@@ -5110,7 +5286,6 @@
                 this.selected_row = $(e.currentTarget), $("#ot_right .ot_add_task").attr("disabled", !1);
             },
             generateRowDetails: function(e, t) {
-                console.log('matias')
                 var n = this, r = e.fnGetData(t), i = r.id, s = '<div class="row_detail ot_id_' + i + '" style="display:none;">';
                 return this.getOtTasks(i, function(e) {
                     var t, r, s;

@@ -1791,18 +1791,18 @@
                         $(t).children("br, a, input:button").remove(), $(t).append('<br /><input type="button" class="lefty BUTTON_report" value="Informe de Requerimientos" /><input type="button" class="BUTTON_preview righty" value="Previsualizar" /><div style="clear:both"></div><a class="righty" style="padding:0.75em;" href="/#/ots/audit/Ot_' + n.ot_number + '">Auditar O/T</a>'), $(".client_authorization_infocard .BUTTON_report").one("click", function() {
                             e.showRequirementsReport(n), $(".BUTTON_report").attr("disabled", !0);
                         });
+                        $('.BUTTON_preview').on('click', function(){
+                            e.preview(n);
+                        })
                     });
                 });
-                $(document).on('click', '.client_authorization_infocard .BUTTON_preview', function(){
-                    e.preview();
-                })
                 $(document).on('click', '.client_table tbody tr', function(evento){
                     e.selectRow(evento);
                 })
             },
-            preview: function(){
+            preview: function(n){
                 var e = this;
-                window.open("/authorization/preview/" + e.ot_id);                    
+                window.open("/authorization/preview/" + n.id);                    
             },
             events: {
                 "click .client_table tr": "selectRow"
@@ -1810,7 +1810,13 @@
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
                 var t = this, n = $($(this.selected_row).find("td")[0]).text();
-                console.log(n)
+                var otstate = $('.client_table').dataTable().fnGetData($(e.currentTarget)).otstate_id;
+                if (otstate == 1){
+                    $('.ot_authorize').val('Notificar O/T');
+                }
+                else{
+                    $('.ot_authorize').val('Autorizar O/T');
+                }
                 n.length && $.ajax({
                     url: "/authorization/setSessionOtId/" + n,
                     success: function(e) {
@@ -2218,9 +2224,9 @@
                     $('.obs_form').remove()
                     var s = this
                     if ($(this).hasClass('details')){
-                        if($(this).find('.observation').length){
+                        /*if($(this).find('.observation').length){
                             e.generateForm($(this).find('.observation').attr('id'));
-                        }
+                        }*/
                     }
                     else{
                         if (t.fnIsOpen(this)){
@@ -2236,6 +2242,9 @@
                         F.cleanInfocard($('.client_authorization_history_infocard'))
                         F.assignValuesToInfoCard($(".client_authorization_history_infocard"), t.fnGetData(s));
                     }
+                })
+                $(document).on('click', '.observation', function(){
+                    e.generateForm($(this).attr('id')); 
                 })
                 $(document).on('click', '.BUTTON_save', function(){
                     e.updateObs();

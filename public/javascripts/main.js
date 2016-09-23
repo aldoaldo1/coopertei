@@ -446,7 +446,7 @@
             $("#left").html(table);
             var width = {};
             if (e.name == 'clients'){
-                width = {targets: [8], width: '220px' }
+                width = {targets: [9], width: '220px' }
             }
             var datatable = $('#'+e.name+'_table').dataTable({
                 ajax: e.source,
@@ -493,10 +493,6 @@
                     ],
                 fnDrawCallback: function(){
                     $('.dataTables_filter input').focus();
-                    if(e.options.open_ot_number_on_start){
-                        $('.dataTables_filter input').val(e.options.open_ot_number_on_start);
-                        $('.dataTables_filter input').keyup()
-                    }
                     $($('.dt-buttons span')[3]).html('PDF (Vertical)')
                     $($('.dt-buttons span')[4]).html('PDF (Horizontal)')
                 },
@@ -517,6 +513,10 @@
                 }
                 t && t(i);
             });
+            if(e.options.open_ot_number_on_start){
+                $('.dataTables_filter input').val(e.options.open_ot_number_on_start);
+                $('.dataTables_filter input').keyup()
+            }
             n && n($("." + e.name + "_table"), e.options.open_ot_number_on_start);
             /*var r = $("<tr>"), i = $("<thead>").append(r), s = $("<tbody>"), o = [], u = [];
             _.each(e.headers, function(e) {
@@ -800,7 +800,7 @@
     }), e.define("/widgets/CRUD.js", function(e, t, n, r, i, s) {
         C.Widget.CRUD = {
             initialize: function(e) {
-                $("#head #tabs").empty().append('<a href="/#/crud/person">Personas</a><a href="/#/crud/user">Usuarios</a><a href="/#/crud/intervention">Intervenciones</a><a href="/#/crud/delay">Demoras</a><a href="/#/crud/task">Tareas</a><a href="/#/crud/materialcategory">Categ. de Materiales</a><a href="/#/crud/equipment">Equipos</a>'), C.Session.doIfSysadmin(function(e) {
+                $("#head #tabs").empty().append('<a href="/#/crud/person">Personas</a><a href="/#/crud/user">Usuarios</a><a href="/#/crud/intervention"I>ntervenciones</a><a href="/#/crud/delay">Demoras</a><a href="/#/crud/task">Tareas</a><a href="/#/crud/materialcategory">Categ. de Materiales</a><a href="/#/crud/equipment">Equipos</a>'), C.Session.doIfSysadmin(function(e) {
                     $("#head #tabs").append('<a href="/#/crud/errorreport">Reportes de errores</a>');
                 }), $("#left .inner").empty().append('<div id="' + (e || "crud") + '_left">' + "</div>"), $("#right .inner").empty().append('<div id="' + (e || "crud") + '_right">' + "</div>");
             }
@@ -840,7 +840,7 @@
     }), e.define("/widgets/Report.js", function(e, t, n, r, i, s) {
         C.Widget.Report = {
             initialize: function() {
-                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a><a href="/#/reports/hoursperclient">Hs por cliente</a><a href="/#/reports/hoursperot">Hs por OT</a><a href="/#/reports/hoursperemployee">Hs por Empleado</a><a href="/#/reports/hoursperarea">Hs por Area</a><a href="/#/reports/ottaskreport">Informe de tareas</a><a href="/#/reports/materialreport">Informe de materiales</a><a href="/#/reports/timeline">Linea de tiempo</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
+                $("#head #tabs").empty().append('<a href="/#/reports/otstate">Estados</a><a href="/#/reports/otdelivery">Vencimiento tarea</a><a href="/#/reports/otdeadline">Vencimiento OT</a><a href="/#/reports/otconclude">Conclusión OT</a><a href="/#/reports/queries">Consultas</a><a href="/#/reports/hoursperclient">Hs por cliente</a><a href="/#/reports/hoursperot">Hs por OT</a><a href="/#/reports/hoursperemployee">Hs por Empleado</a><a href="/#/reports/hoursperarea">Hs por Area</a><a href="/#/reports/ottaskreport">Informe de tareas</a><a href="/#/reports/materialreport">Informe de Materiales</a>'), $("#left .inner").empty().append('<div id="report_left"></div>'), $("#right .inner").empty().append('<div id="report_right"></div>');
             }
         };
     }), e.define("/models/Alert.js", function(e, t, n, r, i, s) {
@@ -1291,7 +1291,12 @@
 	                equipament: null,
 	                client: null,
 	                delivery: null,
-	                reworked_number: null,
+	                delivery: null,
+                    agreedstart: null,
+                    agreedend: null,
+                    created_at: null,
+                    conclusion_date: null,
+                    reworked_number: null,
 	                estado: null,
 	                cliente_id: null,
 	                plan_id: null,
@@ -1303,6 +1308,8 @@
 	                descripcion: null,
 	                fechaVencimiento: null,
 	                conclusion: null,
+                    plan: null,
+                    intervention: null
                 };
             },
             initialize: function() {
@@ -1332,6 +1339,11 @@
 	                titulo: null,
 	                descripcion: null,
 	                fechaVencimiento: null,
+                    delivery: null,
+                    agreedstart: null,
+                    agreedend: null,
+                    created_at: null,
+                    conclusion_date: null,
 	                conclusion: null,
                 };
             },
@@ -1720,7 +1732,8 @@
                         }), e.client_options = new C.View.ClientAuthorizationOptions({
                             el: $("#left .toolbar")[0],
                             client_table: e.client_table,
-                            client_form: e.client_form
+                            client_form: e.client_form,
+                            action: 'Autorizar'
                         });
                     }
                 });
@@ -1802,6 +1815,21 @@
             },
             preview: function(n){
                 var e = this;
+                /*e.getOtTasks(n.id, function(r){
+                    var form;
+                    r.forEach(function(task){
+                        form.push({
+                            'task_observation '
+                        })
+                    })
+                })
+                /*$.ajax({
+                    type: "POST",
+                    url: "/authorization/saveRequirementsReport",
+                    data: $("form[name=requirements_report_form]").serializeObject(),
+                    success: function(t) {
+                    }
+                });*/
                 window.open("/authorization/preview/" + n.id);                    
             },
             events: {
@@ -1811,12 +1839,6 @@
                 this.selected_row = $(e.currentTarget);
                 var t = this, n = $($(this.selected_row).find("td")[0]).text();
                 var otstate = $('.client_table').dataTable().fnGetData($(e.currentTarget)).otstate_id;
-                if (otstate == 1){
-                    $('.ot_authorize').val('Notificar O/T');
-                }
-                else{
-                    $('.ot_authorize').val('Autorizar O/T');
-                }
                 n.length && $.ajax({
                     url: "/authorization/setSessionOtId/" + n,
                     success: function(e) {
@@ -1879,6 +1901,7 @@
                 });
             },
             getOtTasks: function(e, t) {
+                console.log(e)
                 $.ajax({
                     url: "/ottask/byOt/" + e,
                     success: function(e) {
@@ -2010,6 +2033,7 @@
                 location.reload()
             },
             saveRequirementsReport: function(e) {
+                console.log($("form[name=requirements_report_form]").serializeObject())
                 $.ajax({
                     type: "POST",
                     url: "/authorization/saveRequirementsReport",
@@ -2066,7 +2090,7 @@
                 return $(e).append($("<input>", {
                     type: "button",
                     "class": "ot_authorize",
-                    value: "Autorizar O/T",
+                    value: this.options.action+" O/T",
                     disabled: "disabled"
                 })), e;
             },
@@ -2128,7 +2152,7 @@
                     url: '/authorization/getData',
                     success: function(data){
                         $('body').append('<div class="authorization_window"> \
-                                <h1 style="font-size:18px; font-weight:800;">Autorizar O/T</h1><br><br> \
+                                <h1 style="font-size:18px; font-weight:800;">'+e.options.action+' O/T</h1><br><br> \
                                 <form id="authform"> \
                                     <span><strong style="font-weight:800">Fecha y hora: </strong>' + moment().format('DD/MM/YY HH:mm') + '</span><br><br> \
                                     <span><strong style="font-weight:800">Usuario: </strong>'+C.Session.getUser().username()+'</span><br><br> \
@@ -2165,6 +2189,11 @@
                             model: e.model,
                             collection: t,
                             client_table: e.client_table
+                        }), e.client_options = new C.View.ClientAuthorizationOptions({
+                            el: $("#left .toolbar")[0],
+                            client_table: e.client_table,
+                            client_form: e.client_form,
+                            action: 'Notificar',
                         });
                     }
                 });
@@ -2220,7 +2249,8 @@
                 this.data = this.options.collection, F.createDataTable(this, function(e) {
                 });
                 var t = $('.client_table').dataTable();
-                $(document).on('click', '.client_table tbody tr', function(){
+                $(document).on('click', '.client_table tbody tr', function(ev){
+                    e.selectRow(ev)
                     $('.obs_form').remove()
                     var s = this
                     if ($(this).hasClass('details')){
@@ -2258,18 +2288,20 @@
                 })
             },
             generateForm: function(id){
+                $('.obs_form').remove()
                 this.getObservation(id, function(data){
+                    console.log(data)
                     var fields = '<input type="datetime" style="width:100%" name="created_at" value="'+moment(data.created_at).format('DD/MM/YYYY')+'">\
                         <textarea name="observation">'+data.observation+'</textarea>\
                         <input type="hidden" id="obs_id" name="id" value="'+id+'">\
                         <input type="button" value="Guardar" class="BUTTON_save lefty">\
                         <input type="button" value="Eliminar" class="BUTTON_delete ">\
                         ';
-                    if(data.isClient){
+                    console.log(data.isclient)
+                    if(data.isclient == 1){
                         fields = '<p><strong style="font-weight:800">Fecha: </strong>'+moment(data.created_at).format('DD/MM/YYYY')+'</p><br> \
                             <p><strong style="font-weight:800">Observación: </strong>'+data.observation+'</p>'
                     }
-                    console.log(data)
                     $('#client_right').append('<form class="obs_form"> \
                             <h3 class="formtitle">Datos de la observacion</h3> \
                             <p><span><strong style="font-weight:800">IP: </strong>'+data.ip+'</span></p><br> \
@@ -2323,6 +2355,15 @@
             },
             selectRow: function(e) {
                 this.selected_row = $(e.currentTarget);
+                var t = this, n = $($(this.selected_row).find("td")[0]).text();
+                var otstate = $('.client_table').dataTable().fnGetData($(e.currentTarget)).otstate_id;
+                console.log(n)
+                n.length && $.ajax({
+                    url: "/authorization/setSessionOtId/" + n,
+                    success: function(e) {
+                        e.result === !0 && (t.report_tasks = e.report_tasks, t.report_photos = e.report_photos), $(".client_authorization_infocard .selection_id").val(n), $("#client_left .ot_authorize").attr("disabled", !1);
+                    }
+                });
             },
             reloadRowDetails: function() {
                 $("tr.selected_row").click(), window.setTimeout(function() {
@@ -2356,14 +2397,32 @@
                 })
             },
             printObs: function(e){
-                console.log(e)
                 this.popup(e);
             },
             popup: function(data) 
             {   
                 this.getObservation($('#obs_id').val(), function(data){
-                    var html = '<div class="print hidden"> \
-                                <h3 class="formtitle">Datos de la observacion</h3> \
+                    var pathArray = location.href.split( '/' );
+                    var protocol = pathArray[0];
+                    var host = pathArray[2];
+                    var url = protocol + '//' + host;
+                    var documento = "<div class='print hidden' style='width:1000px; margin: 0 auto'><br><br><br><br><br><br><br>\
+                                        <div style='float:left; page-break-after: always; width:200px;height:112px' align='left'>\
+                                            <img src='"+url+"/images/coop.jpg' width='300px'/>\
+                                        </div>\
+                                        <div style='float:left;height:112px; width:600px' align='center'>\
+                                            <h1 align='center'><h1 align='center'><br /> NOTIFICACIÓN DE O/T</h1>\
+                                        </div>\
+                                        <div style='float:left; width:500px; text-align:left'>\
+                                            <h2>FECHA:"+moment().format('DD/MM/YYYY')+"</h2>\
+                                        </div>\
+                                        <div style='float:left; width:500px; text-align:right'>\
+                                        <h2> N° O/T:&nbsp;"+data.number+" </h2>\
+                                    </div>"
+
+                    console.log(url+'/images/coop.jpg');
+                    var html = '<div style="clear:both"> \
+                                <h3 class="formtitle">Datos de la notificación</h3> \
                                 <p><span><strong style="font-weight:800">IP: </strong>'+data.ip+'</span></p> \
                                 <p><strong style="font-weight:800">MAC: </strong>'+data.mac+'</p> \
                                 <p><strong style="font-weight:800">Fecha: </strong>'+moment(data.created_at).format('DD/MM/YYYY')+'</p> \
@@ -2380,15 +2439,16 @@
                             </div>';
                     var mywindow = window.open('', 'Observaciones');
                     mywindow.document.write('<html><head><title>Observaciones</title>');
-                    mywindow.document.write('</head><body >');
-                    mywindow.document.write(html);
+                    mywindow.document.write('</head><body style="font-family:arial">');
+                    mywindow.document.write(documento+html);
                     mywindow.document.write('</body></html>');
 
                     mywindow.document.close(); // necessary for IE >= 10
                     mywindow.focus(); // necessary for IE >= 10
-
-                    mywindow.print();
-                    mywindow.close();
+                    setTimeout(function(){
+                        mywindow.print();
+                        mywindow.close();
+                    }, 20)
 
                     return true;
                 })
@@ -2435,6 +2495,107 @@
                         });
                     }
                 });
+            }
+        });
+    }), e.define("/views/client/ClientAuthorizationHistoryOptions.js", function(e, t, n, r, i, s) {
+        C.View.ClientAuthorizationOptions = Backbone.View.extend({
+            initialize: function() {
+                var e = this;
+                e.render();
+                $(document).on('click', '#client_left .ot_authorize', function(){
+                    e.authorizeOt();
+                })
+            },
+            render: function() {
+                return $(this.el).append(this.template()), this;
+            },
+            template: function() {
+                var e = $("<div>", {
+                    "class": "right_options"
+                });
+                return $(e).append($("<input>", {
+                    type: "button",
+                    "class": "ot_authorize",
+                    value: "Notificar O/T",
+                    disabled: "disabled"
+                })), e;
+            },
+            events: {
+                //"click #client_left .ot_authorize": "authorizeOt"
+            },
+            getForm: function() {
+                return this.options.client_form;
+            },
+            getTable: function() {
+                return this.options.client_table;
+            },
+            getSelectedRow: function() {
+                return this.options.client_table.selected_row;
+            },
+            authorizeOt: function() {
+                if (C.Session.getUser().area_id != 8){
+                    this.templateModal();
+                    $(document).one('click', '#authform .BUTTON_proceed', function(){
+                        $.ajax({
+                            type: 'POST',
+                            url: '/authorization/confirm',
+                            data: $('#authform').serializeObject(),
+                            success: function(){
+                                $('.authorization_window').remove()
+                                $('.blockUI').remove();
+                                F.msgOK('La orden de trabajo ha sido autorizada');
+                                F.reloadDataTable('.client_table');
+                            }
+                        })
+                    }) 
+                }else{
+                    F.msgError('No pertenece al area correspondiente para realizar esta tarea');
+                }
+            },
+            renderModal: function(){
+
+                $.blockUI({
+                    message: $(".authorization_window"),
+                    css: {
+                        top: "10%",
+                        left: "30%",
+                        width: "38%",
+                        border: "none",
+                        padding: "1%",
+                        cursor: "default"
+                    }
+                });
+                console.log($('.authorization_window').length);
+                if($('.authorization_window').length > 1){
+                    $('.authorization_window:first').remove();
+                }
+            },
+            templateModal: function(){
+                var e = this
+                var c = $(".client_table").dataTable(), t = F.getDataTableSelection($(".client_table"))[0], n = c.fnGetData(t).id;
+                $.ajax({
+                    type: 'GET',
+                    url: '/authorization/getData',
+                    success: function(data){
+                        $('body').append('<div class="authorization_window"> \
+                                <h1 style="font-size:18px; font-weight:800;">Notificar O/T</h1><br><br> \
+                                <form id="authform"> \
+                                    <span><strong style="font-weight:800">Fecha y hora: </strong>' + moment().format('DD/MM/YY HH:mm') + '</span><br><br> \
+                                    <span><strong style="font-weight:800">Usuario: </strong>'+C.Session.getUser().username()+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección de IP: </strong>'+data.ip+'</span><br><br> \
+                                    <span><strong style="font-weight:800">Dirección MAC: </strong>'+data.mac+'</span><br><br> \
+                                    <textarea name="observation" placeholder="Observaciones" style="height:100px; clear:both"></textarea><br><br> \
+                                    <input type="hidden" name="ip" value="'+data.ip+'"> \
+                                    <input type="hidden" name="mac" value="'+data.mac+'"> \
+                                    <input type="hidden" name="ot_id" value="'+n+'"> \
+                                    <input type="button" class="lefty BUTTON_cancel" value="Cancelar"> \
+                                    <input type="button" class="righty BUTTON_proceed" value="Aceptar"> \
+                                    <div style="clear:both"></div> \
+                                </form> \
+                            </div>');
+                        e.renderModal()
+                    }
+                })
             }
         });
     }), e.define("/views/client/ClientPayrollTable.js", function(e, t, n, r, i, s) {
@@ -2606,9 +2767,10 @@
             name: "clients",
             initialize: function() {
                 this.options.ot_id !== undefined ? this.renderTimeline() : $("#left .inner").append('<h1 style="font-size:20px;">Debe seleccionarse una O/T para visualizar sus eventos.</h1><br /><a style="font-size:20px;" href="/#/client/ots">Seleccionar Órden de Trabajo</a>');
-                    $('#timeline').after('<div id="references" style="margin-top:10px"></div><div id="delays" style="clear:left; float:left; margin-top:30px; width:49%"><br><h1 style="font-size:20px; font-weight:800; ">Demoras</h1><br></div><div id="materials" style="float:left; margin-top:30px; margin-left:5px; width:49%"><br><h1 style="font-size:20px; font-weight:800; ">Materiales</h1><br></div>')
+                    $('#timeline').after('<div id="references" style="margin-top:10px"></div><div id="delays" style="clear:left; float:left; margin-top:30px; width:33%"><br><h1 style="font-size:20px; font-weight:800; ">Demoras</h1><br></div><div id="materials" style="float:left; margin-top:30px; margin-left:5px; width:33%"><br><h1 style="font-size:20px; font-weight:800; ">Materiales</h1><br></div><div id="notifications" style="float:left; margin-top:30px; margin-left:5px; width:33%"><br><h1 style="font-size:20px; font-weight:800; ">Notificaciones</h1><br></div>')
                 this.appendDelays();
                 this.appendMaterials(),
+                this.appendNotifications(),
                 $(document).on('click', 'timeline-event', function(){
                     $(this).parent().removeClass('ui-state-active')
                 })
@@ -2630,6 +2792,7 @@
                         success: function(result){
                             var json = [];
                             var array = [];
+                            console.log(result)
                             result.forEach(function(r){
                                 json.push({
                                     start: new Date(r[0]),
@@ -2731,6 +2894,7 @@
                     url: '/timelinedelays/'+this.options.ot_id,
                     type: 'GET',
                     success: function(data){
+                        console.log(data);
                         if(data){
                             data.forEach(function(d){
                                 $('#delays').append('<span><strong style="font-weight:800">'+d.reason+'</strong> '+d.observation+' - '+d.delay+' (dias)</span></br>')
@@ -2749,10 +2913,23 @@
                             data.forEach(function(material){
                                 console.log(material.category)
                                 var style = '';
-                                if(!material.arrived){
+                                if(material.arrived){
                                     style = ' text-decoration: line-through;'
                                 }
-                                $('#materials').append('<span style="'+style+'"><strong style="font-weight:800">' + material.category + '</strong> ' + material.name + ' (' + material.quantity + ') <br>');
+                                $('#materials').append('<span style="'+style+'"><strong style="font-weight:800">' + material.category + '</strong> ' + material.name + ' (' + material.quantity + ') </span><br>');
+                            })
+                        }
+                    }
+                })
+            },
+            appendNotifications: function(){
+                $.ajax({
+                    url: '/timelineobs/byOt/'+this.options.ot_id,
+                    type: 'GET',
+                    success: function(data){
+                        if (data){
+                            data.forEach(function(obs){
+                                $('#notifications').append('<span ><strong style="font-weight:800">' + moment(obs.created_at).format('DD/MM/YYYY') + '</strong> ' + obs.observation + '</span><br>');
                             })
                         }
                     }
@@ -2816,8 +2993,8 @@
         C.View.ClientsOtsTable = Backbone.View.extend({
             source: "/clientots",
             name: "clients",
-            headers: [ "ID", "O/T", "O/T cliente", "Equipo (TAG)", "Motivo de intervención", "Inicio", "Entrega", "Estado", 'accion' ],
-            attrs: [ "id", "number", "ot_client", "equipment", "intervention", "agreedstart", "agreedend", "otstate", "accion"],
+            headers: [ "ID", "O/T", "O/T cliente", "Equipo (TAG)", "Motivo de intervención", "Inicio", "Entrega", "Terminado", "Estado", 'accion' ],
+            attrs: [ "id", "number", "ot_client", "equipment", "intervention", "agreedstart", "agreedend", "ready", "otstate", "accion"],
             data: null,
             date_columns: ['created_at', 'delivery'],
             datatableOptions: {
@@ -2830,21 +3007,23 @@
             rowHandler: function(e, t) {
                 var _this = this;
                 var value = 'Notificar'
-                if (t.otstate_id == 2 || t.otstate_id == 3) value = 'Autorizar';
+                if (t.otstate_id < 3) value = 'Autorizar';
                 var n = $('<input type="button" value="'+value+'" class="authorize_ot_button">'), r = $('<input type="button" class="visualize_ot_events" value="Graficar">'), rr = $('<input type="button" value="Ver informe" class="report_preview">');
-                $($(e).children().get(7)).css({
+                $($(e).children().get(8)).css({
                     textAlign: "right"
                 });
-                $($(e).children().get(7)).html(n), $(n).on("click", function() {
-                    _this.authorizeOt(t.id, value);
-                });
-                $($(e).children().get(7)).append(rr), $(rr).on('click', function(){
-                    _this.preview(t.id);
-                })
+                $($(e).children().get(8)).html('')
+                if(t.otstate_id < 6 && t.otstate_id > 1){
+                    $($(e).children().get(8)).append(n), $(n).on("click", function() {
+                        _this.authorizeOt(t.id, value);
+                    });
+                    $($(e).children().get(8)).append(rr), $(rr).on('click', function(){
+                        _this.preview(t.id);
+                    })
+                }
                 if (t.showtimeline){
-                    $($(e).children().get(7)).append(r), $(r).on("click", function() {
-                        window.location = "/#/client/events/" + t.id;
-                        location.reload()
+                    $($(e).children().get(8)).append(r), $(r).on("click", function() {
+                        window.open("/#/client/events/" + t.id);
                     });
                 }
             },
@@ -2863,7 +3042,13 @@
                             success: function(){
                                 $('.authorization_window').remove()
                                 $('.blockUI').remove();
-                                F.msgOK('La orden de trabajo ha sido autorizada');
+                                
+                                if (action == "Autorizar"){
+                                    F.msgOK('La orden de trabajo ha sido autorizada');
+                                }
+                                else{
+                                    F.msgOK('La orden de trabajo ha sido notificada');
+                                }
                                 F.reloadDataTable('.clients_table');
                             }
                         })
@@ -3380,27 +3565,30 @@
                     success: function(data){
                         console.log(data)
                         var el = $('.material_container_'+index)
+                        $('.properties_container').remove();
+                        var container = $('<div class="properties_container"></div>')
                         if (data.material){
-                            $(el).append('<input class="property" type="text" name="material_element_'+index+'" placeholder="Material" style="width:80%; margin: 0 auto">')
+                            $(container).append('<input class="property" type="text" name="material_element_'+index+'" placeholder="Material" style="width:80%; margin: 0 auto">')
                         }
                         if (data.externaldiameter) {
-                            $(el).append('<input type="text" class="property" name="externaldiameter_'+index+'" placeholder="Diámetro externo" style="width:19%; margin-right: 1%; display:inline">')
+                            $(container).append('<input type="text" class="property" name="externaldiameter_'+index+'" placeholder="Diámetro externo" style="width:19%; margin-right: 1%; display:inline">')
                         }
                         if (data.internaldiameter){
-                            $(el).append('<input type="text" class="property" name="internaldiameter_'+index+'" placeholder="Diámetro interno" style="width:19%; margin-right: 1%; display:inline">')
+                            $(container).append('<input type="text" class="property" name="internaldiameter_'+index+'" placeholder="Diámetro interno" style="width:19%; margin-right: 1%; display:inline">')
                         }
                         if (data.width) {
-                            $(el).append('<input type="text" class="property" name="width_'+index+'" placeholder="Ancho" style="width:19%; margin-right: 1%; display:inline">')
+                            $(container).append('<input type="text" class="property" name="width_'+index+'" placeholder="Ancho" style="width:19%; margin-right: 1%; display:inline">')
                         };
                         if (data.height) {
-                            $(el).append('<input type="text" class="property" name="height_'+index+'" placeholder="Alto" style="width:19%; margin-right: 1%; display:inline">')
+                            $(container).append('<input type="text" class="property" name="height_'+index+'" placeholder="Alto" style="width:19%; margin-right: 1%; display:inline">')
                         };
                         if (data.longitude) {
-                            $(el).append('<input type="text" class="property" name="longitude_'+index+'" placeholder="Longitud" style="width:19%; margin-right: 1; display:inline">')
+                            $(container).append('<input type="text" class="property" name="longitude_'+index+'" placeholder="Longitud" style="width:19%; margin-right: 1; display:inline">')
                         };
                         if (data.thickness) {
-                            $(el).append('<input type="text" class="property" name="thickness_'+index+'" placeholder="Espesor" style="width:19%; margin-right: 1; display:inline">')
+                            $(container).append('<input type="text" class="property" name="thickness_'+index+'" placeholder="Espesor" style="width:19%; margin-right: 1; display:inline">')
                         }
+                        $(el).append(container);
                     }
                 })
             },
@@ -3493,6 +3681,7 @@
                         provider: $("#material_order_window select[name=provider]").val(),
                         materials: $("#order_elements").serializeObject()
                     }, this.cleanModals);
+                    F.reloadDataTable('.material_table')
                 }else{
                     F.msgError('Falta completar algunos campos')
                 }
@@ -4013,8 +4202,8 @@
         C.View.OtAdminTable = Backbone.View.extend({
             name: "ot",
             source: "/ot",
-            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo Nuevo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inicio pactado", "Entrega pactada", "Inauguración", "Entrega estimada", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
-            attrs: [ "id", "number", "client_number", "equipment_id", "equipment_new", "equipment", "client_id", "client", "intervention_id", "intervention", "agreedstart", "agreedend", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
+            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo Nuevo", "Equipo (TAG)", "ID Cliente", "Cliente", "ID Internvención", "Motivo de intervención", "Inicio pactado", "Entrega pactada", "Terminado", "Inauguración", "Entrega estimada", "Sugerencia p/Taller", "Sugerencia p/Cliente", "ID Plan", "Retrabajo", "remitoentrada", "Notificar cliente" ],
+            attrs: [ "id", "number", "client_number", "equipment_id", "equipment_new", "equipment", "client_id", "client", "intervention_id", "intervention", "agreedstart", "agreedend", "ready", "created_at", "delivery", "workshop_suggestion", "client_suggestion", "plan_id", "reworked_number", "remitoentrada", "notify_client" ],
             hidden_columns: [ "workshop_suggestion", "client_suggestion", "equipment_new", "remitoentrada", "reworked_number", "notify_client", 'equipment_id', 'client_id', 'intervention_id', 'plan_id'],
             date_columns: ['delivery', 'created_at'],
             data: null,
@@ -4109,6 +4298,10 @@
                 },
                 agreedend: {
                     label: "Fecha de finalización pactada",
+                    type: 'datepicker',
+                },
+                ready: {
+                    label: "Fecha de equipo listo",
                     type: 'datepicker',
                 },
                 intervention_id: {
@@ -4236,7 +4429,7 @@
                                 }
                                 
                             })
-                        })
+                        }, 1000)
                     }
                 }) : F.msgError("Cargue al menos Cliente y TAG del equipo");
             },
@@ -4257,7 +4450,7 @@
                                 F.reloadDataTable('.ot_table')
                             }
                         })
-                    }, 500)
+                    }, 1000)
                 }
               });
             },
@@ -4570,7 +4763,7 @@
                 var r = $(".ot_table").dataTable(), i = F.getDataTableSelection($(".ot_table"))[0], s = 0, o = parseInt(r.fnGetData(i).id);
                 $("body").append('<div id="ot_add_task_window" class="addForm modal" style="display:none;"><h1 class="bold">Ingrese los datos de la nueva Tarea para la O/T '+parseInt(r.fnGetData(i).number)+':</h1><br /><br /><form id="add_task_ot_form"><input placeholder="Prioridad" type="text" style="width:75%;display:inline" name="new_task_priority" /><select style="width:19%;margin-left:2%;display:inline" name="type"><option value="seq">Secuencial</option><option value="par">Paralela</option></select><select name= "area"><option value="1">Administraci&oacute;n</option><option value="2">T&eacute;cnica/Calidad</option><option value="3">Pañol</option><option value="4">Mec&aacute;nica</option><option value="5">Maquinado</option><option value="6">Herrer&iacute;a</option><option value="7">Vigilancia</option></select><textarea name="new_task_description" placeholder="Descripción" style="height:100px;"></textarea></form><br /><br /><a class="BUTTON_cancel lefty">Cancelar</a><input type="button" class="BUTTON_proceed righty button" value="Agregar Tarea" /></div>'), $(".button").button();
                 $('#add_task_ot_form').prepend('<input type="text" name="name" placeholder="Nombre de la tarea">')
-                $('#add_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" name="eta" style="width:200px;display:inline"><input type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" disabled="disabled" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label> <input type="checkbox"  name="materials_missing"><label style="display:inline" disabled="disabled" for="materials_missing">Requiere materiales</label>')
+                $('#add_task_ot_form').append('<input type="text" placeholder="Tiempo estimado (Dias)" name="eta" style="width:200px;display:inline"><input checked type="checkbox" name="reprogramTask"><label for="reprogramTask" style="display:inline">Reprogramar Tareas</label> <input type="checkbox" name="reprogram"><label style="display:inline" disabled="disabled" for="reprogramOT">Reprogramar OT</label> <input type="checkbox"  name="materials_missing"><label style="display:inline" disabled="disabled" for="materials_missing">Requiere materiales</label>')
             },
             cleanModals: function(e) {
                 $(' .ot_add_task').unbind()
@@ -4782,13 +4975,17 @@
                 number: "O/T Nº",
                 equipment: "Equipo (TAG)",
                 client: "Cliente",
-                delivery: "Fecha de entrega",
+                agreedstart: "Inicio pactado",
+                agreedend: "Entrega pactada",
+                created_at: "Inauguración",
+                delivery: "Fecha de entrega estimada",
                 remitoentrada: "Remito de Entrada",
                 reworked_number: "Es retrabajo de"
             },
             initialize: function() {
                 $('.delays').remove();
                 var e = this;
+                console.log(this.options.model)
                 $(".ot_infocard").remove(), F.createInfoCard(this, $("#ot_right"), function() {
                     $("#right").trigger("ot_infocard_loaded", [ e ]);
                 });
@@ -5014,8 +5211,8 @@
         C.View.OtAuditTable = Backbone.View.extend({
             name: "ot",
             source: "/ot",
-            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Inicio pactado", "Entrega pactada", "Entrega estimada", "Retrabajo de", "Graficar" ],
-            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "agreedstart", "agreedend", "delivery", "reworked_number", null ],
+            headers: [ "ID", "O/T", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "Remito", "ID Cliente", "Cliente", "Inicio pactado", "Entrega pactada", "Terminado", "Entrega estimada", "Retrabajo de", "Graficar" ],
+            attrs: [ "id", "ot_number", "number", "client_number", "equipment_id", "equipment", "remitoentrada", "client_id", "client", "agreedstart", "agreedend", 'ready', "delivery", "reworked_number", null ],
             hidden_columns: [ "ot_number", "reworked_number", 'equipment_id', 'client_id' ],
             date_columns: ['delivery'],
             data: null,
@@ -5028,7 +5225,7 @@
             },
             rowHandler: function(e, t){
                 r = $('<span class="visualize_ot_events">Visualizar</span>');
-                $($(e).children().get(8)).html(r), $(r).on("click", function() {
+                $($(e).children().get(9)).html(r), $(r).on("click", function() {
                     window.open("/#/reports/timeline/" + t.id);
                     //location.reload()
                 });
@@ -5041,6 +5238,7 @@
                         $('.visualize_ot_events').css('color', '#30858c')
                         $('.selected_row .visualize_ot_events').css('color', '#fff')
                         var i = r.fnGetData(this)
+                        $('.delays').remove();
                         if (i.delay){
                             $('.ot_infocard').append('<div class="delays"><p><label>Demoras:</label></p>'+i.delay+'</div>')
                         }
@@ -5247,7 +5445,7 @@
         C.View.OtHistoryTable = Backbone.View.extend({
             name: "ot",
             source: "/othistory",
-            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida", "Ingreso", "Salida", "Inicio pactado", "Entrega pactada", 'Visualizar' ],
+            headers: [ "ID", "O/T", "O/T Cliente", "ID Equipo", "Equipo (TAG)", "ID Cliente", "Cliente", "Fecha de entrega", "Retrabajo de", "remitoentrada", "Remito de Salida", "Inauguración", "Entrega estimada", "Inicio pactado", "Entrega pactada", 'Visualizar' ],
             attrs: [ "id",  "number", "client_number", "equipment_id", "equipment", "client_id", "client", "salida", "reworked_number", "remitoentrada", "remitosalida", "created_at", "delivery", "agreedstart", "agreedend", null ],
             hidden_columns: [/*"created_at",*/ "salida", "reworked_number", "remitoentrada", 'client_id', 'equipment_id'],
             date_columns: ['created_at', 'salida'],
@@ -5356,8 +5554,14 @@
                 number: "O/T Nº",
                 equipment: "Equipo (TAG)",
                 client: "Cliente",
-                delivery: "Fecha pactada de entrega",
+                agreedstart: "Inicio pactado",
+                agreedend: "Entrega pactada",
+                created_at: "Inauguración",
+                delivery: "Entrega estimada",
+                conclusion_date: "Entrega/Retiro",
                 reworked_number: "Es retrabajo de",
+                plan: 'Plan de tareas',
+                intervention: 'Intervención',
                 delay: 'Demoras',
             },
             initialize: function() {
@@ -5692,10 +5896,7 @@
                           success: function(t) {
                             if(t.b==!0){
                               F.msgOK("La Tarea Fué eliminada con Éxito")
-                              setTimeout(function(){
-                                window.location = "/#/ots/audit/Ot_"+t.a.ot_id//e.getSelectionID();
-                                location.reload()
-                              }, 1e3);
+                              e.reloadOtRowDetails();
                             }else{
                               F.msgError('La tarea no se puede eliminar')
                             }

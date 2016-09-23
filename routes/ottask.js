@@ -123,6 +123,11 @@ Ottask.add = function(req, res, next) {
         eta: params.eta,
         materials_missing: missing,
       }).save().on('success', function(data) {
+        DB.Reporttask.build({
+          report_id:data.ot_id,
+          ottask_id:data.id,
+          observation: '',
+        }).save();
         if (params.type == 'seq'){
           DB._.query("SELECT priority FROM ottask WHERE ot_id = "+params.ot_id+" AND priority = "+params.priority , function(err, e){
             if (e.length > 0) {
@@ -351,6 +356,13 @@ Ottask.complete = function(req, res, next) {
             });
           });
         }
+        DB.Ottask.findAll({where:{completed: 0, ot_id: t.ot_id}}).on('success', function(ott){
+          if(ott.length == 0){
+            DB.Ot.find({where:{id: t.ot_id}}).on('success', function(ot){
+              ot.updateAttributes({ready:new Date()})
+            })
+          }
+        })
         res.send(true);
       }).on('error', function(err) {
         res.send(false);
@@ -413,6 +425,13 @@ Ottask.complete = function(req, res, next) {
             });
           });
         }
+        DB.Ottask.findAll({where:{completed: 0, ot_id:t.ot_id}}).on('success', function(ott){
+          if(ott.length == 0){
+            DB.Ot.find({where:{id: t.ot_id}}).on('success', function(ot){
+              ot.updateAttributes({ready:new Date()})
+            })
+          }
+        })
         res.send(true);
       }).on('error', function(err) {
         res.send(false);
@@ -442,6 +461,7 @@ Ottask.put = function(req, res, next) {
 
 Ottask.delete = function(req, res, next) {
   DB.Ottask.find({where:{ id: req.params.id}}).on('success', function(ott){
+    DB._.query('DELETE FROM reporttask WHERE ottask_id = '+ott.id);
     if(ott.completed==1||ott.sent){
       if(req.session.role_id>3){
         DB.deleteById(req, res, DB.Ottask);
@@ -457,38 +477,3 @@ Ottask.delete = function(req, res, next) {
 };
 
 module.exports = Ottask;
-
-
-/*TODO
-
-* Calcular la posicion 
-  "SELECT MAX(position) FROM ottask WHERE ot_id = (id de la ot) AND (priority <= (prioridad))";
-
-* Correr las tareas siguientes 
-  "UPDATE ottask SET position = position + 1 WHERE position >= (posicion) AND ot_id = (id de la ot) AND deleted_at IS NULL";
-
-* Si es secuencial consultar si hay tareas de esa misma prioridad
-  "SELECT priority FROM ottask WHERE ot_id = (id de la ot) AND priority = (prioridad)";
-  - si las hay desplazar las de prioridad menor (mayor numero)
-    "UPDATE ottask SET priority = priority + 1 WHERE priority > (prioridad) AND ot_id = (id de la ot);"
-
-* Si esta tildado para reprogramar las fechas
-  PARALELAS: 
-  -Seleccionar el maximo tiempo estimado entre las tareas de su misma prioridad
-    "SELECT MAX(eta) AS max FROM ottask WHERE ot_id = (id de la ot) AND priority = (prioridad)";
-  -Calcular la diferencia de el tiempo estimado que ingresamos contra el maximo tiempo estimado seleccionado, de ser menor a 0 el tiempo la diferencia es 0
-  SECUENCIALES:
-  -La cantidad de dias a desplazar es igual al tiempo estimado ingresado
-
-* Desplazar las fechas de las tareas con prioridad mayor a la ingresada la cantidad de dias establecida en el paso anterior
-  "UPDATE ottask SET due_date = DATE_ADD(due_date, INTERVAL (diferencia) DAY) WHERE ot_id = (id de la ot) AND priority > (prioridad)"
-
-* Si esta tildado para reprogramar OT 
-  -Seleccionar la fecha de la ultima tarea
-    "SELECT due_date AS deadline FROM ottask WHERE ot_id = (ot_id) ORDER BY id DESC LIMIT 1";
-  -Establecer como vencimiento de la ot la fecha seleccionada el paso anterior
-    "UPDATE ot SET delivery = (fecha del paso anterior) WHERE id = (id de la ot)";
-
-* Insertar la tarea
-  
-*/

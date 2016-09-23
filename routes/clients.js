@@ -37,6 +37,7 @@ Clients.getOts = function(req, res, next) {
             "otstate_id": ot.otstate_id,
             "agreedstart": ot.agreedstart ? moment(ot.agreedstart).format('DD/MM/YYYY') : 'Sin definir',
             "agreedend": ot.agreedend ? moment(ot.agreedend).format('DD/MM/YYYY') : 'Sin definir',
+            "ready": ot.ready ? moment(ot.ready).format('DD/MM/YYYY') : 'Sin definir',
             "accion": null,
             "showtimeline": ot.showtimeline
           });

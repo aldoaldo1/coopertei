@@ -81,6 +81,7 @@ module.exports = function(app, routes) {
   app.get('/materialreport/:filterBy/:start/:end', Auth.restrict, routes.otresourcereport.materialReport);
   app.get('/timelinechart/:ot_id', Auth.restrict, routes.timelinechart.get);
   app.get('/timelinedelays/:ot_id', Auth.restrict, routes.timelinechart.delays);
+  app.get('/timelineobs/byOt/:ot_id', Auth.restrict, routes.timelinechart.obs);
 
   app.get('/otobservation/:ot_id', Auth.restrict, routes.otobservation.byOt);
   app.get('/otobservation/byId/:id', Auth.restrict, routes.otobservation.byId);

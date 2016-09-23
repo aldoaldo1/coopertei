@@ -25,7 +25,7 @@ Otobservation.byOt = function(req, res, next) {
 
 Otobservation.byId = function(req, res, next) {
   	var id = req.params.id;
-  	var q = "SELECT o.*, CONCAT(p.lastname, ', ', p.firstname) as person, c.name as client FROM otobservation o \
+  	var q = "SELECT o.*, CONCAT(p.lastname, ', ', p.firstname) as person, ot.number, c.name as client FROM otobservation o \
   		INNER JOIN ot ON o.ot_id = ot.id \
   		INNER JOIN client c ON ot.client_id = c.id \
   		LEFT JOIN user u ON o.user_id = u.id \
@@ -36,7 +36,11 @@ Otobservation.byId = function(req, res, next) {
 	console.log(q);
 
   	DB._.query(q, function(err, data){
-  		res.send(data[0]);
+      if (data){
+  		  res.send(data[0]);
+      }else{
+        res.send(false);
+      }
   	})
 };
 

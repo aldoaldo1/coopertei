@@ -62,6 +62,7 @@ Othistory.get = function(req, res, next) {
         "salida": moment(ot.updated_at).format('DD/MM/YYYY'),
         "agreedstart": ot.agreedstart ? moment(ot.agreedstart).format('DD/MM/YYYY') : '',
         "agreedend": ot.agreedend ? moment(ot.agreedend).format('DD/MM/YYYY') : '',
+        "conclusion_date": ot.conlusion_date ? moment(ot.conclusion_date).format('DD/MM/YYYY') : '',
         "workshop_suggestion": ot.workshop_suggestion,
         "client_suggestion": ot.client_suggestion,
         "client_id": ot.client_id,

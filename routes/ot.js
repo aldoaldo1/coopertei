@@ -147,6 +147,7 @@ Ot.get = function(req, res, next) {
         created_at: moment(ot.created_at).format('DD/MM/YYYY'),
         agreedstart: ot.agreedstart ? moment(ot.agreedstart).format('DD/MM/YYYY') : '',
         agreedend: ot.agreedend ? moment(ot.agreedend).format('DD/MM/YYYY') : '',
+        ready: ot.ready ? moment(ot.ready).format('DD/MM/YYYY') : '',
         workshop_suggestion: ot.workshop_suggestion,
         client_suggestion: ot.client_suggestion,
         client_id: ot.client_id,
@@ -247,12 +248,13 @@ Ot.conclude = function(req, res, next) {
 
 Ot.reprogram = function(req, res, next){
   DB.Ot.find({where: {id: req.params.id}}).on('success', function(ot){
-    prev = ot.delivery;
-    var a = moment(prev);
-    var b = moment(req.body.newDate);
-    var diffDays = b.diff(a, 'days');
-    console.log(diffDays);
-    
+    var diffDays = 0;
+    if (ot.delivery){
+      prev = ot.delivery;
+      var a = moment(prev);
+      var b = moment(req.body.newDate);
+      diffDays = b.diff(a, 'days');
+    }
     ot.updateAttributes({
       delivery: moment(req.body.newDate).format('YYYY-MM-DD')
     })
@@ -272,16 +274,19 @@ Ot.update = function(req, res, next) {
     if(auth){
       auth.updateAttributes({client_id: req.body.client_id})
     }
-  })  
+  })
   DB.Ot.find({ where: { id: req.params.ot_id } }).on('success', function(ot) { 
-   var agreedstart = null;
-   var agreedend = null;
-   var x = req.body.agreedstart
-  agreedstart = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
-  x = req.body.agreedend;
-  agreedend = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
-   if(ot){
-    DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
+    var agreedstart = null;
+    var agreedend = null;
+    var ready = null;
+    var x = req.body.agreedstart
+    agreedstart = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
+    x = req.body.agreedend;
+    agreedend = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
+    x = req.body.ready;
+    ready = x[6]+x[7]+x[8]+x[9]+'-'+x[3]+x[4]+'-'+x[0]+x[1];
+    if(ot){
+      DB._.query("SELECT id FROM plan WHERE id = "+ot.plan_id+" AND deleted_at IS NULL", function(err, plan){
       if(ot.plan_id == req.body.plan_id || (plan.length == 0 && req.body.plan_id == '')){
       //Actualizo Todo menos plan de tareas
         var equipment;
@@ -299,6 +304,7 @@ Ot.update = function(req, res, next) {
               equipment_id = '"+e.id+"',\
               agreedstart = '"+agreedstart+"',\
               agreedend = '"+agreedend+"',\
+              ready = '"+ready+"',\
               intervention_id = '"+req.body.intervention_id+"',\
               workshop_suggestion = '"+req.body.workshop_suggestion+"',\
               client_suggestion = '"+req.body.client_suggestion+"',\
@@ -323,6 +329,7 @@ Ot.update = function(req, res, next) {
             equipment_id = '"+req.body.equipment_id+"',\
             agreedstart = '"+agreedstart+"',\
             agreedend = '"+agreedend+"',\
+            ready = '"+ready+"',\
             intervention_id = '"+req.body.intervention_id+"',\
             workshop_suggestion = '"+req.body.workshop_suggestion+"',\
             client_suggestion = '"+req.body.client_suggestion+"',\
@@ -348,6 +355,7 @@ Ot.update = function(req, res, next) {
   	      client_id: req.body.client_id,
   	      agreedstart: agreedstart,
           agreedend: agreedend,
+          ready: ready,
   	      intervention_id: req.body.intervention_id,
   	      workshop_suggestion: req.body.workshop_suggestion,
   	      client_suggestion: req.body.client_suggestion,
@@ -360,13 +368,14 @@ Ot.update = function(req, res, next) {
           async.parallel(
           {
             tasks: function(fn) {
+              DB._.query('DELETE FROM reporttask WHERE report_id = '+ot.id);
               var q1 = "DELETE FROM ottask WHERE ot_id = " + ot.id;
               DB._.query(q1, function(err, data) {
                 var q2 = " \
                   SELECT tp.*, t.* \
                   FROM taskplan tp \
                   INNER JOIN task t ON tp.task_id = t.id \
-                  WHERE tp.plan_id = " + req.body.plan_id;
+                  WHERE tp.deleted_at IS NULL AND tp.plan_id = " + req.body.plan_id;
                 DB._.query(q2, function(err, tasks) {
                   if (tasks && tasks.length){
                     var position = 1;
@@ -397,7 +406,14 @@ Ot.update = function(req, res, next) {
                           derived_to: 0,
                           ot_id: ot.id,
                           eta: t.eta
-                        }).save();
+                        }).save().on('success', function(rt){
+                          console.log(rt)
+                          DB.Reporttask.build({
+                            report_id: rt.ot_id,
+                            ottask_id: rt.id,
+                            observation: '',
+                          }).save()
+                        });
                         position += 1;
                         if (max[0].eta) {
                           startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
@@ -437,17 +453,14 @@ Ot.post = function(req, res, next) {
 if(req.body.client_id > 0){
    var agreedstart = null;
    var agreedend = null;
-   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
-    agreedstart=moment(DB.flipDateMonth(req.body.agreedstart)).format('YYYY-MM-DD 00:00:00')
-   }else{
-    agreedstart=req.body.agreedstart
-   }
-   if(new Date(req.body.agreedstart.split(' ')[0]) != "Invalid Date"){
-    agreedend=moment(DB.flipDateMonth(req.body.agreedend)).format('YYYY-MM-DD 00:00:00')
-   }else{
-    agreedend=req.body.agreedend
-   }
-   function createOt(equipment_new) {
+   var ready = null;
+   var x = req.body.agreedstart
+    agreedstart = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
+    x = req.body.agreedend;
+    agreedend = x[3]+x[4]+'-'+x[0]+x[1]+'-'+x[6]+x[7]+x[8]+x[9];
+    x = req.body.ready;
+    ready = x[6]+x[7]+x[8]+x[9]+'-'+x[3]+x[4]+'-'+x[0]+x[1];
+    function createOt(equipment_new) {
     var equipment_id = req.body.equipment_id;
     if (equipment_new !== null) {
       equipment_id = equipment_new.id;
@@ -460,6 +473,7 @@ if(req.body.client_id > 0){
         equipment_id: equipment_id,
         agreedstart: agreedstart,
         agreedend: agreedend,
+        ready: ready,
         intervention_id: req.body.intervention_id,
         workshop_suggestion: req.body.workshop_suggestion,
         client_suggestion: req.body.client_suggestion,
@@ -467,20 +481,21 @@ if(req.body.client_id > 0){
         reworked_number: req.body.reworked_number || 0,
         notify_client: req.body.notify_client,
         showtimeline: req.body.showtimeline,
+        showdelays: req.body.showdelays,
         remitoentrada: req.body.remitoentrada,
         otstate_id: 1
       }).save().on('success', function(ot) {
         async.parallel(
         {
           tasks: function(fn) {
-            // Create instance of chosen Taskplan so it can be editable for this OT
+            DB._.query('DELETE FROM reporttask WHERE report_id = '+ot.id);
             var q1 = "DELETE FROM ottask WHERE ot_id = " + ot.id;
             DB._.query(q1, function(err, data) {
               var q2 = " \
                 SELECT tp.*, t.* \
                 FROM taskplan tp \
                 INNER JOIN task t ON tp.task_id = t.id \
-                WHERE tp.plan_id = " + req.body.plan_id;
+                WHERE tp.deleted_at IS NULL AND tp.plan_id = " + req.body.plan_id;
               DB._.query(q2, function(err, tasks) {
                 if (tasks && tasks.length){
                   var position = 1;
@@ -489,13 +504,13 @@ if(req.body.client_id > 0){
                   var q3 = 'SELECT SUM(max) AS eta FROM (SELECT MAX(tp.eta) AS max FROM taskplan tp INNER JOIN task t ON tp.task_id = t.id WHERE tp.plan_id = '+req.body.plan_id+' AND t.priority < '+t.priority+' GROUP BY t.priority) AS aux';
                     DB._.query(q3, function(err, max){
                       var startDay = moment(ot.created_at);
-                      
+                      if (req.body.agreedstart){
+                        startDay = moment(agreedstart);
+                      }
                       if (max[0].eta){
-                        startDay = moment(ot.created_at);
                         startDay.add('days', Number(max[0].eta) + Number(t.eta));
                       }
                       else{
-                        startDay = moment(ot.created_at) 
                         startDay.add('days', Number(t.eta));
                       }
                       DB.Ottask.build({
@@ -511,7 +526,14 @@ if(req.body.client_id > 0){
                         derived_to: 0,
                         ot_id: ot.id,
                         eta: t.eta
-                      }).save();
+                      }).save().on('success', function(rt){
+                        console.log(rt)
+                        DB.Reporttask.build({
+                          report_id: rt.ot_id,
+                          ottask_id: rt.id,
+                          observation: '',
+                        }).save()
+                      });
                       position += 1;
                       if (max[0].eta) {
                         startDay.subtract('days', Number(max[0].eta) + Number(t.eta)).format('YYYY-MM-DD')
@@ -627,7 +649,13 @@ Ot.put = function(req, res, next) {
                       reworked: 0,
                       derived_to: 0,
                       ot_id: ot.id
-                    }).save();
+                    }).save().on('success', function(rt){
+                      DB.Reporttask.build({
+                        ot_id: t.ot_id,
+                        id: rt.id,
+                        observation: '',
+                      })
+                    });
                     position += 1;
                   });
                 }

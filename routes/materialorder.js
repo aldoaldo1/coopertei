@@ -58,8 +58,6 @@ Materialorder.byOt = function(req, res, next){
 }
 
 Materialorder.post = function(req, res, next) {
-console.log(req.body)
-console.log(req.params)
   var q_els = DB.objectSize(req.body.materials) / 4;
   DB.Ot.find({ where: { number: req.body.ot_number } }).on('success', function(ot) {
     if (ot) {
@@ -85,8 +83,8 @@ console.log(req.params)
               if (req.body.materials['longitude_' + i]) {
                 description += 'Longitud: ' + req.body.materials['longitude_' + i] + ' ';
               };
-              if (req.body.materials['thickness' + i]) {
-                description += 'Espesor: ' + req.body.materials['thickness' + i] + ' ';
+              if (req.body.materials['thickness_' + i]) {
+                description += 'Espesor: ' + req.body.materials['thickness_' + i] + ' ';
               };
 
               if(req.body.materials['material_category_' + i]||req.body.materials['material_element_' + i]||req.body.materials['material_quantity_' + i]||req.body.materials['material_unit_' + i]){ 
@@ -199,7 +197,7 @@ Materialorder.arrival = function(req, res, next) {
       if(req.params.quantity != 0){
       qe= '\
       INSERT INTO materialreception (date, created_at, updated_at, deleted_at, user_id, materialorderelement_id,quantity,remito,observation) VALUES ("'+humanDate+'","'+hora+'"," '+hora+'", NULL, "'+req.session.user_id+'" , '+moe.id+', '+req.params.quantity +",'"+remiobs[0]+"','"+remiobs[1]+"')";
-      DB._.query(qe);     console.log("CREO NUEVA RECEPCION CON TODOS SUS DATOS");
+      DB._.query(qe);     
       DB.Materialorder.find({ where: { id: moe.materialorder_id } }).on('success', function(mo) {
         DB.Ot.find({where: {id: mo.ot_id }}).on('success',function(ot){
           var q = "SELECT name FROM equipment e WHERE e.deleted_at IS NULL AND id = "+ot.equipment_id;
@@ -235,8 +233,8 @@ Materialorder.arrival = function(req, res, next) {
     		      		completed: 1,
     		      		completed_date: moment().format('YYYY-MM-DD')
   		      		}).on('success', function() {
-  	      		    console.log("ACTUALIZA LA OT! poniendo 'V' en la qe corresponda");
-  		      		});
+  	      		  
+                });
   		        }
             }); 
 		      }; 
@@ -246,7 +244,6 @@ Materialorder.arrival = function(req, res, next) {
             WHERE materialorderelement_id = "+ moe.id;
             DB._.query(sum, function(error, data) {
               if (data) {
-                console.log("Cantidad Pedida=", moe.quantity,"Recibido = ",data[0].total);
                 if(moe.quantity <= data[0].total){
                   moe.updateAttributes({
         	          "arrived": 1,//moe.arrived!,
@@ -255,11 +252,12 @@ Materialorder.arrival = function(req, res, next) {
       	            res.send({ result: true, arrived: moU.arrived });
                     var q = 'SELECT moe.arrived FROM materialorderelement moe \
                             INNER JOIN  materialorder mo ON mo.id = moe.materialorder_id \
-                            WHERE (moe.arrived = 0 OR moe.arrived IS NULL) AND mo.ot_id = '+mo.ot_id;
+                            WHERE (moe.arrived = 0 OR moe.arrived IS NULL) AND mo.ot_id = '+mo.ot_id+' AND moe.deleted_at IS NULL';
                     DB._.query(q, function(err, rows){
-                      console.log(rows, rows.length)
+                      console.log(rows.length, 'columnas')
                       if (rows.length == 0){
                         DB._.query('UPDATE ot SET otstate_id = 5 WHERE id = '+mo.ot_id);
+                        DB._.query('UPDATE authorization SET otstate_id = 5 WHERE ot_id = '+mo.ot_id);
                       }
                     })
                   });
@@ -297,11 +295,8 @@ Materialorder.delete = function(req, res, next) {
 };
 
 Materialorder.elementdelete = function(req, res, next) {
- console.log(req.params.id);
-  console.log("req.params.id");
 DB.Materialorderelement.find({ where: { id: req.params.id } }).on('success', function(moe) {
  var hora =moment().format("YYYY-MM-DD HH:mm:ss");
- console.log(req.params.id);
  moe.updateAttributes({
    "deleted_at": hora,
    "updated_at": hora,

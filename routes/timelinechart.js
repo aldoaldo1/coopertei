@@ -14,13 +14,14 @@ Timelinechart.get = function(req, res, next) {
 	var data = [];
 	var query = 'SELECT ott.*, otr.id as worked FROM ottask ott\
 				LEFT JOIN ottaskresource otr ON otr.ottask_id = ott.id\
-				WHERE ott.ot_id = '+ot_id+'\
+				WHERE ott.ot_id = '+ot_id+' AND ott.deleted_at IS NULL\
 				GROUP BY ott.id ORDER BY priority ASC';
 				console.log(query)
 	DB._.query(query, function(err, tasks){
 	//DB.Ottask.findAll({where: {ot_id : ot_id}, order:[['priority ASC',]]}).on('success', function(tasks){
 		DB.Ot.find({where: {id: ot_id}}).on('success', function(ot){
-			if (ot.agreedstart) {
+			console.log(new Date(ot.agreedstart))
+			if (ot.agreedstart && new Date(ot.agreedstart) != 'Invalid Date') {
 				startDay = new Date(ot.agreedstart);
 				data.push([
 					moment(startDay).format('YYYY/MM/DD'),
@@ -37,7 +38,7 @@ Timelinechart.get = function(req, res, next) {
 					'milestone'
 				])
 			};
-			if(ot.agreedend){
+			if(ot.agreedend && new Date(ot.agreedend) != 'Invalid Date'){
 				data.push([
 					moment(ot.agreedend).format('YYYY/MM/DD'),
 					null,
@@ -45,7 +46,15 @@ Timelinechart.get = function(req, res, next) {
 					'milestone'
 				])
 			}
-			if(ot.conclusion_date){
+			if(ot.ready && new Date(ot.ready) != 'Invalid Date'){
+				data.push([
+					moment(ot.ready).format('YYYY/MM/DD'),
+					null,
+					'Terminado',
+					'milestone'
+				])
+			}
+			if(ot.conclusion_date && new Date(ot.conclusion_date) != 'Invalid Date'){
 				data.push([
 					moment(ot.conclusion_date).format('YYYY/MM/DD'),
 					null,
@@ -62,7 +71,6 @@ Timelinechart.get = function(req, res, next) {
 			var priority_completed = true;
 			var uncompleted_count = 0;
 			tasks.forEach(function(task){
-				console.log(task.priority, task.worked)
 				var taskclass = '';
 				due_date = addDays(task.due_date, totalDelay);
 				completed_date = new Date(task.completed_date);
@@ -94,7 +102,6 @@ Timelinechart.get = function(req, res, next) {
 							}
 						}
 						if (max_completed_date > max_due_date && priority_completed){
-							console.log(max_due_date)
 							currentDelay = diffBetweenDates(max_completed_date, max_due_date)
 							totalDelay += currentDelay
 							data.push([
@@ -144,7 +151,6 @@ Timelinechart.get = function(req, res, next) {
 					data.push([moment(startDay).format('YYYY/MM/DD'), null, task.name, taskclass]);
 				};
 				//Actualizo valores
-				console.log(max_due_date, currentDelay)
 				max_due_date = addDays(max_due_date, currentDelay)
 				if (addDays(due_date, currentDelay) > max_due_date){
 					max_due_date = addDays(due_date, currentDelay); 
@@ -165,7 +171,7 @@ Timelinechart.get = function(req, res, next) {
 					data.push([
 						moment(addDays(max_due_date, 1)).format('YYYY/MM/DD'),
 						null,
-						'Terminado',
+						'Programado',
 						'milestone'
 					])
 				}
@@ -203,7 +209,8 @@ Timelinechart.delays = function(req, res, next){
 	ot_id = req.params.ot_id;
 	q = 'SELECT od.observation, od.delay, d.reason FROM otdelay od\
 		INNER JOIN delay d ON od.delay_id = d.id\
-		WHERE od.ot_id = '+ot_id;
+		WHERE od.ot_id = '+ot_id+' \
+		ORDER BY od.id DESC';
 	DB._.query(q, function(err, data){
 		DB.Ot.find({where: {id: ot_id}}).on('success', function(ot){
 			if(ot){
@@ -222,6 +229,13 @@ Timelinechart.delays = function(req, res, next){
 				}
 			}
 		})
+	})	
+}
+Timelinechart.obs = function(req, res, next){
+	ot_id = req.params.ot_id;
+	DB.Otobservation.findAll({where:{ot_id:ot_id, deleted_at: null}}).on('success', function(data){
+		console.log(data)
+		res.send(data);
 	})	
 }
 module.exports = Timelinechart;

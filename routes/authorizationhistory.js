@@ -14,11 +14,11 @@ Authorizationhistory.get = function(req, res, next) {
     FROM authorization a \
     INNER JOIN ot ot ON a.ot_id = ot.id \
     INNER JOIN client c ON a.client_id = c.id \
-    INNER JOIN otstate o ON a.otstate_id = o.id \
+    INNER JOIN otstate o ON ot.otstate_id = o.id \
     LEFT JOIN user u ON a.user_id = u.id \
     LEFT JOIN employee e ON u.employee_id = e.id \
     LEFT JOIN person p ON e.person_id = p.id \
-    WHERE ot.otstate_id >= 5 AND a.deleted_at IS NULL \
+    WHERE ot.otstate_id >= 4 AND a.deleted_at IS NULL \
     ORDER BY ot.otstate_id ASC \
   ";
 
